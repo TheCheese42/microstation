@@ -1,0 +1,26 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>file.svg</file>
+    <file>layers.svg</file>
+    <file>moon.svg</file>
+    <file>aperture.svg</file>
+    <file>arrow-down.svg</file>
+    <file>clock.svg</file>
+    <file>code.svg</file>
+    <file>file-text.svg</file>
+    <file>github.svg</file>
+    <file>globe.svg</file>
+    <file>hard-drive.svg</file>
+    <file>icons.qrc</file>
+    <file>info.svg</file>
+    <file>monitor.svg</file>
+    <file>pause-circle.svg</file>
+    <file>power.svg</file>
+    <file>refresh-cw.svg</file>
+    <file>settings.svg</file>
+    <file>sliders.svg</file>
+    <file>tool.svg</file>
+    <file>upload.svg</file>
+    <file>users.svg</file>
+  </qresource>
+</RCC>

@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>569</width>
+    <height>317</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Microstation</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <layout class="QFormLayout" name="formLayout_2">
+      <item row="0" column="0">
+       <widget class="QLabel" name="mcLabel">
+        <property name="font">
+         <font>
+          <pointsize>20</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Microcontroller:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="mcDisplay">
+        <property name="font">
+         <font>
+          <pointsize>20</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <layout class="QFormLayout" name="formLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="profileLabel">
+        <property name="font">
+         <font>
+          <pointsize>20</pointsize>
+         </font>
+        </property>
+        <property name="text">
+         <string>Active Profile:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="profileCombo">
+        <property name="font">
+         <font>
+          <pointsize>16</pointsize>
+         </font>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QCheckBox" name="autoDetectBox">
+      <property name="font">
+       <font>
+        <pointsize>20</pointsize>
+       </font>
+      </property>
+      <property name="text">
+       <string>Auto Detect Profiles</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <spacer name="verticalSpacer_2">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>569</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="actionPort"/>
+    <addaction name="actionRefresh_Ports"/>
+    <addaction name="separator"/>
+    <addaction name="actionPause"/>
+    <addaction name="separator"/>
+    <addaction name="actionRun_in_Background"/>
+    <addaction name="actionQuit"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>Edit</string>
+    </property>
+    <addaction name="actionSettings"/>
+    <addaction name="actionProfiles"/>
+    <addaction name="actionMacros"/>
+   </widget>
+   <widget class="QMenu" name="menuTool">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionSerial_Monitor"/>
+    <addaction name="separator"/>
+    <addaction name="actionLog"/>
+    <addaction name="actionSerial_Log"/>
+    <addaction name="actionExport_Serial_History"/>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+    <addaction name="actionAboutMicrostation"/>
+    <addaction name="separator"/>
+    <addaction name="actionOpenGitHub"/>
+    <addaction name="actionOpenSourceLicenses"/>
+   </widget>
+   <widget class="QMenu" name="menuMicrocontroller">
+    <property name="title">
+     <string>Microcontroller</string>
+    </property>
+    <addaction name="actionUpload_Code"/>
+    <addaction name="separator"/>
+    <addaction name="actionSettings_2"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>View</string>
+    </property>
+    <widget class="QMenu" name="menuLanguage">
+     <property name="title">
+      <string>Language</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../icons/icons.qrc">
+       <normaloff>:/icons/globe.svg</normaloff>:/icons/globe.svg</iconset>
+     </property>
+    </widget>
+    <widget class="QMenu" name="menuTheme">
+     <property name="title">
+      <string>Theme</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../icons/icons.qrc">
+       <normaloff>:/icons/layers.svg</normaloff>:/icons/layers.svg</iconset>
+     </property>
+     <addaction name="actionDefault"/>
+     <addaction name="actionDark"/>
+    </widget>
+    <addaction name="menuTheme"/>
+    <addaction name="menuLanguage"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuMicrocontroller"/>
+   <addaction name="menuTool"/>
+   <addaction name="menuView"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionRefresh_Ports">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/refresh-cw.svg</normaloff>:/icons/refresh-cw.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Refresh Ports</string>
+   </property>
+  </action>
+  <action name="actionPause">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/pause-circle.svg</normaloff>:/icons/pause-circle.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Pause</string>
+   </property>
+  </action>
+  <action name="actionRun_in_Background">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/arrow-down.svg</normaloff>:/icons/arrow-down.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Run in Background</string>
+   </property>
+  </action>
+  <action name="actionQuit">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/power.svg</normaloff>:/icons/power.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/settings.svg</normaloff>:/icons/settings.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
+  <action name="actionProfiles">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/users.svg</normaloff>:/icons/users.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Profiles</string>
+   </property>
+  </action>
+  <action name="actionSerial_Monitor">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/monitor.svg</normaloff>:/icons/monitor.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Serial Monitor</string>
+   </property>
+  </action>
+  <action name="actionLog">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/file-text.svg</normaloff>:/icons/file-text.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Open Log</string>
+   </property>
+  </action>
+  <action name="actionSerial_Log">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/tool.svg</normaloff>:/icons/tool.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Microcontroller Log</string>
+   </property>
+  </action>
+  <action name="actionExport_Serial_History">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/clock.svg</normaloff>:/icons/clock.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Export Serial History</string>
+   </property>
+  </action>
+  <action name="actionAboutMicrostation">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/info.svg</normaloff>:/icons/info.svg</iconset>
+   </property>
+   <property name="text">
+    <string>About Microstation</string>
+   </property>
+  </action>
+  <action name="actionOpenGitHub">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/github.svg</normaloff>:/icons/github.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Open GitHub</string>
+   </property>
+  </action>
+  <action name="actionOpenSourceLicenses">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/code.svg</normaloff>:/icons/code.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Open Source Licenses</string>
+   </property>
+  </action>
+  <action name="actionMacros">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/aperture.svg</normaloff>:/icons/aperture.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Macros</string>
+   </property>
+  </action>
+  <action name="actionUpload_Code">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/upload.svg</normaloff>:/icons/upload.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Upload Code</string>
+   </property>
+  </action>
+  <action name="actionSettings_2">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/sliders.svg</normaloff>:/icons/sliders.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Settings</string>
+   </property>
+  </action>
+  <action name="actionPort">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/hard-drive.svg</normaloff>:/icons/hard-drive.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Port</string>
+   </property>
+  </action>
+  <action name="actionDefault">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/file.svg</normaloff>:/icons/file.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Default</string>
+   </property>
+  </action>
+  <action name="actionDark">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/moon.svg</normaloff>:/icons/moon.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Dark</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../icons/icons.qrc"/>
+ </resources>
+ <connections/>
+</ui>
