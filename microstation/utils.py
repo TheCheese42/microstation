@@ -1,6 +1,6 @@
 import sys
 
-import serial.tools.list_ports
+import serial.tools.list_ports_common
 
 
 def get_device_info(port: serial.tools.list_ports_common.ListPortInfo) -> str:
