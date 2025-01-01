@@ -4,6 +4,7 @@ from PyQt6.QtCore import QStandardPaths
 
 ROOT_PATH = Path(__file__).parent
 STYLES_PATH = ROOT_PATH / "external_styles"
+ICONS_PATH = ROOT_PATH / "icons"
 LICENSES_PATH = ROOT_PATH / "licenses"
 LICENSE_PATH = LICENSES_PATH / "LICENSE.html"
 WINDOWS_LICENSE_PATH = LICENSES_PATH / "OPEN_SOURCE_LICENSES_WINDOWS.html"
@@ -13,7 +14,7 @@ CONFIG_DIR = Path(
     QStandardPaths.writableLocation(
         QStandardPaths.StandardLocation.AppDataLocation
     )
-) / "Buttonbox"
+) / "Microstation"
 CONFIG_PATH = CONFIG_DIR / "config.json"
 LOGGER_PATH = CONFIG_DIR / "latest.log"
 MC_DEBUG_LOG_PATH = CONFIG_DIR / "mcdebug.log"

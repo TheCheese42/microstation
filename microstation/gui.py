@@ -2,15 +2,19 @@ import sys
 from functools import partial
 from pathlib import Path
 
-from PyQt6.QtCore import QLocale, QTranslator
+from PyQt6.QtCore import QLocale, QTimer, QTranslator
+from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import QApplication, QMainWindow
+from serial.tools.list_ports import comports
 
 try:
     from . import config
+    from .daemon import Daemon
     from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
     from .icons import resource as _  # noqa: F811
     from .paths import STYLES_PATH
     from .ui.window_ui import Ui_MainWindow
+    from .utils import get_device_info
 except ImportError:
     import config  # type: ignore[no-redef]
     try:
@@ -36,21 +40,50 @@ except ImportError:
             "Failed to load UI. Did you forget to run the compile-ui script?"
             "ERROR",
         )
+    from daemon import Daemon  # type: ignore[no-redef]  # noqa: F401
     from paths import STYLES_PATH  # type: ignore[no-redef]  # noqa: F401
+    from utils import get_device_info  # type: ignore[no-redef]  # noqa: F401
 
 
 class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
     def __init__(
         self,
+        daemon: Daemon,
         locales: list[QLocale],
         translators: dict[str, QTranslator],
     ) -> None:
         super().__init__(None)
+        self.daemon = daemon
         self.locales = locales
         self.translators = translators
         self.current_translator: QTranslator | None = None
         self.setupUi(self)
         self.connectSignalsSlots()
+
+        self.selected_port: str = config.get_config_value("default_port")
+        self.previous_comports: list[str] = []
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_ports)
+        self.timer.start(1000)
+
+    def update_ports(self) -> None:
+        current_comports = [port.device for port in comports()]
+        if current_comports == self.previous_comports:
+            return
+        self.previous_comports = current_comports
+        self.menuPort.clear()
+        for port in sorted(comports()):
+            action = self.menuPort.addAction(
+                f"{port.device} ({get_device_info(port)})"
+            )
+            action.setCheckable(True)
+            if port.device == self.selected_port:
+                action.setChecked(True)
+            action.triggered.connect(partial(self.set_port, port.device))
+
+    def set_port(self, port: str) -> None:
+        self.selected_port = port
 
     def setupUi(self, window: QMainWindow) -> None:
         super().setupUi(window)
@@ -86,8 +119,19 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
                     )
 
     def connectSignalsSlots(self) -> None:
+        self.actionRefresh_Ports.triggered.connect(self.update_ports)
+        self.actionRestart_Daemon.triggered.connect(self.daemon.queue_restart)
+        self.actionPause.triggered.connect(self.set_paused)
+        self.actionRun_in_Background.triggered.connect(self.hide)
+        self.actionQuit.triggered.connect(self.full_close)
         self.actionThemeDefault.triggered.connect(
             lambda: self.setStyleSheet("")
+        )
+
+    def set_paused(self) -> None:
+        self.daemon.set_paused(self.actionPause.isChecked())
+        self.actionPause.setText(
+            "Resume" if self.actionPause.isChecked() else "Pause"
         )
 
     def set_style(self, path: Path, full_name: str) -> None:
@@ -107,8 +151,24 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             self.current_translator = translator
         self.retranslateUi(self)
 
+    def closeEvent(self, event: QCloseEvent | None) -> None:
+        if event:
+            event.ignore()
+        self.close()
 
-def launch_gui() -> tuple[QApplication, Window]:
+    def close(self) -> bool:
+        self.hide()
+        return False
+
+    def full_close(self) -> None:
+        config.log("User requested QUIT through GUI", "INFO")
+        super().close()
+        if instance := QApplication.instance():
+            instance.quit()
+        sys.exit(0)
+
+
+def launch_gui(daemon: Daemon) -> tuple[QApplication, Window]:
     app = QApplication(sys.argv)
     app.setApplicationName("Microstation")
     app.setApplicationDisplayName("Microstation")
@@ -138,5 +198,5 @@ def launch_gui() -> tuple[QApplication, Window]:
     # if default_translator:
     #     app.installTranslator(default_translator)
 
-    win = Window(locales, translators)
+    win = Window(daemon, locales, translators)
     return app, win

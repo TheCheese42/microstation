@@ -108,9 +108,19 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionPort"/>
+    <widget class="QMenu" name="menuPort">
+     <property name="title">
+      <string>Port</string>
+     </property>
+     <property name="icon">
+      <iconset resource="../icons/icons.qrc">
+       <normaloff>:/icons/hard-drive.svg</normaloff>:/icons/hard-drive.svg</iconset>
+     </property>
+    </widget>
+    <addaction name="menuPort"/>
     <addaction name="actionRefresh_Ports"/>
     <addaction name="separator"/>
+    <addaction name="actionRestart_Daemon"/>
     <addaction name="actionPause"/>
     <addaction name="separator"/>
     <addaction name="actionRun_in_Background"/>
@@ -195,6 +205,12 @@
    </property>
   </action>
   <action name="actionPause">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/pause-circle.svg</normaloff>:/icons/pause-circle.svg</iconset>
@@ -329,15 +345,6 @@
     <string>Settings</string>
    </property>
   </action>
-  <action name="actionPort">
-   <property name="icon">
-    <iconset resource="../icons/icons.qrc">
-     <normaloff>:/icons/hard-drive.svg</normaloff>:/icons/hard-drive.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Port</string>
-   </property>
-  </action>
   <action name="actionThemeDefault">
    <property name="text">
     <string>Default</string>
@@ -350,6 +357,20 @@
    </property>
    <property name="text">
     <string>Breeze Dark</string>
+   </property>
+  </action>
+  <action name="action">
+   <property name="text">
+    <string> </string>
+   </property>
+  </action>
+  <action name="actionRestart_Daemon">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/activity.svg</normaloff>:/icons/activity.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Restart Daemon</string>
    </property>
   </action>
  </widget>

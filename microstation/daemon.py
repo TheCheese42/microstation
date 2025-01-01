@@ -1,12 +1,12 @@
 import asyncio
+import traceback
 from collections import deque
 from typing import Self
 
 import serial
-from serial.tools.list_ports import comports
 
 try:
-    from .config import log
+    from .config import LogStream, log
     from .utils import get_port_info
 except ImportError:
     from config import log  # type: ignore[no-redef]
@@ -20,7 +20,10 @@ class Device:
     def __init__(self, port: str, baudrate: int) -> None:
         self.port = port
         self.baudrate = baudrate
-        self.ser = serial.Serial(port, baudrate, timeout=1)
+        try:
+            self.ser = serial.Serial(port, baudrate, timeout=1)
+        except Exception:
+            log(f"Failed to create device {self}", "ERROR")
 
     @property
     def name(self) -> str | None:
@@ -79,7 +82,10 @@ class Device:
         self.ser.close()
 
     def __enter__(self) -> Self:
-        self.ser.open()
+        try:
+            self.ser.open()
+        except Exception:
+            log(f"Failed to open device {self}", "ERROR")
         return self
 
     def __exit__(
@@ -90,9 +96,14 @@ class Device:
 
 class Daemon:
     def __init__(self, port: str, baudrate: int) -> None:
+        self.port = port
+        self.baudrate = baudrate
         self.device = Device(port, baudrate)
         self.write_queue: deque[str] = deque()
         self.running = False
+        self.paused = False
+        self.restart_queued = False
+        self.stop_queued = False
 
     def queue_write(self, data: str) -> None:
         if not self.running:
@@ -101,35 +112,44 @@ class Daemon:
         self.write_queue.append(data)
 
     async def run(self) -> None:
-        print("run")
-        with self.device as device:
-            while device.is_open():
-                if device.in_waiting():
-                    data = device.readline()
-                    task = Task(data)
-                    await task.run()
-                if self.write_queue:
-                    data = self.write_queue.popleft()
-                    device.writeline(data)
+        should_stop = False
+        should_restart = False
+        while True:
+            self.write_queue.clear()
+            if should_stop:
+                break
+            elif should_restart:
+                self.device = Device(self.port, self.baudrate)
+            with self.device as device:
+                while device.is_open():
+                    if self.paused:
+                        return
+                    if self.restart_queued:
+                        should_restart = True
+                        break
+                    if self.stop_queued:
+                        should_stop = True
+                        break
+                    if device.in_waiting():
+                        data = device.readline()
+                        task = Task(data)
+                        await task.run()
+                    if self.write_queue:
+                        data = self.write_queue.popleft()
+                        device.writeline(data)
+                    await asyncio.sleep(0.01)
 
-    def restart(self) -> None:
-        """
-        Completely restarts the daemon. Can also be used to start the daemon.
-        """
-        self.stop()
-        self.device = Device(self.device.port, self.device.baudrate)
-        asyncio.tasks.create_task(self.run())
-        self.running = True
+    def queue_restart(self) -> None:
+        self.restart_queued = True
 
-    def stop(self) -> None:
+    def queue_stop(self) -> None:
+        self.stop_queued = True
+
+    def set_paused(self, paused: bool) -> None:
         """
-        Stops the daemon.
+        Pauses or unpauses the daemon.
         """
-        self.device.close()
-        self.write_queue.clear()
-        for task in asyncio.tasks.all_tasks():
-            task.cancel()
-        self.running = False
+        self.paused = paused
 
 
 class Task:

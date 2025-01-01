@@ -1,7 +1,6 @@
 .venv/
 .vscode/
 microstation/icons/resource.py
-microstation/icons/*.png
 microstation/ui/*.py
 __pycache__/
 *.qm
