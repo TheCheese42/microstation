@@ -63,14 +63,15 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
             action.triggered.connect(partial(self.change_language, locale_))
 
         # Theme menu
-        for dir in STYLES_PATH.iterdir():
+        for dir in sorted(STYLES_PATH.iterdir()):
             if dir.is_dir():
                 group_name = dir.name
-                for sub_theme in dir.iterdir():
+                for sub_theme in sorted(dir.iterdir()):
                     if sub_theme.is_file() or "cache" in sub_theme.name:
                         continue
+                    theme_name = sub_theme.name.replace("-", " ").title()
                     action = self.menuTheme.addAction(
-                        f"{group_name.capitalize()} {sub_theme.name}"
+                        f"{group_name.title()} {theme_name}"
                     )
                     action.triggered.connect(
                         partial(
