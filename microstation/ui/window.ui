@@ -173,7 +173,6 @@
        <normaloff>:/icons/layers.svg</normaloff>:/icons/layers.svg</iconset>
      </property>
      <addaction name="actionThemeDefault"/>
-     <addaction name="actionThemeBreezeDark"/>
     </widget>
     <addaction name="menuTheme"/>
     <addaction name="menuLanguage"/>
@@ -340,10 +339,6 @@
    </property>
   </action>
   <action name="actionThemeDefault">
-   <property name="icon">
-    <iconset resource="../icons/icons.qrc">
-     <normaloff>:/icons/file.svg</normaloff>:/icons/file.svg</iconset>
-   </property>
    <property name="text">
     <string>Default</string>
    </property>

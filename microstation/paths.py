@@ -3,7 +3,7 @@ from pathlib import Path
 from PyQt6.QtCore import QStandardPaths
 
 ROOT_PATH = Path(__file__).parent
-STYLES_PATH = ROOT_PATH / "styles"
+STYLES_PATH = ROOT_PATH / "external_styles"
 LICENSES_PATH = ROOT_PATH / "licenses"
 LICENSE_PATH = LICENSES_PATH / "LICENSE.html"
 WINDOWS_LICENSE_PATH = LICENSES_PATH / "OPEN_SOURCE_LICENSES_WINDOWS.html"

@@ -4,13 +4,12 @@ from datetime import datetime
 from typing import Any, Optional, Union
 
 try:
-    from .paths import (CONFIG_DIR, CONFIG_PATH,
-                        LOGGER_PATH, MACROS_PATH,
+    from .paths import (CONFIG_DIR, CONFIG_PATH, LOGGER_PATH, MACROS_PATH,
                         MC_DEBUG_LOG_PATH, PROFILES_PATH)
 except ImportError:
     from paths import (CONFIG_DIR, CONFIG_PATH,  # type: ignore[no-redef]
-                       LOGGER_PATH, MACROS_PATH,
-                       MC_DEBUG_LOG_PATH, PROFILES_PATH)
+                       LOGGER_PATH, MACROS_PATH, MC_DEBUG_LOG_PATH,
+                       PROFILES_PATH)
 
 
 DEFAULT_CONFIG = {

@@ -10,7 +10,7 @@ try:
     from . import config
     from .icons import resource as _
     from .paths import STYLES_PATH
-    #from .styles import breeze_dark as _  # noqa: F811
+    from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
     from .ui.window_ui import Ui_MainWindow
 except ImportError:
     import config  # type: ignore[no-redef]
@@ -22,14 +22,14 @@ except ImportError:
             "Failed to load icons. Did you forget to run the compile-icons "
             "script?"
         )
-    # try:
-    #     #from styles import breeze_dark as _  # noqa: F401, F811
-    # except ImportError:
-    #     config.log(
-    #         "ERROR",
-    #         "Failed to load styles. Did you forget to run the compile-styles "
-    #         "script?"
-    #     )
+    try:
+        from external_styles.breeze import breeze_pyqt6 as _  # noqa: F401,F811
+    except ImportError:
+        config.log(
+            "ERROR",
+            "Failed to load styles. Did you forget to run the compile-styles "
+            "script?"
+        )
     try:
         from ui.window_ui import Ui_MainWindow
     except ImportError:
@@ -55,24 +55,36 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
     def setupUi(self, window: QMainWindow) -> None:
         super().setupUi(window)
         self.setWindowTitle("Microstation")
+
+        # Language menu
         self.menuLanguage.clear()
         for locale_ in self.locales:
-            print(locale_.name())
             action = self.menuLanguage.addAction(locale_.language().name)
             action.triggered.connect(partial(self.change_language, locale_))
+
+        # Theme menu
+        for dir in STYLES_PATH.iterdir():
+            if dir.is_dir():
+                group_name = dir.name
+                for sub_theme in dir.iterdir():
+                    if sub_theme.is_file() or "cache" in sub_theme.name:
+                        continue
+                    action = self.menuTheme.addAction(
+                        f"{group_name.capitalize()} {sub_theme.name}"
+                    )
+                    action.triggered.connect(
+                        partial(
+                            self.setStyleSheet,
+                            (sub_theme / "stylesheet.qss").read_text("utf-8"),
+                        )
+                    )
 
     def connectSignalsSlots(self) -> None:
         self.actionThemeDefault.triggered.connect(
             lambda: self.setStyleSheet("")
         )
-        self.actionThemeBreezeDark.triggered.connect(
-            lambda: self.setStyleSheet(
-                (STYLES_PATH / "breeze_dark.qss").read_text()
-            )
-        )
 
     def change_language(self, locale: QLocale) -> None:
-        print(locale.name())
         QLocale.setDefault(locale)
         if self.current_translator:
             if (app := QApplication.instance()) is not None:
