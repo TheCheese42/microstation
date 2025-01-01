@@ -1,10 +1,11 @@
 import sys
 from functools import partial
 from pathlib import Path
+from typing import Any
 
 from PyQt6.QtCore import QLocale, QTimer, QTranslator
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import QApplication, QMainWindow
+from PyQt6.QtWidgets import QApplication, QDialog, QMainWindow, QWidget
 from serial.tools.list_ports import comports
 
 try:
@@ -13,6 +14,7 @@ try:
     from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
     from .icons import resource as _  # noqa: F811
     from .paths import STYLES_PATH
+    from .ui.settings_ui import Ui_Settings
     from .ui.window_ui import Ui_MainWindow
     from .utils import get_device_info
 except ImportError:
@@ -34,6 +36,7 @@ except ImportError:
             "ERROR",
         )
     try:
+        from ui.settings_ui import Ui_Settings
         from ui.window_ui import Ui_MainWindow
     except ImportError:
         config.log(
@@ -57,19 +60,20 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self.locales = locales
         self.translators = translators
         self.current_translator: QTranslator | None = None
-        self.setupUi(self)
-        self.connectSignalsSlots()
 
         self.selected_port: str = config.get_config_value("default_port")
         self.previous_comports: list[str] = []
+
+        self.setupUi(self)
+        self.connectSignalsSlots()
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_ports)
         self.timer.start(1000)
 
-    def update_ports(self) -> None:
+    def update_ports(self, force: bool = False) -> None:
         current_comports = [port.device for port in comports()]
-        if current_comports == self.previous_comports:
+        if current_comports == self.previous_comports and not force:
             return
         self.previous_comports = current_comports
         self.menuPort.clear()
@@ -84,10 +88,15 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
     def set_port(self, port: str) -> None:
         self.selected_port = port
+        self.update_ports(force=True)
+        if self.daemon.port != port:
+            self.daemon.port = port
+            self.daemon.queue_restart()
 
     def setupUi(self, window: QMainWindow) -> None:
         super().setupUi(window)
         self.setWindowTitle("Microstation")
+        self.update_ports(True)
 
         # Language menu
         self.menuLanguage.clear()
@@ -124,9 +133,32 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self.actionPause.triggered.connect(self.set_paused)
         self.actionRun_in_Background.triggered.connect(self.hide)
         self.actionQuit.triggered.connect(self.full_close)
+
+        self.actionSettings.triggered.connect(self.open_settings)
+
         self.actionThemeDefault.triggered.connect(
             lambda: self.setStyleSheet("")
         )
+
+    def open_settings(self) -> None:
+        dialog = Settings(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            selected_port = dialog.portBox.currentText()
+            config.set_config_value("default_port", selected_port)
+            self.set_port(selected_port)
+            selected_baudrate = dialog.baudrateSpin.value()
+            config.set_config_value("baudrate", selected_baudrate)
+            if self.daemon.baudrate != selected_baudrate:
+                self.daemon.baudrate = selected_baudrate
+                self.daemon.queue_restart()
+            auto_detect_profiles = dialog.autoDetectCheck.isChecked()
+            config.set_config_value(
+                "auto_detect_profiles", auto_detect_profiles
+            )
+            hide_to_tray_startup = dialog.hideToTrayCheck.isChecked()
+            config.set_config_value(
+                "hide_to_tray_startup", hide_to_tray_startup
+            )
 
     def set_paused(self) -> None:
         self.daemon.set_paused(self.actionPause.isChecked())
@@ -200,3 +232,30 @@ def launch_gui(daemon: Daemon) -> tuple[QApplication, Window]:
 
     win = Window(daemon, locales, translators)
     return app, win
+
+
+class Settings(QDialog, Ui_Settings):  # type: ignore[misc]
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+        self.portBox.clear()
+        prev_default = config.get_config_value("default_port")
+        cur_index = 0
+        for i, port in enumerate(sorted(comports())):
+            self.portBox.addItem(port[0])
+            if port[0] == prev_default:
+                cur_index = i
+        self.portBox.setCurrentIndex(cur_index)
+
+        self.baudrateSpin.setValue(config.get_config_value("baudrate"))
+
+        self.autoDetectCheck.setChecked(
+            config.get_config_value("auto_detect_profiles")
+        )
+
+        self.hideToTrayCheck.setChecked(
+            config.get_config_value("hide_to_tray_startup")
+        )

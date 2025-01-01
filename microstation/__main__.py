@@ -33,7 +33,8 @@ def main() -> None:
     )
     daemon_thread.start()
     app, win = launch_gui(daemon)
-    win.show()
+    if not config.get_config_value("hide_to_tray_startup"):
+        win.show()
 
     def show_gui(_) -> None:  # type: ignore[no-untyped-def]
         config.log("Received SHOW signal from tray icon", "DEBUG")

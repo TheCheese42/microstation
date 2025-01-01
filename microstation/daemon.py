@@ -1,12 +1,11 @@
 import asyncio
-import traceback
 from collections import deque
 from typing import Self
 
 import serial
 
 try:
-    from .config import LogStream, log
+    from .config import log
     from .utils import get_port_info
 except ImportError:
     from config import log  # type: ignore[no-redef]
@@ -27,7 +26,10 @@ class Device:
 
     @property
     def name(self) -> str | None:
-        return get_port_info(self.ser.port)
+        try:
+            return get_port_info(self.ser.port)
+        except AttributeError:
+            return "Uninitialized Device"
 
     def __str__(self) -> str:
         return f"{self.name} on {self.port} at {self.baudrate} baud"
@@ -75,11 +77,17 @@ class Device:
         return in_waiting
 
     def is_open(self) -> bool:
-        is_open: bool = self.ser.is_open
+        try:
+            is_open: bool = self.ser.is_open
+        except Exception:
+            is_open = False
         return is_open
 
     def close(self) -> None:
-        self.ser.close()
+        try:
+            self.ser.close()
+        except Exception:
+            pass
 
     def __enter__(self) -> Self:
         try:
@@ -89,7 +97,7 @@ class Device:
         return self
 
     def __exit__(
-        self, exc_type: type, exc_value: Exception, traceback: object
+        self, _: type, exc_value: Exception, traceback: object
     ) -> None:
         self.close()
 
@@ -119,9 +127,11 @@ class Daemon:
             if should_stop:
                 break
             elif should_restart:
+                should_restart = False
+                self.restart_queued = False
                 self.device = Device(self.port, self.baudrate)
             with self.device as device:
-                while device.is_open():
+                while True:
                     if self.paused:
                         return
                     if self.restart_queued:
@@ -138,6 +148,7 @@ class Daemon:
                         data = self.write_queue.popleft()
                         device.writeline(data)
                     await asyncio.sleep(0.01)
+        await asyncio.sleep(0.1)
 
     def queue_restart(self) -> None:
         self.restart_queued = True
