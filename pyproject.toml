@@ -36,7 +36,7 @@ microstation = "microstation.__main__:main"
 
 [tool.mypy]
 files = ["microstation/"]
-exclude = ["microstation/icons/", "microstation/ui/"]
+exclude = ["microstation/icons/", "microstation/ui/", "microstation/styles/"]
 strict = true
 ignore_missing_imports = true
 warn_unused_ignores = true

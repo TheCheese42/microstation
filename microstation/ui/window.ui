@@ -172,8 +172,8 @@
       <iconset resource="../icons/icons.qrc">
        <normaloff>:/icons/layers.svg</normaloff>:/icons/layers.svg</iconset>
      </property>
-     <addaction name="actionDefault"/>
-     <addaction name="actionDark"/>
+     <addaction name="actionThemeDefault"/>
+     <addaction name="actionThemeBreezeDark"/>
     </widget>
     <addaction name="menuTheme"/>
     <addaction name="menuLanguage"/>
@@ -339,7 +339,7 @@
     <string>Port</string>
    </property>
   </action>
-  <action name="actionDefault">
+  <action name="actionThemeDefault">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/file.svg</normaloff>:/icons/file.svg</iconset>
@@ -348,13 +348,13 @@
     <string>Default</string>
    </property>
   </action>
-  <action name="actionDark">
+  <action name="actionThemeBreezeDark">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/moon.svg</normaloff>:/icons/moon.svg</iconset>
    </property>
    <property name="text">
-    <string>Dark</string>
+    <string>Breeze Dark</string>
    </property>
   </action>
  </widget>
