@@ -1,4 +1,5 @@
 import json
+import locale
 import platform
 from datetime import datetime
 from typing import Any, Optional, Union
@@ -13,13 +14,12 @@ except ImportError:
 
 
 DEFAULT_CONFIG = {
-    "dark": False,
+    "theme": "",
+    "locale": locale.getdefaultlocale()[0],
     "default_port": "COM0" if platform.system() == "Windows" else "/dev/ttyS0",
-    "baudrate": 115200,
-    "rotary_encoder_sensitivity": 1,
-    "rotary_encoder_debounce_time": 0.0,
+    "baudrate": 9600,
     "auto_detect_profiles": True,
-    "hide_to_tray": True,
+    "hide_to_tray_startup": True,
 }
 
 MACRO_ACTION = dict[str, Optional[Union[str, int]]]
