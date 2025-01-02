@@ -162,6 +162,8 @@
      <string>Microcontroller</string>
     </property>
     <addaction name="actionUpload_Code"/>
+    <addaction name="actionInstall_additional_Boards"/>
+    <addaction name="actionUpdate_Libraries"/>
     <addaction name="separator"/>
     <addaction name="actionSettingsMC"/>
    </widget>
@@ -375,6 +377,16 @@
    </property>
    <property name="text">
     <string>Restart Daemon</string>
+   </property>
+  </action>
+  <action name="actionInstall_additional_Boards">
+   <property name="text">
+    <string>Install Additional Boards</string>
+   </property>
+  </action>
+  <action name="actionUpdate_Libraries">
+   <property name="text">
+    <string>Update Libraries</string>
    </property>
   </action>
  </widget>
