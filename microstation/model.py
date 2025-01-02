@@ -1,8 +1,8 @@
 # from abc import ABCMeta, abstractmethod
 from enum import StrEnum
 from functools import cache
-from typing import Any, Literal, TYPE_CHECKING, Callable
 from importlib import import_module
+from typing import Any, Callable, Literal
 
 try:
     from .paths import DEVICES_PATH
