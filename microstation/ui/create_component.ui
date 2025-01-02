@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>CreateComponent</class>
+ <widget class="QDialog" name="CreateComponent">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>462</width>
+    <height>481</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Create Component</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../icons/icons.qrc">
+    <normaloff>:/icons/hard-drive.svg</normaloff>:/icons/hard-drive.svg</iconset>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item alignment="Qt::AlignHCenter">
+    <widget class="QLabel" name="label">
+     <property name="font">
+      <font>
+       <pointsize>20</pointsize>
+      </font>
+     </property>
+     <property name="text">
+      <string>Select a Component</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>4</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QTreeWidget" name="treeWidget">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="selectionBehavior">
+      <enum>QAbstractItemView::SelectItems</enum>
+     </property>
+     <column>
+      <property name="text">
+       <string>Component</string>
+      </property>
+     </column>
+     <item>
+      <property name="text">
+       <string>Switches</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>Button</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Switch</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>4x4 KeyPad</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Resistors</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>Potentiometer</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Thermistor</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Photoresistor</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Diodes</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>LED</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>RGB</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>7 Segment Digit</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>4x 7 Segment Digit</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>8x8 LED Matrix</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Display</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>SSD1306 OLED Display</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>LCD1602 Display</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Motors</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>DC Motor</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>ULN2003 Stepper Motor Driver</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Servo Motor</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Audio Output</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>Active Buzzer</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Passive Buzzer</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Sensors</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>GY-521 MCU</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>HC-SR501 PIR Motion Sensor</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Sound Sensor</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Water Level Detection Sensor</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Ultrasonic Sensor</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>DHT11 Temp. and Humidity Sensor</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Other</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>DS1307 RTC Module</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Rotary Encoder</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>Joystick</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>IR Receiver</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Chips</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>L293D</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>74HC595 IC</string>
+       </property>
+      </item>
+     </item>
+     <item>
+      <property name="text">
+       <string>Constructs</string>
+      </property>
+      <item>
+       <property name="text">
+        <string>Button Row</string>
+       </property>
+      </item>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QDialogButtonBox" name="buttonBox">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="standardButtons">
+      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="../icons/icons.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>CreateComponent</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>254</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>rejected()</signal>
+   <receiver>CreateComponent</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>316</x>
+     <y>260</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>286</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

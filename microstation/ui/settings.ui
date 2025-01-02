@@ -14,8 +14,8 @@
    <string>Settings</string>
   </property>
   <property name="windowIcon">
-   <iconset resource="../../../Buttonbox/client/buttonbox_client/icons/menu_icons.qrc">
-    <normaloff>:/icons/settings.png</normaloff>:/icons/settings.png</iconset>
+   <iconset resource="../icons/icons.qrc">
+    <normaloff>:/icons/settings.svg</normaloff>:/icons/settings.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item alignment="Qt::AlignHCenter">
@@ -198,7 +198,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../../../Buttonbox/client/buttonbox_client/icons/menu_icons.qrc"/>
+  <include location="../icons/icons.qrc"/>
  </resources>
  <connections>
   <connection>

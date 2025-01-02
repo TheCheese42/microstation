@@ -5,6 +5,7 @@ from PyQt6.QtCore import QStandardPaths
 ROOT_PATH = Path(__file__).parent
 STYLES_PATH = ROOT_PATH / "external_styles"
 ICONS_PATH = ROOT_PATH / "icons"
+DEVICES_PATH = ROOT_PATH / "devices"
 LICENSES_PATH = ROOT_PATH / "licenses"
 LICENSE_PATH = LICENSES_PATH / "LICENSE.html"
 WINDOWS_LICENSE_PATH = LICENSES_PATH / "OPEN_SOURCE_LICENSES_WINDOWS.html"
