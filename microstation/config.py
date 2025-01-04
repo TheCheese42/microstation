@@ -2,12 +2,14 @@ import json
 import locale
 import platform
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 try:
+    from .model import Profile
     from .paths import (CONFIG_DIR, CONFIG_PATH, LOGGER_PATH, MACROS_PATH,
                         MC_DEBUG_LOG_PATH, PROFILES_PATH)
 except ImportError:
+    from model import Profile  # type: ignore[no-redef]
     from paths import (CONFIG_DIR, CONFIG_PATH,  # type: ignore[no-redef]
                        LOGGER_PATH, MACROS_PATH, MC_DEBUG_LOG_PATH,
                        PROFILES_PATH)
@@ -22,8 +24,11 @@ DEFAULT_CONFIG = {
     "hide_to_tray_startup": True,
 }
 
-MACRO_ACTION = dict[str, Optional[Union[str, int]]]
-MACRO = dict[str, Union[str, int, list[MACRO_ACTION]]]
+type MACRO_ACTION = dict[str, Optional[Union[str, int]]]
+type MACRO = dict[str, Union[str, int, list[MACRO_ACTION]]]
+
+
+PROFILES: list[Profile] = []
 
 
 def config_exists() -> bool:
@@ -90,13 +95,24 @@ def set_config_value(key: str, value: Union[str, int, float, bool]) -> None:
     _overwrite_config(config)
 
 
-def get_macros() -> list[MACRO]:
+def load_profiles(write_method: Callable[[str], None]) -> list[Profile]:
+    with open(PROFILES_PATH, "r", encoding="utf-8") as fp:
+        profiles = [Profile(data, write_method) for data in json.load(fp)]
+    return profiles
+
+
+def save_profiles(profiles: list[Profile]) -> None:
+    with open(PROFILES_PATH, "w", encoding="utf-8") as fp:
+        json.dump([profile.export() for profile in profiles], fp)
+
+
+def load_macros() -> list[MACRO]:
     with open(MACROS_PATH, "r", encoding="utf-8") as fp:
         text: list[MACRO] = json.load(fp)
     return text
 
 
-def set_macros(macros: list[MACRO]) -> None:
+def save_macros(macros: list[MACRO]) -> None:
     with open(MACROS_PATH, "w", encoding="utf-8") as fp:
         json.dump(macros, fp)
 

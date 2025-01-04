@@ -40,14 +40,38 @@ def find_device(name: str) -> type["Device"]:
 class Profile:
     def __init__(self, data: PROFILE, write_method: Callable[[str], None]):
         self.write_method = write_method
-        self.name = data["name"]
-        self.auto_activate_priority = data["auto_activate_priority"]
+        self.id: int = data["id"]
+        if not isinstance(self.id, int):
+            raise ValueError(
+                f"Profile id must be an int, got {type(self.id)}"
+            )
+        self.name: str = data["name"]
+        if not isinstance(self.name, str):
+            raise ValueError(
+                f"Profile name must be a string, got {type(self.name)}"
+            )
+        self.auto_activate_priority: int = data["auto_activate_priority"]
+        if not isinstance(self.auto_activate_priority, int):
+            raise ValueError(
+                "Profile auto_activate_priority must be an int, got "
+                f"{type(self.auto_activate_priority)}"
+            )
+        self.auto_activate_manager: str | bool = data["auto_activate_manager"]
+        if not (
+            isinstance(self.auto_activate_manager, str)
+            or isinstance(self.auto_activate_manager, bool)
+        ):
+            raise ValueError(
+                "Profile auto_activate_manager must be either str or bool, "
+                f"got {type(self.auto_activate_priority)}"
+            )
         self.components = [
             Component(i, write_method) for i in data["components"]
         ]
 
     def export(self) -> PROFILE:
         return {
+            "id": self.id,
             "name": self.name,
             "auto_activate_priority": self.auto_activate_priority,
             "components": [
@@ -55,14 +79,53 @@ class Profile:
             ],
         }
 
+    @classmethod
+    def new(cls, id: int, write_method: Callable[[str], None]) -> "Profile":
+        return cls(
+            {
+                "id": id,
+                "name": "New Profile",
+                "auto_activate_priority": 0,
+                "auto_activate_manager": False,
+                "components": [],
+            },
+            write_method,
+        )
+
+
+def gen_profile_id(profiles: list[Profile]) -> int:
+    ids: list[int] = [profile.id for profile in profiles]
+    if not ids:
+        return 0
+    return max(ids) + 1
+
 
 class Component:
     def __init__(self, data: COMPONENT, write_method: Callable[[str], None]):
         self.write_method = write_method
-        device = data["device"]
-        self.device = find_device(device)
+        self.device = find_device(data["device"])
         self.pins: dict[str, int] = data["pins"]  # name: number
+        if not isinstance(self.pins, dict):
+            raise ValueError(
+                f"Component pins must be a dict, got {type(self.pins)}"
+            )
+        elif self.pins.keys() != {pin.name for pin in self.device.PINS}:
+            raise ValueError(
+                "Component pins must match device pins, got "
+                f"{self.pins.keys()}"
+            )
+        elif not all([isinstance(value, int) for value in self.pins.values()]):
+            raise ValueError(
+                "Component pin values must be integers, got "
+                f"{[type(value) for value in self.pins.values()]}"
+            )
         self.properties: dict[str, Any] = data["properties"]
+        if not isinstance(self.properties, dict):
+            raise ValueError(
+                "Component properties must be a dict, got "
+                f"{type(self.properties)}"
+            )
+
         self.callbacks: dict[str, list[Callable[...,  None]]] = {}
 
     def export(self) -> COMPONENT:
