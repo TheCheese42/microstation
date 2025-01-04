@@ -285,6 +285,9 @@
     <name>Microstation</name>
     <message>
         <location filename="../ui/window.ui" line="14"/>
+        <location filename="../gui.py" line="109"/>
+        <location filename="../gui.py" line="257"/>
+        <location filename="../gui.py" line="260"/>
         <source>Microstation</source>
         <translation></translation>
     </message>
@@ -295,6 +298,7 @@
     </message>
     <message>
         <location filename="../ui/window.ui" line="47"/>
+        <location filename="../gui.py" line="83"/>
         <source>Not connected</source>
         <translation>Nicht verbunden</translation>
     </message>
@@ -360,6 +364,7 @@
     </message>
     <message>
         <location filename="../ui/window.ui" line="222"/>
+        <location filename="../gui.py" line="181"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
@@ -524,6 +529,11 @@
         <location filename="../ui/window.ui" line="431"/>
         <source>Ctrl+Shift+L</source>
         <translation></translation>
+    </message>
+    <message>
+        <location filename="../gui.py" line="179"/>
+        <source>Resume</source>
+        <translation>Weiter</translation>
     </message>
 </context>
 <context>

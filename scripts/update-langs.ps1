@@ -1,5 +1,5 @@
 $LangDir = "microstation/langs"
 
 Get-ChildItem "$LangDir\*.ts" | ForEach-Object {
-    lupdate microstation/ -ts $_.FullName
+    lupdate -tr-function-alias translate=tr microstation/ microstation/gui.py -ts $_.FullName -no-obsolete -source-language en_US
 }
