@@ -416,6 +416,10 @@
    </property>
   </action>
   <action name="actionInstall_additional_Boards">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/download.svg</normaloff>:/icons/download.svg</iconset>
+   </property>
    <property name="text">
     <string>Install Additional Boards</string>
    </property>
@@ -424,6 +428,10 @@
    </property>
   </action>
   <action name="actionUpdate_Libraries">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/book.svg</normaloff>:/icons/book.svg</iconset>
+   </property>
    <property name="text">
     <string>Update Libraries</string>
    </property>

@@ -1,5 +1,7 @@
 <RCC>
   <qresource prefix="icons">
+    <file>book.svg</file>
+    <file>download.svg</file>
     <file>file.svg</file>
     <file>activity.svg</file>
     <file>layers.svg</file>
