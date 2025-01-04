@@ -21,6 +21,9 @@
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <layout class="QFormLayout" name="formLayout_2">
+      <property name="horizontalSpacing">
+       <number>14</number>
+      </property>
       <item row="0" column="0">
        <widget class="QLabel" name="mcLabel">
         <property name="font">
@@ -41,7 +44,7 @@
          </font>
         </property>
         <property name="text">
-         <string/>
+         <string>Not connected</string>
         </property>
        </widget>
       </item>
@@ -49,6 +52,9 @@
     </item>
     <item>
      <layout class="QFormLayout" name="formLayout">
+      <property name="horizontalSpacing">
+       <number>14</number>
+      </property>
       <item row="0" column="0">
        <widget class="QLabel" name="profileLabel">
         <property name="font">
@@ -71,18 +77,6 @@
        </widget>
       </item>
      </layout>
-    </item>
-    <item>
-     <widget class="QCheckBox" name="autoDetectBox">
-      <property name="font">
-       <font>
-        <pointsize>20</pointsize>
-       </font>
-      </property>
-      <property name="text">
-       <string>Auto Detect Profiles</string>
-      </property>
-     </widget>
     </item>
     <item>
      <spacer name="verticalSpacer_2">
@@ -209,6 +203,9 @@
    <property name="text">
     <string>Refresh Ports</string>
    </property>
+   <property name="shortcut">
+    <string>F5</string>
+   </property>
   </action>
   <action name="actionPause">
    <property name="checkable">
@@ -224,6 +221,9 @@
    <property name="text">
     <string>Pause</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+P</string>
+   </property>
   </action>
   <action name="actionRun_in_Background">
    <property name="icon">
@@ -232,6 +232,9 @@
    </property>
    <property name="text">
     <string>Run in Background</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Q</string>
    </property>
   </action>
   <action name="actionQuit">
@@ -242,6 +245,9 @@
    <property name="text">
     <string>Quit</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+Q</string>
+   </property>
   </action>
   <action name="actionSettings">
    <property name="icon">
@@ -250,6 +256,9 @@
    </property>
    <property name="text">
     <string>Settings</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
   <action name="actionProfiles">
@@ -260,6 +269,9 @@
    <property name="text">
     <string>Profiles</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+P</string>
+   </property>
   </action>
   <action name="actionSerial_Monitor">
    <property name="icon">
@@ -268,6 +280,9 @@
    </property>
    <property name="text">
     <string>Serial Monitor</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+M</string>
    </property>
   </action>
   <action name="actionLog">
@@ -278,6 +293,9 @@
    <property name="text">
     <string>Open Log</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+L</string>
+   </property>
   </action>
   <action name="actionSerial_Log">
    <property name="icon">
@@ -287,6 +305,9 @@
    <property name="text">
     <string>Microcontroller Log</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+Shift+L</string>
+   </property>
   </action>
   <action name="actionExport_Serial_History">
    <property name="icon">
@@ -295,6 +316,9 @@
    </property>
    <property name="text">
     <string>Export Serial History</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+H</string>
    </property>
   </action>
   <action name="actionAboutMicrostation">
@@ -332,6 +356,9 @@
    <property name="text">
     <string>Macros</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+M</string>
+   </property>
   </action>
   <action name="actionUpload_Code">
    <property name="icon">
@@ -341,6 +368,9 @@
    <property name="text">
     <string>Upload Code</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+U</string>
+   </property>
   </action>
   <action name="actionSettingsMC">
    <property name="icon">
@@ -349,6 +379,9 @@
    </property>
    <property name="text">
     <string>Settings</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+S</string>
    </property>
   </action>
   <action name="actionThemeDefault">
@@ -378,15 +411,24 @@
    <property name="text">
     <string>Restart Daemon</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+R</string>
+   </property>
   </action>
   <action name="actionInstall_additional_Boards">
    <property name="text">
     <string>Install Additional Boards</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+I</string>
+   </property>
   </action>
   <action name="actionUpdate_Libraries">
    <property name="text">
     <string>Update Libraries</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+L</string>
    </property>
   </action>
  </widget>

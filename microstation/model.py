@@ -40,6 +40,8 @@ def find_device(name: str) -> type["Device"]:
 class Profile:
     def __init__(self, data: PROFILE, write_method: Callable[[str], None]):
         self.write_method = write_method
+        self.name = data["name"]
+        self.auto_activate_priority = data["auto_activate_priority"]
         self.components = [
             Component(i, write_method) for i in data["components"]
         ]

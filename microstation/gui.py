@@ -15,7 +15,8 @@ try:
     from .icons import resource as _  # noqa: F811
     from .paths import STYLES_PATH
     from .ui.settings_ui import Ui_Settings
-    from .ui.window_ui import Ui_MainWindow
+    from .ui.window_ui import Ui_Microstation
+    from .ui.profiles_ui import Ui_Profiles
     from .utils import get_device_info
 except ImportError:
     import config  # type: ignore[no-redef]
@@ -37,7 +38,8 @@ except ImportError:
         )
     try:
         from ui.settings_ui import Ui_Settings
-        from ui.window_ui import Ui_MainWindow
+        from ui.window_ui import Ui_Microstation
+        from ui.profiles_ui import Ui_Profiles
     except ImportError:
         config.log(
             "Failed to load UI. Did you forget to run the compile-ui script?"
@@ -48,7 +50,10 @@ except ImportError:
     from utils import get_device_info  # type: ignore[no-redef]  # noqa: F401
 
 
-class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
+tr = QApplication.translate
+
+
+class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def __init__(
         self,
         daemon: Daemon,
@@ -68,8 +73,14 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         self.connectSignalsSlots()
 
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_ports)
-        self.timer.start(1000)
+        self.timer.timeout.connect(self.refresh)
+        self.timer.start(500)
+
+    def refresh(self) -> None:
+        self.update_ports()
+        self.mcDisplay.setText(
+            self.daemon.device.name or tr("Microstation", "Not connected")
+        )
 
     def update_ports(self, force: bool = False) -> None:
         current_comports = [port.device for port in comports()]
@@ -95,8 +106,9 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
 
     def setupUi(self, window: QMainWindow) -> None:
         super().setupUi(window)
-        self.setWindowTitle("Microstation")
+        self.setWindowTitle(tr("Microstation", "Microstation"))
         self.update_ports(True)
+        self.refresh()
 
         # Language menu
         self.menuLanguage.clear()
@@ -163,7 +175,9 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
     def set_paused(self) -> None:
         self.daemon.set_paused(self.actionPause.isChecked())
         self.actionPause.setText(
-            "Resume" if self.actionPause.isChecked() else "Pause"
+            tr("Microstation", "Resume")
+            if self.actionPause.isChecked()
+            else tr("Microstation", "Pause")
         )
 
     def set_style(self, path: Path, full_name: str) -> None:
@@ -200,40 +214,6 @@ class Window(QMainWindow, Ui_MainWindow):  # type: ignore[misc]
         sys.exit(0)
 
 
-def launch_gui(daemon: Daemon) -> tuple[QApplication, Window]:
-    app = QApplication(sys.argv)
-    app.setApplicationName("Microstation")
-    app.setApplicationDisplayName("Microstation")
-    font = app.font()
-    font.setFamily("Liberation Sans")
-    app.setFont(font)
-    langs_dir = Path(__file__).resolve().parent / "langs"
-    locales: list[QLocale] = []
-    translators: dict[str, QTranslator] = {}
-    for file in langs_dir.iterdir():
-        if file.suffix == ".qm":
-            locale_name = file.stem.split("_", 1)[1]
-            locale_ = QLocale(locale_name)
-            locales.append(locale_)
-            translator = QTranslator()
-            translator.load(str(file))
-            translators[locale_name] = translator
-
-    default = config.get_config_value("locale")
-    if default not in [i.name() for i in locales]:
-        default = "en_US"
-        config.set_config_value("locale", default)
-    # default_locale = QLocale(default)
-    # QLocale.setDefault(default_locale)
-
-    # default_translator = translators.get(default)
-    # if default_translator:
-    #     app.installTranslator(default_translator)
-
-    win = Window(daemon, locales, translators)
-    return app, win
-
-
 class Settings(QDialog, Ui_Settings):  # type: ignore[misc]
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
@@ -259,3 +239,44 @@ class Settings(QDialog, Ui_Settings):  # type: ignore[misc]
         self.hideToTrayCheck.setChecked(
             config.get_config_value("hide_to_tray_startup")
         )
+
+
+class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+
+
+def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:
+    app = QApplication(sys.argv)
+    app.setApplicationName(
+        tr("Microstation", "Microstation")
+    )
+    app.setApplicationDisplayName(
+        tr("Microstation", "Microstation")
+    )
+    font = app.font()
+    font.setFamily("Liberation Sans")
+    app.setFont(font)
+    langs_dir = Path(__file__).resolve().parent / "langs"
+    locales: list[QLocale] = []
+    translators: dict[str, QTranslator] = {}
+    for file in langs_dir.iterdir():
+        if file.suffix == ".qm":
+            locale_name = file.stem.split("_", 1)[1]
+            locale_ = QLocale(locale_name)
+            locales.append(locale_)
+            translator = QTranslator(app)
+            translator.load(str(file))
+            translators[locale_name] = translator
+
+    default = config.get_config_value("locale")
+    if default not in [i.name() for i in locales]:
+        default = "en_US"
+        config.set_config_value("locale", default)
+
+    win = Microstation(daemon, locales, translators)
+    return app, win
