@@ -317,7 +317,9 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
             selected = self.profilesList.selectedIndexes()[0].row()
         except IndexError:
             return
-        dialog = ProfileEditor(self, self.profiles[selected], self.daemon)
+        dialog = ProfileEditor(
+            self, deepcopy(self.profiles[selected]), self.daemon
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             new_profile = dialog.profile
             new_profile.name = dialog.nameEdit.text()
