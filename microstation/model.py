@@ -46,19 +46,50 @@ class Profile:
             Component(i, write_method) for i in data["components"]
         ]
 
+    def export(self) -> PROFILE:
+        return {
+            "name": self.name,
+            "auto_activate_priority": self.auto_activate_priority,
+            "components": [
+                component.export() for component in self.components
+            ],
+        }
+
 
 class Component:
     def __init__(self, data: COMPONENT, write_method: Callable[[str], None]):
         self.write_method = write_method
         device = data["device"]
         self.device = find_device(device)
-        self.pins: list[int] = data["pins"]
+        self.pins: dict[str, int] = data["pins"]  # name: number
         self.properties: dict[str, Any] = data["properties"]
-        self.slots: dict[str, list[str]] = data["slots"]
+        self.callbacks: dict[str, list[Callable[...,  None]]] = {}
+
+    def export(self) -> COMPONENT:
+        return {
+            "device": self.device.NAME,
+            "pins": self.pins,
+            "properties": self.properties,
+        }
+
+    def register_callback(
+        self, signal: str, callback: Callable[..., None]
+    ) -> None:
+        if signal not in self.device.available_signals():
+            raise ValueError(
+                f"Signal {signal} not available for {self.device.NAME}"
+            )
+        try:
+            self.callbacks[signal].append(callback)
+        except KeyError:
+            self.callbacks[signal] = [callback]
 
     def emit_signal(self, signal: str, *args: Any) -> None:
-        for slot in getattr(self, signal, []):
-            getattr(self.device, slot)(*args)
+        for signal_callback in self.callbacks.get(signal, []):
+            signal_callback(*args)
+
+    def call_slot(self, slot: str, *args: Any) -> None:
+        self.device.call_slot(slot, self.pins, *args)
 
     def control_pin(self, pin_name: str, pin_number: int, value: int) -> None:
         for pin in self.device.PINS:
@@ -98,3 +129,91 @@ class Device:  # (ABCMeta):
     NAME = "Device"
     TAGS: list[Tag] = []
     PINS: list[Pin] = []
+
+    @classmethod
+    def available_signals(cls) -> list[str]:
+        signals = []
+        if Tag.INPUT in cls.TAGS:
+            if Tag.DIGITAL in cls.TAGS:
+                signals.extend(
+                    ["digital_changed", "digital_high", "digital_low"]
+                )
+            if Tag.ANALOG in cls.TAGS:
+                signals.extend(["analog_changed"])
+        return signals
+
+    @classmethod
+    def available_slots(cls) -> list[str]:
+        slots = []
+        if Tag.OUTPUT in cls.TAGS:
+            if Tag.DIGITAL in cls.TAGS:
+                slots.extend(["trigger_digital_high", "trigger_digital_low"])
+            if Tag.ANALOG in cls.TAGS:
+                slots.extend(["value_analog"])
+        return slots
+
+    @classmethod
+    def call_slot(cls, slot: str, pin_data: dict[str, int], *args: Any) -> str:
+        if slot not in cls.available_slots():
+            raise ValueError(f"Slot {slot} not available for {cls.NAME}")
+        command: str = getattr(cls, slot)(pin_data, *args)
+        return command
+
+    @classmethod
+    def trigger_digital_high(cls, pin_data: dict[str, int]) -> str:
+        if "trigger_digital_high" not in cls.available_slots():
+            raise ValueError(
+                f"Slot trigger_digital_high not available for {cls.NAME}"
+            )
+        pin: int | None = None
+        for device_pin in cls.PINS:
+            if device_pin.type == "digital" and device_pin.io_type == "output":
+                pin = pin_data[device_pin.name]
+                break
+        if pin is None:
+            raise ValueError(
+                f"Device {cls.NAME} has no digital output pin to trigger"
+            )
+        return f"WRITE DIGITAL {pin} 1"
+
+    @classmethod
+    def trigger_digital_low(cls, pin_data: dict[str, int]) -> str:
+        if "trigger_digital_low" not in cls.available_slots():
+            raise ValueError(
+                f"Slot trigger_digital_low not available for {cls.NAME}"
+            )
+        pin: int | None = None
+        for device_pin in cls.PINS:
+            if device_pin.type == "digital" and device_pin.io_type == "output":
+                pin = pin_data[device_pin.name]
+                break
+        if pin is None:
+            raise ValueError(
+                f"Device {cls.NAME} has no digital output pin to trigger"
+            )
+        return f"WRITE DIGITAL {pin} 0"
+
+    @classmethod
+    def value_analog(cls, pin_data: dict[str, int], *args: int) -> str:
+        if "value_analog" not in cls.available_slots():
+            raise ValueError(
+                f"Slot value_analog not available for {cls.NAME}"
+            )
+        elif (
+            len(args) != 1
+            or not isinstance(args[0], int)
+        ):
+            raise ValueError(
+                "Slot value_analog requires 1 argument of type int (got "
+                f"{args})"
+            )
+        pin: int | None = None
+        for device_pin in cls.PINS:
+            if device_pin.type == "analog" and device_pin.io_type == "output":
+                pin = pin_data[device_pin.name]
+                break
+        if pin is None:
+            raise ValueError(
+                f"Device {cls.NAME} has no analog output pin to trigger"
+            )
+        return f"WRITE ANALOG {pin} {args[0]}"
