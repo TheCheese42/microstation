@@ -65,6 +65,12 @@ class Profile:
                 "Profile auto_activate_manager must be either str or bool, "
                 f"got {type(self.auto_activate_priority)}"
             )
+        self.auto_activate_params: dict[str, Any] = {}
+        if not (isinstance(self.auto_activate_params, dict)):
+            raise ValueError(
+                "Profile auto_activate_params must be a dict, got "
+                f"{type(self.auto_activate_params)}"
+            )
         self.components = [
             Component(i, write_method) for i in data["components"]
         ]
@@ -74,6 +80,8 @@ class Profile:
             "id": self.id,
             "name": self.name,
             "auto_activate_priority": self.auto_activate_priority,
+            "auto_activate_manager": self.auto_activate_manager,
+            "auto_activate_params": self.auto_activate_params,
             "components": [
                 component.export() for component in self.components
             ],
@@ -87,6 +95,7 @@ class Profile:
                 "name": "New Profile",
                 "auto_activate_priority": 0,
                 "auto_activate_manager": False,
+                "auto_activate_params": {},
                 "components": [],
             },
             write_method,

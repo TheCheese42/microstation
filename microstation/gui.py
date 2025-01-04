@@ -6,11 +6,12 @@ from typing import Any
 
 from PyQt6.QtCore import QLocale, QTimer, QTranslator
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import QApplication, QDialog, QMainWindow, QWidget
+from PyQt6.QtWidgets import QApplication, QDialog, QMainWindow, QWidget, QSpinBox, QDoubleSpinBox, QCheckBox, QLineEdit
 from serial.tools.list_ports import comports
 
 try:
     from . import config
+    from .actions import auto_activaters
     from .daemon import Daemon
     from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
     from .icons import resource as _  # noqa: F811
@@ -48,9 +49,10 @@ except ImportError:
             "Failed to load UI. Did you forget to run the compile-ui script?"
             "ERROR",
         )
+    from actions import auto_activaters  # type: ignore[no-redef]  # noqa: F401
     from daemon import Daemon  # type: ignore[no-redef]  # noqa: F401
-    from model import (Profile,  # type: ignore[no-redef]  # noqa: F401
-                       gen_profile_id)
+    from model import Profile  # type: ignore[no-redef]  # noqa: F401
+    from model import gen_profile_id  # type: ignore[no-redef]  # noqa: F401
     from paths import STYLES_PATH  # type: ignore[no-redef]  # noqa: F401
     from utils import get_device_info  # type: ignore[no-redef]  # noqa: F401
 
@@ -196,6 +198,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         dialog = Profiles(self, deepcopy(config.PROFILES), self.daemon)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             config.PROFILES = dialog.profiles
+            config.save_profiles(config.PROFILES)
             self.selected_profile = None
             self.refresh()
 
@@ -316,7 +319,10 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
             return
         dialog = ProfileEditor(self, self.profiles[selected], self.daemon)
         if dialog.exec() == QDialog.DialogCode.Accepted:
-            # TODO ...
+            new_profile = dialog.profile
+            new_profile.name = dialog.nameEdit.text()
+            new_profile.auto_activate_priority = dialog.prioritySpin.value()
+            self.profiles[selected] = new_profile
             self.updateProfileList()
 
     def delete_profile(self) -> None:
@@ -335,7 +341,107 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
         super().__init__(parent)
         self.profile = profile
         self.daemon = daemon
+        self.activate_config_widgets: list[QWidget] = []
         self.setupUi(self)
+        self.connectSignalsSlots()
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+        self.nameEdit.setText(self.profile.name)
+
+        self.autoActivateCombo.addItems(
+            [tr("ProfileEditor", "Off"), tr("ProfileEditor", "Default")]
+        )
+        for name in auto_activaters.ACTIVATERS:
+            self.autoActivateCombo.addItem(name)
+            if self.profile.auto_activate_manager == name:
+                self.autoActivateCombo.setCurrentText(name)
+                self.set_auto_activate(name, init=True)
+        if self.profile.auto_activate_manager is True:
+            self.autoActivateCombo.setCurrentText(
+                tr("ProfileEditor", "Default")
+            )
+        elif self.profile.auto_activate_manager is False:
+            self.autoActivateCombo.setCurrentText(tr("ProfileEditor", "Off"))
+
+        self.prioritySpin.setValue(self.profile.auto_activate_priority)
+
+        cl = self.componentsVBox
+
+    def connectSignalsSlots(self) -> None:
+        self.autoActivateCombo.currentTextChanged.connect(
+            self.set_auto_activate
+        )
+
+    def _set_auto_activate_param(
+        self, name: str, value: int | float | bool | str
+    ) -> None:
+        self.profile.auto_activate_params[name] = value
+
+    def set_auto_activate(self, text: str, init: bool = False) -> None:
+        """
+        Setup the layout to configure the auto-activater selected in the
+        combo box.
+
+        :param text: The name of the auto-activation manager
+        :type text: str
+        :param init: Wether this is the initial setup, meaning the previous
+        config values should be used.
+        :type init: bool
+        """
+        if text == self.profile.auto_activate_manager and not init:
+            return
+        self.profile.auto_activate_manager = text
+        for widget in self.activate_config_widgets:
+            self.autoActivateConfigLayout.removeWidget(widget)
+        self.activate_config_widgets.clear()
+        if text in (
+            (tr("ProfileEditor", "Default"), tr("ProfileEditor", "Off"))
+        ):
+            if text == tr("ProfileEditor", "Default"):
+                self.profile.auto_activate_manager = True
+            else:
+                self.profile.auto_activate_manager = False
+            self.profile.auto_activate_params = {}
+            return
+        params = auto_activaters.ACTIVATERS[text][1]
+        if not init:
+            self.profile.auto_activate_params = {}
+        for name, type in params.items():
+            if type == int:
+                widget = QSpinBox()
+                widget.setRange(-100000, 100000)
+                widget.setValue(self.profile.auto_activate_params.get(name, 0))
+                widget.valueChanged.connect(
+                    partial(self._set_auto_activate_param, name)
+                )
+            elif type == float:
+                widget = QDoubleSpinBox()
+                widget.setRange(-100000, 100000)
+                widget.setValue(
+                    self.profile.auto_activate_params.get(name, 0.0)
+                )
+                widget.valueChanged.connect(
+                    partial(self._set_auto_activate_param, name)
+                )
+            elif type == bool:
+                widget = QCheckBox()
+                widget.setChecked(
+                    self.profile.auto_activate_params.get(name, False)
+                )
+                widget.stateChanged.connect(
+                    partial(self._set_auto_activate_param, name)
+                )
+            else:
+                widget = QLineEdit()
+                widget.setText(
+                    self.profile.auto_activate_params.get(name, "")
+                )
+                widget.textChanged.connect(
+                    partial(self._set_auto_activate_param, name)
+                )
+            self.activate_config_widgets.append(widget)
+            self.autoActivateConfigLayout.addWidget(widget)
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:
