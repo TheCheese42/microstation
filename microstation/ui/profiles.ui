@@ -60,7 +60,11 @@
     </spacer>
    </item>
    <item>
-    <widget class="QListWidget" name="profilesList"/>
+    <widget class="QListWidget" name="profilesList">
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -69,12 +73,18 @@
        <property name="text">
         <string>Add</string>
        </property>
+       <property name="shortcut">
+        <string>A</string>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="copyBtn">
        <property name="text">
         <string>Copy</string>
+       </property>
+       <property name="shortcut">
+        <string>C</string>
        </property>
       </widget>
      </item>
@@ -83,12 +93,18 @@
        <property name="text">
         <string>Edit</string>
        </property>
+       <property name="shortcut">
+        <string>Return</string>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="deleteBtn">
        <property name="text">
         <string>Delete</string>
+       </property>
+       <property name="shortcut">
+        <string>D</string>
        </property>
       </widget>
      </item>

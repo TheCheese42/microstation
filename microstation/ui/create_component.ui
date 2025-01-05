@@ -47,9 +47,12 @@
     </spacer>
    </item>
    <item>
-    <widget class="QTreeWidget" name="treeWidget">
+    <widget class="QTreeWidget" name="componentsTree">
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="showDropIndicator" stdset="0">
+      <bool>false</bool>
      </property>
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectItems</enum>
@@ -67,15 +70,24 @@
        <property name="text">
         <string>Button</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">Button</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>Switch</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">Switch</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>4x4 KeyPad</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">4x4 KeyPad</string>
        </property>
       </item>
      </item>
@@ -87,15 +99,24 @@
        <property name="text">
         <string>Potentiometer</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">Potentiometer</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>Thermistor</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">Thermistor</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>Photoresistor</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">Photoresistor</string>
        </property>
       </item>
      </item>
@@ -107,25 +128,40 @@
        <property name="text">
         <string>LED</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">LED</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>RGB</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">RGB</string>
        </property>
       </item>
       <item>
        <property name="text">
         <string>7 Segment Digit</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">7 Segment Digit</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>4x 7 Segment Digit</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">4x 7 Segment Digit</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>8x8 LED Matrix</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">8x8 LED Matrix</string>
        </property>
       </item>
      </item>
@@ -137,10 +173,16 @@
        <property name="text">
         <string>SSD1306 OLED Display</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">SSD1306 OLED Display</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>LCD1602 Display</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">LCD1602 Display</string>
        </property>
       </item>
      </item>
@@ -152,15 +194,24 @@
        <property name="text">
         <string>DC Motor</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">DC Motor</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>ULN2003 Stepper Motor Driver</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">ULN2003 Stepper Motor Driver</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>Servo Motor</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">Servo Motor</string>
        </property>
       </item>
      </item>
@@ -172,10 +223,16 @@
        <property name="text">
         <string>Active Buzzer</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">Active Buzzer</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>Passive Buzzer</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">Passive Buzzer</string>
        </property>
       </item>
      </item>
@@ -187,30 +244,48 @@
        <property name="text">
         <string>GY-521 MCU</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">GY521 MCU</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>HC-SR501 PIR Motion Sensor</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">HC-SR501 PIR Motion Sensor</string>
        </property>
       </item>
       <item>
        <property name="text">
         <string>Sound Sensor</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">Sound Sensor</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>Water Level Detection Sensor</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">Water Level Detection Sensor</string>
        </property>
       </item>
       <item>
        <property name="text">
         <string>Ultrasonic Sensor</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">Ultrasonic Sensor</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>DHT11 Temp. and Humidity Sensor</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">DHT11 Temp. and Humidity Sensor</string>
        </property>
       </item>
      </item>
@@ -222,20 +297,32 @@
        <property name="text">
         <string>DS1307 RTC Module</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">DS1307 RTC Module</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>Rotary Encoder</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">Rotary Encoder</string>
        </property>
       </item>
       <item>
        <property name="text">
         <string>Joystick</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">Joystick</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>IR Receiver</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">IR Receiver</string>
        </property>
       </item>
      </item>
@@ -247,10 +334,16 @@
        <property name="text">
         <string>L293D</string>
        </property>
+       <property name="toolTip">
+        <string notr="true">L293D</string>
+       </property>
       </item>
       <item>
        <property name="text">
         <string>74HC595 IC</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">74HC595 IC</string>
        </property>
       </item>
      </item>
@@ -261,6 +354,9 @@
       <item>
        <property name="text">
         <string>Button Row</string>
+       </property>
+       <property name="toolTip">
+        <string notr="true">Button Row</string>
        </property>
       </item>
      </item>

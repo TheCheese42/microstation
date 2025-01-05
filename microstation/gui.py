@@ -6,7 +6,11 @@ from typing import Any
 
 from PyQt6.QtCore import QLocale, QTimer, QTranslator
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import QApplication, QDialog, QMainWindow, QWidget, QSpinBox, QDoubleSpinBox, QCheckBox, QLineEdit
+from PyQt6.QtWidgets import (QApplication, QCheckBox, QDialog, QDoubleSpinBox,
+                             QFrame, QHBoxLayout, QLabel, QLineEdit,
+                             QMainWindow, QMessageBox, QPushButton,
+                             QSizePolicy, QSpacerItem, QSpinBox, QVBoxLayout,
+                             QWidget)
 from serial.tools.list_ports import comports
 
 try:
@@ -15,8 +19,10 @@ try:
     from .daemon import Daemon
     from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
     from .icons import resource as _  # noqa: F811
-    from .model import Profile, gen_profile_id
+    from .model import (Component, Issue, Profile, find_device, gen_profile_id,
+                        validate_components)
     from .paths import STYLES_PATH
+    from .ui.create_component_ui import Ui_CreateComponent
     from .ui.profile_editor_ui import Ui_ProfileEditor
     from .ui.profiles_ui import Ui_Profiles
     from .ui.settings_ui import Ui_Settings
@@ -41,6 +47,8 @@ except ImportError:
             "ERROR",
         )
     try:
+        from ui.create_component_ui import Ui_CreateComponent
+        from ui.profile_editor_ui import Ui_ProfileEditor
         from ui.profiles_ui import Ui_Profiles
         from ui.settings_ui import Ui_Settings
         from ui.window_ui import Ui_Microstation
@@ -51,13 +59,27 @@ except ImportError:
         )
     from actions import auto_activaters  # type: ignore[no-redef]  # noqa: F401
     from daemon import Daemon  # type: ignore[no-redef]  # noqa: F401
+    from model import Component  # type: ignore[no-redef]  # noqa: F401
+    from model import Issue  # type: ignore[no-redef]  # noqa: F401
     from model import Profile  # type: ignore[no-redef]  # noqa: F401
+    from model import find_device  # type: ignore[no-redef]  # noqa: F401
     from model import gen_profile_id  # type: ignore[no-redef]  # noqa: F401
+    from model import validate_components  # type: ignore[no-redef] # noqa F401
     from paths import STYLES_PATH  # type: ignore[no-redef]  # noqa: F401
     from utils import get_device_info  # type: ignore[no-redef]  # noqa: F401
 
 
 tr = QApplication.translate
+
+
+def show_error(parent: QWidget, title: str, desc: str) -> int:
+    messagebox = QMessageBox(parent)
+    messagebox.setIcon(QMessageBox.Icon.Critical)
+    messagebox.setWindowTitle(title)
+    messagebox.setText(desc)
+    messagebox.setStandardButtons(QMessageBox.StandardButton.Ok)
+    messagebox.setDefaultButton(QMessageBox.StandardButton.Ok)
+    return messagebox.exec()
 
 
 class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
@@ -212,7 +234,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
     def set_style(self, path: Path, full_name: str) -> None:
         config.set_config_value("theme", full_name)
-        self.setStyleSheet(path.read_text("utf-8"))
+        stylesheet = path.read_text("utf-8")
+        self.setStyleSheet(stylesheet)
 
     def change_language(self, locale: QLocale) -> None:
         config.set_config_value("locale", locale.name())
@@ -344,6 +367,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
         self.profile = profile
         self.daemon = daemon
         self.activate_config_widgets: list[QWidget] = []
+        self.component_widgets: list[QWidget] = []
         self.setupUi(self)
         self.connectSignalsSlots()
 
@@ -368,12 +392,121 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
 
         self.prioritySpin.setValue(self.profile.auto_activate_priority)
 
+        self.setup_components()
+
+    def setup_components(self) -> None:
+        self.scrollAreaWidgetContents.setLayout(self.scrollAreaLayout)
         cl = self.componentsVBox
+        for widget in self.component_widgets:
+            try:
+                cl.removeWidget(widget)
+            except TypeError:
+                # To also remove the Spacer
+                cl.removeItem(widget)
+        self.component_widgets.clear()
+
+        for i, component in enumerate(self.profile.components):
+            name_rest_vbox = QVBoxLayout()
+            frame = QFrame()
+            frame.setFrameShape(QFrame.Shape.Box)
+            name_label = QLabel(component.device.NAME)
+            name_font = name_label.font()
+            name_font.setPointSize(16)
+            name_label.setFont(name_font)
+            rest_hbox = QHBoxLayout()
+            pins_label = QLabel(tr("ProfileEditor", "Pins:"))
+            pins_font = pins_label.font()
+            pins_font.setPointSize(14)
+            pins_label.setFont(pins_font)
+            rest_hbox.addWidget(pins_label)
+            for pin in component.pins.values():
+                pin_label = QLabel(str(pin))
+                pin_font = pin_label.font()
+                pin_font.setPointSize(14)
+                pin_label.setFont(pin_font)
+                pin_label.setStyleSheet(
+                    "border-color: rgb(118, 121, 124); border-width: 1px;"
+                )
+                rest_hbox.addWidget(pin_label)
+            rest_hbox.addSpacerItem(QSpacerItem(
+                1, 1, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed,
+            ))
+            edit_btn = QPushButton(tr("ProfileEditor", "Edit"))
+            edit_font = edit_btn.font()
+            edit_font.setPointSize(14)
+            edit_btn.setFont(edit_font)
+            edit_btn.clicked.connect(partial(self.edit_component, i))
+            rest_hbox.addWidget(edit_btn)
+            name_rest_vbox.addWidget(name_label)
+            name_rest_vbox.addLayout(rest_hbox)
+            frame.setLayout(name_rest_vbox)
+            self.component_widgets.append(frame)
+            cl.addWidget(frame)
+        spacer = QSpacerItem(
+            1, 1, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding,
+        )
+        cl.addSpacerItem(spacer)
+        self.component_widgets.append(spacer)
+
+    def edit_component(self, index: int) -> None:
+        pass
 
     def connectSignalsSlots(self) -> None:
         self.autoActivateCombo.currentTextChanged.connect(
             self.set_auto_activate
         )
+        self.newBtn.clicked.connect(self.new_component)
+
+        self.buttonBox.accepted.connect(self.accept_requested)
+
+    def accept_requested(self) -> None:
+        issue, info = validate_components(self.profile.components)
+        match issue:
+            case Issue.NONE:
+                self.accept()
+            case Issue.DUPLICATED_PIN:
+                show_error(
+                    self,
+                    tr("ProfileEditor", "Invalid Components"),
+                    tr("ProfileEditor", "Your Profile contains invalid "
+                       f"Components: Pin {0} was used multiple "
+                       "times.").format(info['pin']),
+                )
+            case Issue.COMPONENT_PINS_NOT_MATCHING_DEVICE:
+                show_error(
+                    self,
+                    tr("ProfileEditor", "Invalid Components"),
+                    tr("ProfileEditor", "Your Profile contains an invalid "
+                       f"Component: {0} has invalid Pins that do not match "
+                       "those of its device. Please delete and recreate that "
+                       "component.").format(info['component_name']),
+                )
+
+    def new_component(self) -> None:
+        dialog = ComponentCreator(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            try:
+                selected = dialog.componentsTree.selectedItems()[0]
+            except IndexError:
+                return
+            name = selected.toolTip(0)
+            # Yes, we're using tooltips to store the full device name :)
+            try:
+                device = find_device(name)
+            except ValueError:
+                show_error(
+                    self,
+                    tr("ProfileEditor", "Unimplemented Component"),
+                    tr("ProfileEditor", "The selected Component is currently "
+                       "not implemented. Visit our GitHub to open an issue or "
+                       "watch the state of development.")
+                )
+                return
+            num_pins = len(device.PINS)
+            self.profile.components.append(
+                Component.new(device, [0] * num_pins, self.daemon.queue_write)
+            )
+            self.setup_components()
 
     def _set_auto_activate_param(
         self, name: str, value: int | float | bool | str
@@ -442,8 +575,20 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                 widget.textChanged.connect(
                     partial(self._set_auto_activate_param, name)
                 )
+            font = widget.font()
+            font.setPointSize(14)
+            widget.setFont(font)
             self.activate_config_widgets.append(widget)
             self.autoActivateConfigLayout.addWidget(widget)
+
+
+class ComponentCreator(QDialog, Ui_CreateComponent):  # type: ignore[misc]
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:

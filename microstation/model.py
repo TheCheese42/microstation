@@ -1,5 +1,5 @@
 # from abc import ABCMeta, abstractmethod
-from enum import StrEnum
+from enum import StrEnum, IntEnum
 from functools import cache
 from importlib import import_module
 from typing import Any, Callable, Literal
@@ -20,9 +20,9 @@ def fetch_devices() -> list[type["Device"]]:
     for file in DEVICES_PATH.iterdir():
         if file.suffix == ".py":
             try:
-                module = import_module(f".devices.{file.stem}")
-            except ImportError:
-                module = import_module(f"devices.{file.stem}")
+                module = import_module(f".devices.{file.stem}", "microstation")
+            except (ImportError, TypeError):
+                module = import_module(f"microstation.devices.{file.stem}")
             for device_type in module.__all__:
                 device = getattr(module, device_type)
                 devices.append(device)
@@ -137,6 +137,27 @@ class Component:
 
         self.callbacks: dict[str, list[Callable[...,  None]]] = {}
 
+    def __str__(self) -> str:
+        return f"Component with Device {self.device.NAME} on Pins {self.pins}"
+
+    @classmethod
+    def new(
+        cls,
+        device: type["Device"],
+        pins: list[int],
+        write_method: Callable[[str], None],
+    ) -> "Component":
+        return cls(
+            {
+                "device": device.NAME,
+                "pins": {name: pin for name, pin in zip(
+                    [p.name for p in device.PINS], pins
+                )},
+                "properties": {},
+            },
+            write_method,
+        )
+
     def export(self) -> COMPONENT:
         return {
             "device": self.device.NAME,
@@ -186,6 +207,31 @@ class Pin:
         self.name = name
         if properties is None:
             self.properties: list[str] = []
+
+
+class Issue(IntEnum):
+    NONE = 0
+    DUPLICATED_PIN = 1
+    COMPONENT_PINS_NOT_MATCHING_DEVICE = 3
+
+
+def validate_components(
+    components: list[Component]
+) -> tuple[Issue, dict[str, Any]]:
+    all_pins: list[int] = []
+    for component in components:
+        if component.pins.keys() != {
+            pin.name for pin in component.device.PINS
+        }:
+            return (
+                Issue.COMPONENT_PINS_NOT_MATCHING_DEVICE,
+                {"component_name": component.device.NAME}
+            )
+        all_pins.extend(list(component.pins.values()))
+    for pin in all_pins:
+        if all_pins.count(pin) > 1:
+            return Issue.DUPLICATED_PIN, {"pin": pin}
+    return Issue.NONE, {}
 
 
 class Tag(StrEnum):
