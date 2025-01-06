@@ -11,6 +11,11 @@ class RotaryEncoder(Device):
         Pin(type="digital", io_type="input", name="CLK"),
         Pin(type="digital", io_type="input", name="DT"),
     ]
+    CONFIG = {
+        "sensitivity": {
+            "type": int, "default": 1, "min": 1, "max": 9999
+        }
+    }
 
 
 __all__ = ["RotaryEncoder"]

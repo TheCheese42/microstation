@@ -128,7 +128,9 @@ class Component:
                 "Component pin values must be integers, got "
                 f"{[type(value) for value in self.pins.values()]}"
             )
-        self.properties: dict[str, Any] = data["properties"]
+        self.properties: dict[str, int | float | str | bool] = data[
+            "properties"
+        ]
         if not isinstance(self.properties, dict):
             raise ValueError(
                 "Component properties must be a dict, got "
@@ -243,13 +245,22 @@ class Tag(StrEnum):
     MANAGER = "manager"
 
 
+type CONFIG_TYPE = type[int] | type[float] | type[bool] | type[str]
+type CONFIG_VALUE = int | float | bool | str
+
+
 class Device:  # (ABCMeta):
     NAME = "Device"
     TAGS: list[Tag] = []
     PINS: list[Pin] = []
+    # Ex.: {"sensitivity": {"type": int, "default": 1, "min": 1, "max": 9999}}
+    CONFIG: dict[str, dict[str, CONFIG_VALUE | CONFIG_TYPE]]
 
     @classmethod
-    def available_signals(cls) -> list[str]:
+    def available_signals(
+        cls, properties: dict[str, CONFIG_VALUE] = {},
+    ) -> list[str]:
+        # Signal = Thing sent by input device
         signals = []
         if Tag.INPUT in cls.TAGS:
             if Tag.DIGITAL in cls.TAGS:
@@ -261,7 +272,10 @@ class Device:  # (ABCMeta):
         return signals
 
     @classmethod
-    def available_slots(cls) -> list[str]:
+    def available_slots(
+        cls, properties: dict[str, CONFIG_VALUE] = {},
+    ) -> list[str]:
+        # Slot = Command to an output device
         slots = []
         if Tag.OUTPUT in cls.TAGS:
             if Tag.DIGITAL in cls.TAGS:

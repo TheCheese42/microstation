@@ -1,14 +1,15 @@
 import sys
 from copy import deepcopy
 from functools import partial
+from itertools import chain
 from pathlib import Path
 from typing import Any
 
 from PyQt6.QtCore import QLocale, QTimer, QTranslator
 from PyQt6.QtGui import QCloseEvent
-from PyQt6.QtWidgets import (QApplication, QCheckBox, QDialog, QDoubleSpinBox,
-                             QFrame, QHBoxLayout, QLabel, QLineEdit,
-                             QMainWindow, QMessageBox, QPushButton,
+from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
+                             QDoubleSpinBox, QFrame, QHBoxLayout, QLabel,
+                             QLineEdit, QMainWindow, QMessageBox, QPushButton,
                              QSizePolicy, QSpacerItem, QSpinBox, QVBoxLayout,
                              QWidget)
 from serial.tools.list_ports import comports
@@ -22,6 +23,7 @@ try:
     from .model import (Component, Issue, Profile, find_device, gen_profile_id,
                         validate_components)
     from .paths import STYLES_PATH
+    from .ui.component_editor_ui import Ui_ComponentEditor
     from .ui.create_component_ui import Ui_CreateComponent
     from .ui.profile_editor_ui import Ui_ProfileEditor
     from .ui.profiles_ui import Ui_Profiles
@@ -47,6 +49,7 @@ except ImportError:
             "ERROR",
         )
     try:
+        from ui.component_editor_ui import Ui_ComponentEditor
         from ui.create_component_ui import Ui_CreateComponent
         from ui.profile_editor_ui import Ui_ProfileEditor
         from ui.profiles_ui import Ui_Profiles
@@ -437,6 +440,12 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
             edit_btn.setFont(edit_font)
             edit_btn.clicked.connect(partial(self.edit_component, i))
             rest_hbox.addWidget(edit_btn)
+            delete_btn = QPushButton(tr("ProfileEditor", "Delete"))
+            delete_font = delete_btn.font()
+            delete_font.setPointSize(14)
+            delete_btn.setFont(delete_font)
+            delete_btn.clicked.connect(partial(self.delete_component, i))
+            rest_hbox.addWidget(delete_btn)
             name_rest_vbox.addWidget(name_label)
             name_rest_vbox.addLayout(rest_hbox)
             frame.setLayout(name_rest_vbox)
@@ -449,7 +458,15 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
         self.component_widgets.append(spacer)
 
     def edit_component(self, index: int) -> None:
-        pass
+        component = self.profile.components[index]
+        dialog = ComponentEditor(self, deepcopy(component))
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.profile.components[index] = dialog.component
+        self.setup_components()
+
+    def delete_component(self, index: int) -> None:
+        del self.profile.components[index]
+        self.setup_components()
 
     def connectSignalsSlots(self) -> None:
         self.autoActivateCombo.currentTextChanged.connect(
@@ -589,6 +606,114 @@ class ComponentCreator(QDialog, Ui_CreateComponent):  # type: ignore[misc]
 
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
+
+
+class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
+    def __init__(self, parent: QWidget, component: Component) -> None:
+        super().__init__(parent)
+        self.component = component
+        self.setupUi(self)
+        self.connectSignalsSlots()
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+        lb = self.leftVBox
+        rb = self.rightVBox
+
+        for name, num in self.component.pins.items():
+            pin_hbox = QHBoxLayout()
+            if name:
+                pin_label = QLabel(tr("ComponentEditor", "Pin ({0}):").format(
+                    name
+                ))
+            else:
+                pin_label = QLabel(tr("ComponentEditor", "Pin:"))
+            pin_spin = QSpinBox()
+            pin_spin.setMinimum(0)
+            pin_spin.setMaximum(999)
+            pin_spin.setValue(num)
+            pin_spin.valueChanged.connect(partial(self.pin_changed, name))
+            pin_hbox.addWidget(pin_label)
+            pin_hbox.addWidget(pin_spin)
+            lb.addLayout(pin_hbox)
+
+        for property, info in self.component.device.CONFIG.items():
+            label = QLabel(property)
+            default: int | float | bool | str = info["default"]  # type: ignore[assignment]  # noqa E501
+            type_: type[int] | type[float] | type[bool] | type[str] = info["type"]  # type: ignore[assignment]  # noqa E501
+            value = self.component.properties.get(property)
+            if not isinstance(value, type_):
+                value = None
+            if not isinstance(default, type_):
+                config.log(
+                    f"Default value for property {property} has type "
+                    f"{type_(default)} (should be {type_})", "WARNING",
+                )
+                default = type_()
+            if type_ == int:
+                widget = QSpinBox()
+                widget.setRange(info.get("min") or 0, info.get("max") or 999999)  # type: ignore[arg-type]  # noqa E501
+                widget.setValue(value if value is not None else default)  # type: ignore[arg-type]  # noqa E501
+                widget.valueChanged.connect(
+                    partial(self.property_changed, property)
+                )
+            elif type_ == float:
+                widget = QDoubleSpinBox()
+                widget.setRange(info.get("min") or 0.0, info.get("max") or 999999.0)  # type: ignore[arg-type]  # noqa E501
+                widget.setValue(value if value is not None else default)  # type: ignore[arg-type]  # noqa E501
+                widget.valueChanged.connect(
+                    partial(self.property_changed, property)
+                )
+            elif type_ == bool:
+                widget = QCheckBox()
+                widget.setChecked(bool(value) if value is not None else default)  # type: ignore[arg-type]  # noqa E501
+                widget.stateChanged.connect(
+                    partial(self.property_changed, property)
+                )
+            else:
+                widget = QLineEdit()
+                widget.setText(value if value is not None else default)  # type: ignore[arg-type]  # noqa E501
+                widget.textChanged.connect(
+                    partial(self.property_changed, property)
+                )
+            font = widget.font()
+            font.setPointSize(14)
+            widget.setFont(font)
+            property_hbox = QHBoxLayout()
+            property_hbox.addWidget(label)
+            property_hbox.addWidget(widget)
+            lb.addLayout(property_hbox)
+
+        tags_label = QLabel(tr("ComponentCreator", "Tags: {0}").format(
+            ", ".join(self.component.device.TAGS)
+        ))
+        rb.addWidget(tags_label)
+
+        for entry in chain(
+            self.component.device.available_signals(self.component.properties),
+            self.component.device.available_slots(self.component.properties),
+        ):
+            # NOTE Example ButtonRow:
+            # The available_signals() method may return the same signal
+            # multiple times.
+            label = QLabel(entry)
+            combo = QComboBox()
+            font = widget.font()
+            font.setPointSize(14)
+            combo.setFont(font)
+            property_hbox = QHBoxLayout()
+            property_hbox.addWidget(label)
+            property_hbox.addWidget(combo)
+            rb.addLayout(property_hbox)
+            # TODO Add Signals and Slots
+
+    def pin_changed(self, name: str, num: int) -> None:
+        self.component.pins[name] = num
+
+    def property_changed(
+        self, property: str, value: int | float | bool | str,
+    ) -> None:
+        self.component.properties[property] = value
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:
