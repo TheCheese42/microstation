@@ -1,7 +1,12 @@
+from typing import Any
+
 try:
-    from ..model import Tag
+    from ..enums import Tag
 except ImportError:
-    from microstation.model import Tag
+    from microstation.enums import Tag
+
+
+INSTANCES: dict[type["SignalOrSlot"], "SignalOrSlot"] = {}
 
 
 class Param:
@@ -19,25 +24,59 @@ class SignalOrSlot:
     NAME = "Unnamed Signal/Slot"
     TAGS: list[Tag] = []
     PARAMS: list[Param] = []
+    DEVICES: list[str] = []
+
+    def call(self, *args: Any, **kwargs: Any) -> Any | None:
+        return None
+
+
+def get_ss_instance(cls: type[SignalOrSlot]) -> SignalOrSlot:
+    if cls in INSTANCES:
+        return INSTANCES[cls]
+    instance = cls()
+    INSTANCES[cls] = instance
+    return instance
 
 
 def find_signal_slot(name: str) -> type[SignalOrSlot]:
     for thing in dir():
-        ref: type[SignalOrSlot] = globals()[thing]
+        try:
+            ref: type[SignalOrSlot] = globals()[thing]
+        except KeyError:
+            continue
         if issubclass(ref, SignalOrSlot) and ref.NAME == name:
             return ref
     raise ValueError(f"Signal or Slot {name} was not found.")
 
 
-def query_signals_slots(tags: list[Tag]) -> list[type[SignalOrSlot]]:
+def query_signals_slots(
+    tags: list[Tag], include_manager: bool = True,
+) -> list[type[SignalOrSlot]]:
     signals_slots: list[type[SignalOrSlot]] = []
     for thing in dir():
-        ref: type[SignalOrSlot] = globals()[thing]
+        try:
+            ref: type[SignalOrSlot] = globals()[thing]
+        except KeyError:
+            continue
         if issubclass(ref, SignalOrSlot):
             for tag in tags:
                 if tag not in ref.TAGS:
                     break
             else:
+                if not (include_manager is False and Tag.MANAGER in ref.TAGS):
+                    signals_slots.append(ref)
+    return signals_slots
+
+
+def query_by_device(device: str) -> list[type[SignalOrSlot]]:
+    signals_slots: list[type[SignalOrSlot]] = []
+    for thing in dir():
+        try:
+            ref: type[SignalOrSlot] = globals()[thing]
+        except KeyError:
+            continue
+        if issubclass(ref, SignalOrSlot):
+            if device in ref.DEVICES:
                 signals_slots.append(ref)
     return signals_slots
 

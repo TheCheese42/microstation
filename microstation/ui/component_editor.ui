@@ -52,7 +52,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_2">
+      <widget class="QLabel" name="componentDisplay">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -103,35 +103,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QScrollArea" name="scrollArea">
-       <property name="styleSheet">
-        <string notr="true">border: null;</string>
-       </property>
-       <property name="widgetResizable">
-        <bool>true</bool>
-       </property>
-       <widget class="QWidget" name="scrollAreaWidgetContents">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>339</width>
-          <height>351</height>
-         </rect>
-        </property>
-        <widget class="QWidget" name="verticalLayoutWidget">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>0</y>
-           <width>331</width>
-           <height>351</height>
-          </rect>
-         </property>
-         <layout class="QVBoxLayout" name="leftVBox"/>
-        </widget>
-       </widget>
-      </widget>
+      <layout class="QVBoxLayout" name="leftVBox"/>
      </item>
      <item>
       <widget class="Line" name="line">
@@ -141,35 +113,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QScrollArea" name="scrollArea_2">
-       <property name="styleSheet">
-        <string notr="true">border: null;</string>
-       </property>
-       <property name="widgetResizable">
-        <bool>true</bool>
-       </property>
-       <widget class="QWidget" name="scrollAreaWidgetContents_2">
-        <property name="geometry">
-         <rect>
-          <x>0</x>
-          <y>0</y>
-          <width>338</width>
-          <height>351</height>
-         </rect>
-        </property>
-        <widget class="QWidget" name="verticalLayoutWidget_2">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>331</width>
-           <height>351</height>
-          </rect>
-         </property>
-         <layout class="QVBoxLayout" name="rightVBox"/>
-        </widget>
-       </widget>
-      </widget>
+      <layout class="QVBoxLayout" name="rightVBox"/>
      </item>
     </layout>
    </item>

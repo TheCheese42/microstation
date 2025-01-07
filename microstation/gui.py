@@ -17,10 +17,12 @@ from serial.tools.list_ports import comports
 try:
     from . import config
     from .actions import auto_activaters
+    from .actions.signals_slots import query_by_device, query_signals_slots
     from .daemon import Daemon
+    from .enums import Issue, Tag
     from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
     from .icons import resource as _  # noqa: F811
-    from .model import (Component, Issue, Profile, find_device, gen_profile_id,
+    from .model import (Component, Profile, find_device, gen_profile_id,
                         validate_components)
     from .paths import STYLES_PATH
     from .ui.component_editor_ui import Ui_ComponentEditor
@@ -61,9 +63,11 @@ except ImportError:
             "ERROR",
         )
     from actions import auto_activaters  # type: ignore[no-redef]  # noqa: F401
+    from actions.signals_slots import query_by_device  # type: ignore
+    from actions.signals_slots import query_signals_slots  # type: ignore
     from daemon import Daemon  # type: ignore[no-redef]  # noqa: F401
+    from enums import Issue, Tag  # type: ignore[no-redef]  # noqa: F401
     from model import Component  # type: ignore[no-redef]  # noqa: F401
-    from model import Issue  # type: ignore[no-redef]  # noqa: F401
     from model import Profile  # type: ignore[no-redef]  # noqa: F401
     from model import find_device  # type: ignore[no-redef]  # noqa: F401
     from model import gen_profile_id  # type: ignore[no-redef]  # noqa: F401
@@ -613,10 +617,10 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         super().__init__(parent)
         self.component = component
         self.setupUi(self)
-        self.connectSignalsSlots()
 
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
+        self.componentDisplay.setText(self.component.device.NAME)
         lb = self.leftVBox
         rb = self.rightVBox
 
@@ -628,7 +632,13 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                 ))
             else:
                 pin_label = QLabel(tr("ComponentEditor", "Pin:"))
+            font = pin_label.font()
+            font.setPointSize(14)
+            pin_label.setFont(font)
             pin_spin = QSpinBox()
+            font = pin_spin.font()
+            font.setPointSize(14)
+            pin_spin.setFont(font)
             pin_spin.setMinimum(0)
             pin_spin.setMaximum(999)
             pin_spin.setValue(num)
@@ -684,28 +694,96 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             property_hbox.addWidget(widget)
             lb.addLayout(property_hbox)
 
+        lb.addSpacerItem(QSpacerItem(
+            1, 1, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding,
+        ))
+        lb.addSpacerItem(QSpacerItem(
+            1, 1, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed,
+        ))
+
         tags_label = QLabel(tr("ComponentCreator", "Tags: {0}").format(
             ", ".join(self.component.device.TAGS)
         ))
+        font = tags_label.font()
+        font.setPointSize(14)
+        tags_label.setFont(font)
         rb.addWidget(tags_label)
 
-        for entry in chain(
-            self.component.device.available_signals(self.component.properties),
-            self.component.device.available_slots(self.component.properties),
-        ):
+        def _add_signal_slot_entry(
+            entry: str, actions: list[str], type_: str,
+        ) -> None:
             # NOTE Example ButtonRow:
             # The available_signals() method may return the same signal
             # multiple times.
             label = QLabel(entry)
+            font = label.font()
+            font.setPointSize(14)
+            label.setFont(font)
             combo = QComboBox()
-            font = widget.font()
+            font = combo.font()
             font.setPointSize(14)
             combo.setFont(font)
+            if type_ == "signal":
+                combo.currentTextChanged.connect(partial(
+                    self.signal_changed, entry
+                ))
+            elif type_ == "slot":
+                combo.currentTextChanged.connect(partial(
+                    self.slot_changed, entry
+                ))
+            else:
+                combo.currentTextChanged.connect(self.manager_changed)
+            for signal_slot in actions:
+                combo.addItem(signal_slot)
             property_hbox = QHBoxLayout()
             property_hbox.addWidget(label)
             property_hbox.addWidget(combo)
             rb.addLayout(property_hbox)
-            # TODO Add Signals and Slots
+
+        for dig_sig in self.component.device.available_signals_digital(
+            self.component.properties
+        ):
+            tags = [Tag.INPUT, Tag.DIGITAL]
+            actions = query_signals_slots(tags, False)
+            _add_signal_slot_entry(
+                dig_sig, [a.NAME for a in actions], "signal"
+            )
+
+        for ana_sig in self.component.device.available_signals_analog(
+            self.component.properties
+        ):
+            tags = [Tag.INPUT, Tag.ANALOG]
+            actions = query_signals_slots(tags, False)
+            _add_signal_slot_entry(
+                ana_sig, [a.NAME for a in actions], "signal"
+            )
+
+        for dig_slo in self.component.device.available_slots_digital(
+            self.component.properties
+        ):
+            tags = [Tag.OUTPUT, Tag.DIGITAL]
+            actions = query_signals_slots(tags, False)
+            _add_signal_slot_entry(dig_slo, [a.NAME for a in actions], "slot")
+
+        for ana_slo in self.component.device.available_slots_digital(
+            self.component.properties
+        ):
+            tags = [Tag.OUTPUT, Tag.ANALOG]
+            actions = query_signals_slots(tags, False)
+            _add_signal_slot_entry(ana_slo, [a.NAME for a in actions], "slot")
+
+        if (actions := query_by_device(self.component.device.NAME)):
+            _add_signal_slot_entry(
+                tr("ComponentEditor", "Manager:"),
+                [a.NAME for a in actions], "manager",
+            )
+
+        rb.addSpacerItem(QSpacerItem(
+            1, 1, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding,
+        ))
+        rb.addSpacerItem(QSpacerItem(
+            1, 1, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed,
+        ))
 
     def pin_changed(self, name: str, num: int) -> None:
         self.component.pins[name] = num
@@ -714,6 +792,15 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         self, property: str, value: int | float | bool | str,
     ) -> None:
         self.component.properties[property] = value
+
+    def signal_changed(self, entry: str, value: str) -> None:
+        self.component.signals_actions[entry] = value
+
+    def slot_changed(self, entry: str, value: str) -> None:
+        self.component.slots_actions[entry] = value
+
+    def manager_changed(self, value: str) -> None:
+        self.component.manager = value
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:

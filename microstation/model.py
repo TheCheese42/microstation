@@ -1,12 +1,16 @@
 # from abc import ABCMeta, abstractmethod
-from enum import StrEnum, IntEnum
 from functools import cache
 from importlib import import_module
 from typing import Any, Callable, Literal
 
+from .enums import Issue, Tag
+
 try:
+    from .actions.signals_slots import find_signal_slot, get_ss_instance
     from .paths import DEVICES_PATH
 except ImportError:
+    from actions.signals_slots import (  # type: ignore  # noqa
+        find_signal_slot, get_ss_instance)
     from paths import DEVICES_PATH  # type: ignore[no-redef]
 
 
@@ -136,8 +140,45 @@ class Component:
                 "Component properties must be a dict, got "
                 f"{type(self.properties)}"
             )
-
-        self.callbacks: dict[str, list[Callable[...,  None]]] = {}
+        self.signals_actions: dict[str, str] = data["signals_actions"]
+        if not isinstance(self.signals_actions, dict):
+            raise ValueError(
+                "Component signals_actions must be a dict, got "
+                f"{type(self.signals_actions)}"
+            )
+        for k, v in self.signals_actions.items():
+            if not isinstance(k, str):
+                raise ValueError(
+                    "Component signals_actions keys must be a string, got "
+                    f"{type(k)}"
+                )
+            if not isinstance(v, str):
+                raise ValueError(
+                    "Component signals_actions values must be a string, got "
+                    f"{type(v)}"
+                )
+        self.slots_actions: dict[str, str] = data["slots_actions"]
+        if not isinstance(self.slots_actions, dict):
+            raise ValueError(
+                "Component slots_actions must be a dict, got "
+                f"{type(self.slots_actions)}"
+            )
+        for k, v in self.slots_actions.items():
+            if not isinstance(k, str):
+                raise ValueError(
+                    "Component slots_actions keys must be a string, got "
+                    f"{type(k)}"
+                )
+            if not isinstance(v, str):
+                raise ValueError(
+                    "Component slots_actions values must be a string, got "
+                    f"{type(v)}"
+                )
+        self.manager: str = data["manager"]
+        if not isinstance(self.manager, str):
+            raise ValueError(
+                f"Component manager must be a string, got {type(self.manager)}"
+            )
 
     def __str__(self) -> str:
         return f"Component with Device {self.device.NAME} on Pins {self.pins}"
@@ -156,6 +197,9 @@ class Component:
                     [p.name for p in device.PINS], pins
                 )},
                 "properties": {},
+                "signals_actions": {},
+                "slots_actions": {},
+                "manager": "",
             },
             write_method,
         )
@@ -165,35 +209,28 @@ class Component:
             "device": self.device.NAME,
             "pins": self.pins,
             "properties": self.properties,
+            "signals_actions": self.signals_actions,
+            "slots_actions": self.slots_actions,
+            "manager": self.manager,
         }
 
-    def register_callback(
-        self, signal: str, callback: Callable[..., None]
-    ) -> None:
-        if signal not in self.device.available_signals():
-            raise ValueError(
-                f"Signal {signal} not available for {self.device.NAME}"
-            )
-        try:
-            self.callbacks[signal].append(callback)
-        except KeyError:
-            self.callbacks[signal] = [callback]
-
     def emit_signal(self, signal: str, *args: Any) -> None:
-        for signal_callback in self.callbacks.get(signal, []):
-            signal_callback(*args)
+        action = self.signals_actions.get(signal, "")
+        if action:
+            get_ss_instance(find_signal_slot(action)).call(*args)
 
     def call_slot(self, slot: str, *args: Any) -> None:
         self.device.call_slot(slot, self.pins, *args)
 
-    def control_pin(self, pin_name: str, pin_number: int, value: int) -> None:
-        for pin in self.device.PINS:
-            if pin.name == pin_name:
-                type = pin.type
-                io_type = pin.io_type
-                if io_type != "output":
-                    raise RuntimeError(f"Pin {pin_name} is not an output pin")
-                self.write_method(f"WRITE {type.upper()} {pin_number} {value}")
+    # XXX
+    # def control_pin(self, pin_name: str, pin_number: int, value: int) -> None:  # noqa XXX
+    #     for pin in self.device.PINS:
+    #         if pin.name == pin_name:
+    #             type = pin.type
+    #             io_type = pin.io_type
+    #             if io_type != "output":
+    #                 raise RuntimeError(f"Pin {pin_name} is not an output pin")  # noqa XXX
+    #             self.write_method(f"WRITE {type.upper()} {pin_number} {value}")  # noqa XXX
 
 
 class Pin:
@@ -209,12 +246,6 @@ class Pin:
         self.name = name
         if properties is None:
             self.properties: list[str] = []
-
-
-class Issue(IntEnum):
-    NONE = 0
-    DUPLICATED_PIN = 1
-    COMPONENT_PINS_NOT_MATCHING_DEVICE = 3
 
 
 def validate_components(
@@ -236,15 +267,6 @@ def validate_components(
     return Issue.NONE, {}
 
 
-class Tag(StrEnum):
-    INPUT = "input"
-    OUTPUT = "output"
-    ANALOG = "analog"
-    DIGITAL = "digital"
-    CONVERTER = "converter"
-    MANAGER = "manager"
-
-
 type CONFIG_TYPE = type[int] | type[float] | type[bool] | type[str]
 type CONFIG_VALUE = int | float | bool | str
 
@@ -254,35 +276,53 @@ class Device:  # (ABCMeta):
     TAGS: list[Tag] = []
     PINS: list[Pin] = []
     # Ex.: {"sensitivity": {"type": int, "default": 1, "min": 1, "max": 9999}}
-    CONFIG: dict[str, dict[str, CONFIG_VALUE | CONFIG_TYPE]]
+    CONFIG: dict[str, dict[str, CONFIG_VALUE | CONFIG_TYPE]] = {}
+
+    @classmethod
+    def available_signals_digital(
+        cls, properties: dict[str, CONFIG_VALUE] | None = None,
+    ) -> list[str]:
+        if Tag.INPUT in cls.TAGS and Tag.DIGITAL in cls.TAGS:
+            return ["digital_changed", "digital_high", "digital_low"]
+        return []
+
+    @classmethod
+    def available_signals_analog(
+        cls, properties: dict[str, CONFIG_VALUE] | None = None,
+    ) -> list[str]:
+        if Tag.INPUT in cls.TAGS and Tag.ANALOG in cls.TAGS:
+            return ["analog_changed"]
+        return []
 
     @classmethod
     def available_signals(
-        cls, properties: dict[str, CONFIG_VALUE] = {},
+        cls, properties: dict[str, CONFIG_VALUE] | None = None,
     ) -> list[str]:
         # Signal = Thing sent by input device
-        signals = []
-        if Tag.INPUT in cls.TAGS:
-            if Tag.DIGITAL in cls.TAGS:
-                signals.extend(
-                    ["digital_changed", "digital_high", "digital_low"]
-                )
-            if Tag.ANALOG in cls.TAGS:
-                signals.extend(["analog_changed"])
-        return signals
+        return cls.available_signals_digital() + cls.available_signals_analog()
+
+    @classmethod
+    def available_slots_digital(
+        cls, properties: dict[str, CONFIG_VALUE] | None = None,
+    ) -> list[str]:
+        if Tag.OUTPUT in cls.TAGS and Tag.DIGITAL in cls.TAGS:
+            return ["trigger_digital_high", "trigger_digital_low"]
+        return []
+
+    @classmethod
+    def available_slots_analog(
+        cls, properties: dict[str, CONFIG_VALUE] | None = None,
+    ) -> list[str]:
+        if Tag.OUTPUT in cls.TAGS and Tag.ANALOG in cls.TAGS:
+            return ["value_analog"]
+        return []
 
     @classmethod
     def available_slots(
-        cls, properties: dict[str, CONFIG_VALUE] = {},
+        cls, properties: dict[str, CONFIG_VALUE] | None = None,
     ) -> list[str]:
         # Slot = Command to an output device
-        slots = []
-        if Tag.OUTPUT in cls.TAGS:
-            if Tag.DIGITAL in cls.TAGS:
-                slots.extend(["trigger_digital_high", "trigger_digital_low"])
-            if Tag.ANALOG in cls.TAGS:
-                slots.extend(["value_analog"])
-        return slots
+        return cls.available_slots_digital() + cls.available_slots_analog()
 
     @classmethod
     def call_slot(cls, slot: str, pin_data: dict[str, int], *args: Any) -> str:
