@@ -1,7 +1,6 @@
 import sys
 from copy import deepcopy
 from functools import partial
-from itertools import chain
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +16,8 @@ from serial.tools.list_ports import comports
 try:
     from . import config
     from .actions import auto_activaters
-    from .actions.signals_slots import query_by_device, query_signals_slots
+    from .actions.signals_slots import (SignalOrSlot, find_signal_slot,
+                                        query_by_device, query_signals_slots)
     from .daemon import Daemon
     from .enums import Issue, Tag
     from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
@@ -63,6 +63,8 @@ except ImportError:
             "ERROR",
         )
     from actions import auto_activaters  # type: ignore[no-redef]  # noqa: F401
+    from actions.signals_slots import SignalOrSlot  # type: ignore[no-redef]
+    from actions.signals_slots import find_signal_slot  # type: ignore
     from actions.signals_slots import query_by_device  # type: ignore
     from actions.signals_slots import query_signals_slots  # type: ignore
     from daemon import Daemon  # type: ignore[no-redef]  # noqa: F401
@@ -616,6 +618,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
     def __init__(self, parent: QWidget, component: Component) -> None:
         super().__init__(parent)
         self.component = component
+        self.entry_hbox: dict[str, QHBoxLayout] = {}
         self.setupUi(self)
 
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
@@ -710,7 +713,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         rb.addWidget(tags_label)
 
         def _add_signal_slot_entry(
-            entry: str, actions: list[str], type_: str,
+            entry: str, actions: list[type[SignalOrSlot]], type_: str,
         ) -> None:
             # NOTE Example ButtonRow:
             # The available_signals() method may return the same signal
@@ -727,18 +730,40 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                 combo.currentTextChanged.connect(partial(
                     self.signal_changed, entry
                 ))
+                if (d := self.component.signals_actions.get(entry)):
+                    selected = d.get("name")
+                else:
+                    selected = None
             elif type_ == "slot":
                 combo.currentTextChanged.connect(partial(
                     self.slot_changed, entry
                 ))
+                if (d := self.component.slots_actions.get(entry)):
+                    selected = d.get("name")
+                else:
+                    selected = None
             else:
                 combo.currentTextChanged.connect(self.manager_changed)
-            for signal_slot in actions:
+                selected = self.component.manager.get(entry)
+
+            selected_ss: str | None = None
+            combo.blockSignals(True)
+            for i, signal_slot in enumerate([a.NAME for a in actions]):
                 combo.addItem(signal_slot)
+                if selected == signal_slot:
+                    combo.setCurrentIndex(i)
+                    selected_ss = signal_slot
+            combo.blockSignals(False)
+
             property_hbox = QHBoxLayout()
             property_hbox.addWidget(label)
             property_hbox.addWidget(combo)
+            self.entry_hbox[entry] = property_hbox
             rb.addLayout(property_hbox)
+            if selected_ss:
+                self.update_signal_slot_params(
+                    entry, find_signal_slot(selected_ss), type_, property_hbox
+                )
 
         for dig_sig in self.component.device.available_signals_digital(
             self.component.properties
@@ -746,7 +771,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             tags = [Tag.INPUT, Tag.DIGITAL]
             actions = query_signals_slots(tags, False)
             _add_signal_slot_entry(
-                dig_sig, [a.NAME for a in actions], "signal"
+                dig_sig, actions, "signal"
             )
 
         for ana_sig in self.component.device.available_signals_analog(
@@ -755,7 +780,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             tags = [Tag.INPUT, Tag.ANALOG]
             actions = query_signals_slots(tags, False)
             _add_signal_slot_entry(
-                ana_sig, [a.NAME for a in actions], "signal"
+                ana_sig, actions, "signal"
             )
 
         for dig_slo in self.component.device.available_slots_digital(
@@ -763,19 +788,19 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         ):
             tags = [Tag.OUTPUT, Tag.DIGITAL]
             actions = query_signals_slots(tags, False)
-            _add_signal_slot_entry(dig_slo, [a.NAME for a in actions], "slot")
+            _add_signal_slot_entry(dig_slo, actions, "slot")
 
         for ana_slo in self.component.device.available_slots_digital(
             self.component.properties
         ):
             tags = [Tag.OUTPUT, Tag.ANALOG]
             actions = query_signals_slots(tags, False)
-            _add_signal_slot_entry(ana_slo, [a.NAME for a in actions], "slot")
+            _add_signal_slot_entry(ana_slo, actions, "slot")
 
         if (actions := query_by_device(self.component.device.NAME)):
             _add_signal_slot_entry(
                 tr("ComponentEditor", "Manager:"),
-                [a.NAME for a in actions], "manager",
+                actions, "manager",
             )
 
         rb.addSpacerItem(QSpacerItem(
@@ -794,13 +819,129 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         self.component.properties[property] = value
 
     def signal_changed(self, entry: str, value: str) -> None:
-        self.component.signals_actions[entry] = value
+        # Params don't need to be preserved as the signal just changed
+        self.component.signals_actions[entry] = {"name": value}
+        self.update_signal_slot_params(
+            entry, find_signal_slot(value), "signal", self.entry_hbox[entry]
+        )
 
     def slot_changed(self, entry: str, value: str) -> None:
-        self.component.slots_actions[entry] = value
+        # Params don't need to be preserved as the slot just changed
+        self.component.slots_actions[entry] = {"name": value}
+        self.update_signal_slot_params(
+            entry, find_signal_slot(value), "slot", self.entry_hbox[entry]
+        )
 
     def manager_changed(self, value: str) -> None:
-        self.component.manager = value
+        # Params don't need to be preserved as the manager just changed
+        self.component.manager = {"name": value}
+        self.update_signal_slot_params(
+            "manager", find_signal_slot(value),
+            "manager", self.entry_hbox["manager"]
+        )
+
+    def update_signal_slot_params(
+        self,
+        entry: str,
+        signal_slot: type[SignalOrSlot],
+        type_: str,
+        hbox: QHBoxLayout,
+    ) -> None:
+        for i in reversed(range(hbox.count())[2:]):
+            child = hbox.takeAt(i)
+            if child and (w := child.widget()):
+                w.deleteLater()
+        for param in signal_slot.PARAMS:
+            value = None
+            if type_ == "signal":
+                if (d := self.component.signals_actions.get(entry)):
+                    if isinstance((p := d.get("params")), dict):
+                        value = p.get(param.name)
+            elif type_ == "slot":
+                if (d := self.component.slots_actions.get(entry)):
+                    if isinstance((p := d.get("params")), dict):
+                        value = p.get(param.name)
+            else:
+                if isinstance(
+                    (e := self.component.manager.get("params")), dict
+                ):
+                    value = e.get(param.name)
+            if param.type == int:
+                widget = QSpinBox()
+                widget.setRange(param.info.get("min") or 0, param.info.get("max") or 999999)  # type: ignore[arg-type]  # noqa E501
+                widget.setValue(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
+                widget.valueChanged.connect(
+                    partial(
+                        self.param_changed, type_, entry, param.name
+                    )
+                )
+            if param.type == float:
+                widget = QDoubleSpinBox()
+                widget.setRange(param.info.get("min") or 0.0, param.info.get("max") or 999999.0)  # type: ignore[arg-type]  # noqa E501
+                widget.setValue(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
+                widget.valueChanged.connect(
+                    partial(
+                        self.param_changed, type_, entry, param.name
+                    )
+                )
+            if param.type == bool:
+                widget = QCheckBox()
+                widget.setChecked(bool(value) if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
+                widget.stateChanged.connect(
+                    partial(
+                        self.param_changed, type_, entry, param.name
+                    )
+                )
+            else:
+                widget = QLineEdit()
+                widget.setText(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
+                widget.textChanged.connect(
+                    partial(
+                        self.param_changed, type_, entry, param.name
+                    )
+                )
+            font = widget.font()
+            font.setPointSize(14)
+            widget.setFont(font)
+            hbox.addWidget(widget)
+
+    def param_changed(
+        self,
+        type_: str,
+        entry: str,
+        param: str,
+        value: int | float | bool | str,
+    ) -> None:
+        if type_ == "signal":
+            d = self.component.signals_actions.get(entry)
+            if d:
+                p = d.get("params")
+                if isinstance(p, dict):
+                    p[param] = value
+                else:
+                    d["params"] = {param: value}
+            else:
+                raise ValueError(
+                    f"Entry {entry} param changed but entry doesn't exist"
+                )
+        elif type_ == "slot":
+            d = self.component.slots_actions.get(entry)
+            if d:
+                p = d.get("params")
+                if isinstance(p, dict):
+                    p[param] = value
+                else:
+                    d["params"] = {param: value}
+            else:
+                raise ValueError(
+                    f"Entry {entry} param changed but entry doesn't exist"
+                )
+        else:
+            e = self.component.manager.get("params")
+            if isinstance(e, dict):
+                e[param] = value
+            else:
+                self.component.manager["params"] = {param: value}
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:

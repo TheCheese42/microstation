@@ -1,4 +1,7 @@
+from pathlib import Path
 from typing import Any
+
+import psutil
 
 try:
     from ..enums import Tag
@@ -12,11 +15,13 @@ INSTANCES: dict[type["SignalOrSlot"], "SignalOrSlot"] = {}
 class Param:
     def __init__(
         self, name: str, desc: str, type_: type,
+        default: int | float | bool | str | None = None,
         info: dict[str, int | float | bool | str] = {},
     ) -> None:
         self.name = name
         self.desc = desc
         self.type = type_
+        self.default = default or self.type()
         self.info = info
 
 
@@ -26,7 +31,7 @@ class SignalOrSlot:
     PARAMS: list[Param] = []
     DEVICES: list[str] = []
 
-    def call(self, *args: Any, **kwargs: Any) -> Any | None:
+    def call(self, signal_slot: str, *args: Any, **kwargs: Any) -> Any | None:
         return None
 
 
@@ -39,13 +44,9 @@ def get_ss_instance(cls: type[SignalOrSlot]) -> SignalOrSlot:
 
 
 def find_signal_slot(name: str) -> type[SignalOrSlot]:
-    for thing in dir():
-        try:
-            ref: type[SignalOrSlot] = globals()[thing]
-        except KeyError:
-            continue
-        if issubclass(ref, SignalOrSlot) and ref.NAME == name:
-            return ref
+    for cls in SIGNALS_SLOTS:
+        if cls.NAME == name:
+            return cls
     raise ValueError(f"Signal or Slot {name} was not found.")
 
 
@@ -53,32 +54,38 @@ def query_signals_slots(
     tags: list[Tag], include_manager: bool = True,
 ) -> list[type[SignalOrSlot]]:
     signals_slots: list[type[SignalOrSlot]] = []
-    for thing in dir():
-        try:
-            ref: type[SignalOrSlot] = globals()[thing]
-        except KeyError:
-            continue
-        if issubclass(ref, SignalOrSlot):
-            for tag in tags:
-                if tag not in ref.TAGS:
-                    break
-            else:
-                if not (include_manager is False and Tag.MANAGER in ref.TAGS):
-                    signals_slots.append(ref)
+    for cls in SIGNALS_SLOTS:
+        for tag in tags:
+            if tag not in cls.TAGS:
+                break
+        else:
+            if not (include_manager is False and Tag.MANAGER in cls.TAGS):
+                signals_slots.append(cls)
     return signals_slots
 
 
 def query_by_device(device: str) -> list[type[SignalOrSlot]]:
     signals_slots: list[type[SignalOrSlot]] = []
-    for thing in dir():
-        try:
-            ref: type[SignalOrSlot] = globals()[thing]
-        except KeyError:
-            continue
-        if issubclass(ref, SignalOrSlot):
-            if device in ref.DEVICES:
-                signals_slots.append(ref)
+    for cls in SIGNALS_SLOTS:
+        if device in cls.DEVICES:
+            signals_slots.append(cls)
     return signals_slots
+
+
+class UniStr(str):
+    def __eq__(self, _: object) -> bool:
+        return True
+
+
+class Nothing(SignalOrSlot):
+    NAME = "None"
+    TAGS = [Tag.INPUT, Tag.OUTPUT, Tag.DIGITAL, Tag.ANALOG]
+
+
+class NothingManager(SignalOrSlot):
+    NAME = "No Manager"
+    TAGS = [Tag.INPUT, Tag.OUTPUT, Tag.DIGITAL, Tag.ANALOG, Tag.MANAGER]
+    DEVICES = [UniStr()]
 
 
 # #################### SIGNALS #####################
@@ -95,6 +102,17 @@ class LogToFile(SignalOrSlot):
         )
     ]
 
+    def __init__(self) -> None:
+        self.path = ""
+
+    def call(self, signal_slot: str, value: int | float) -> None:
+        if not self.path:
+            print(value)
+        else:
+            if (p := Path(self.path)).exists():
+                with open(p, mode="a", encoding="utf-8") as fp:
+                    fp.write(str(value) + "\n")
+
 
 # ##################### SLOTS ######################
 
@@ -109,3 +127,21 @@ class ProgramRunning(SignalOrSlot):
             type_=str,
         )
     ]
+
+    def __init__(self) -> None:
+        self.program = ""
+
+    def call(self, signal_slot: str) -> bool:
+        if not self.program:
+            return False
+        return self.program in (
+            p.name() for p in psutil.process_iter(attrs=['name'])
+        )
+
+
+SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
+    Nothing,
+    NothingManager,
+    LogToFile,
+    ProgramRunning,
+]

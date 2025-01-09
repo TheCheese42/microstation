@@ -140,7 +140,9 @@ class Component:
                 "Component properties must be a dict, got "
                 f"{type(self.properties)}"
             )
-        self.signals_actions: dict[str, str] = data["signals_actions"]
+        self.signals_actions: dict[
+            str, dict[str, str | dict[str, int | float | bool | str]]
+        ] = data["signals_actions"]
         if not isinstance(self.signals_actions, dict):
             raise ValueError(
                 "Component signals_actions must be a dict, got "
@@ -149,15 +151,17 @@ class Component:
         for k, v in self.signals_actions.items():
             if not isinstance(k, str):
                 raise ValueError(
-                    "Component signals_actions keys must be a string, got "
+                    "Component signals_actions keys must be strings, got "
                     f"{type(k)}"
                 )
-            if not isinstance(v, str):
+            if not isinstance(v, dict):
                 raise ValueError(
-                    "Component signals_actions values must be a string, got "
+                    "Component signals_actions values must be a dict, got "
                     f"{type(v)}"
                 )
-        self.slots_actions: dict[str, str] = data["slots_actions"]
+        self.slots_actions: dict[
+            str, dict[str, str | dict[str, int | float | bool | str]]
+        ] = data["slots_actions"]
         if not isinstance(self.slots_actions, dict):
             raise ValueError(
                 "Component slots_actions must be a dict, got "
@@ -166,19 +170,32 @@ class Component:
         for k, v in self.slots_actions.items():
             if not isinstance(k, str):
                 raise ValueError(
-                    "Component slots_actions keys must be a string, got "
+                    "Component slots_actions keys must be strings, got "
                     f"{type(k)}"
                 )
-            if not isinstance(v, str):
+            if not isinstance(v, dict):
                 raise ValueError(
-                    "Component slots_actions values must be a string, got "
+                    "Component slots_actions values must be a dict, got "
                     f"{type(v)}"
                 )
-        self.manager: str = data["manager"]
-        if not isinstance(self.manager, str):
+        self.manager: dict[
+            str, str | dict[str, int | float | bool | str]
+        ] = data["manager"]
+        if not isinstance(self.manager, dict):
             raise ValueError(
-                f"Component manager must be a string, got {type(self.manager)}"
+                f"Component manager must be a dict, got {type(self.manager)}"
             )
+        for key, val in self.manager.items():
+            if not isinstance(key, str):
+                raise ValueError(
+                    "Component manager keys must be strings, got "
+                    f"{type(key)}"
+                )
+            if not isinstance(val, str):
+                raise ValueError(
+                    "Component manager values must be string, got "
+                    f"{type(val)}"
+                )
 
     def __str__(self) -> str:
         return f"Component with Device {self.device.NAME} on Pins {self.pins}"
@@ -199,7 +216,7 @@ class Component:
                 "properties": {},
                 "signals_actions": {},
                 "slots_actions": {},
-                "manager": "",
+                "manager": {},
             },
             write_method,
         )
@@ -215,9 +232,15 @@ class Component:
         }
 
     def emit_signal(self, signal: str, *args: Any) -> None:
-        action = self.signals_actions.get(signal, "")
+        action = self.signals_actions.get(signal, None)
         if action:
-            get_ss_instance(find_signal_slot(action)).call(*args)
+            name = action["name"]
+            if not isinstance(name, str):
+                raise TypeError(
+                    f"Action name for signal {signal} must be a string, got "
+                    f"{type(name)}"
+                )
+            get_ss_instance(find_signal_slot(name)).call(signal, *args)
 
     def call_slot(self, slot: str, *args: Any) -> None:
         self.device.call_slot(slot, self.pins, *args)
