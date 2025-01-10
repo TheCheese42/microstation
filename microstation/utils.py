@@ -6,7 +6,7 @@ from serial.tools.list_ports import comports
 
 def get_port_info(port_str: str) -> str | None:
     for port in comports():
-        if port.name == port_str:
+        if port.name in port_str:
             return get_device_info(port)
     return None
 

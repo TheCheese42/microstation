@@ -27,7 +27,7 @@ class Device:
     @property
     def name(self) -> str | None:
         try:
-            return get_port_info(self.ser.port)
+            return get_port_info(self.ser.port) or "Unknown Board"
         except AttributeError:
             return "Uninitialized Device"
 
