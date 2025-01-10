@@ -187,11 +187,18 @@
     <addaction name="menuTheme"/>
     <addaction name="menuLanguage"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionOpen_Wiki"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuMicrocontroller"/>
    <addaction name="menuTool"/>
    <addaction name="menuView"/>
+   <addaction name="menuHelp"/>
    <addaction name="menuAbout"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -255,7 +262,7 @@
      <normaloff>:/icons/settings.svg</normaloff>:/icons/settings.svg</iconset>
    </property>
    <property name="text">
-    <string>Settings</string>
+    <string>Settings...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -267,7 +274,7 @@
      <normaloff>:/icons/users.svg</normaloff>:/icons/users.svg</iconset>
    </property>
    <property name="text">
-    <string>Profiles</string>
+    <string>Profiles...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
@@ -279,7 +286,7 @@
      <normaloff>:/icons/monitor.svg</normaloff>:/icons/monitor.svg</iconset>
    </property>
    <property name="text">
-    <string>Serial Monitor</string>
+    <string>Serial Monitor...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+M</string>
@@ -354,7 +361,7 @@
      <normaloff>:/icons/aperture.svg</normaloff>:/icons/aperture.svg</iconset>
    </property>
    <property name="text">
-    <string>Macros</string>
+    <string>Macros...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+M</string>
@@ -378,7 +385,7 @@
      <normaloff>:/icons/sliders.svg</normaloff>:/icons/sliders.svg</iconset>
    </property>
    <property name="text">
-    <string>Settings</string>
+    <string>Settings...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+S</string>
@@ -421,7 +428,7 @@
      <normaloff>:/icons/download.svg</normaloff>:/icons/download.svg</iconset>
    </property>
    <property name="text">
-    <string>Install Additional Boards</string>
+    <string>Install Additional Boards...</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+I</string>
@@ -437,6 +444,15 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+L</string>
+   </property>
+  </action>
+  <action name="actionOpen_Wiki">
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/book-open.svg</normaloff>:/icons/book-open.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Open Wiki</string>
    </property>
   </action>
  </widget>

@@ -11,6 +11,7 @@ mkdir -p ../../microstation/external_styles/breeze
 cp -f LICENSE.md ../../microstation/external_styles/breeze/
 cp -rf dist/* ../../microstation/external_styles/breeze/
 cp -f resources/breeze_pyqt6.py ../../microstation/external_styles/breeze/
+rm -rf ../../microstation/external_styles/breeze/*-alt
 deactivate
 cd ../../
 rm -rf style_clones
