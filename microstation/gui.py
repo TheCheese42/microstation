@@ -652,6 +652,9 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
 
         for property, info in self.component.device.CONFIG.items():
             label = QLabel(property)
+            font = label.font()
+            font.setPointSize(14)
+            label.setFont(font)
             default: int | float | bool | str = info["default"]  # type: ignore[assignment]  # noqa E501
             type_: type[int] | type[float] | type[bool] | type[str] = info["type"]  # type: ignore[assignment]  # noqa E501
             value = self.component.properties.get(property)
