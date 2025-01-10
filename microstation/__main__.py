@@ -26,6 +26,7 @@ def main() -> None:
         config.get_config_value("baudrate"),
     )
     config.PROFILES = config.load_profiles(daemon.queue_write)
+    config.MACROS = config.load_macros()
     daemon_thread = Thread(
         target=start_daemon,
         args=(daemon,),

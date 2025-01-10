@@ -2,6 +2,7 @@
 from functools import cache
 from importlib import import_module
 from typing import Any, Callable, Literal
+from pynput.keyboard import Key
 
 from .enums import Issue, Tag
 
@@ -16,6 +17,53 @@ except ImportError:
 
 type COMPONENT = dict[str, Any]
 type PROFILE = dict[str, Any]
+
+MODS = ["Ctrl", "Shift", "Alt", "AltGr", "Tab"]
+KEY_LOOKUP = {
+    "Alt": Key.alt,
+    "AltGr": Key.alt_gr,
+    "Backspace": Key.backspace,
+    "CapsLock": Key.caps_lock,
+    "Ctrl": Key.ctrl,
+    "Del": Key.delete,
+    "Down": Key.down,
+    "End": Key.end,
+    "Return": Key.enter,
+    "Esc": Key.esc,
+    "F1": Key.f1,
+    "F2": Key.f2,
+    "F3": Key.f3,
+    "F4": Key.f4,
+    "F5": Key.f5,
+    "F6": Key.f6,
+    "F7": Key.f7,
+    "F8": Key.f8,
+    "F9": Key.f9,
+    "F10": Key.f10,
+    "F11": Key.f11,
+    "F12": Key.f12,
+    "F13": Key.f13,
+    "F14": Key.f14,
+    "F15": Key.f15,
+    "F16": Key.f16,
+    "F17": Key.f17,
+    "F18": Key.f18,
+    "F19": Key.f19,
+    "F20": Key.f20,
+    "Home Page": Key.home,
+    "Ins": Key.insert,
+    "Left": Key.left,
+    "NumLock": Key.num_lock,
+    "PgDown": Key.page_down,
+    "PgUp": Key.page_up,
+    "Print": Key.print_screen,
+    "Right": Key.right,
+    "ScrollLock": Key.scroll_lock,
+    "Shift": Key.shift,
+    "Space": Key.space,
+    "Tab": Key.tab,
+    "Up": Key.up,
+}
 
 
 @cache

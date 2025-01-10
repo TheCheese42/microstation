@@ -29,6 +29,7 @@ type MACRO = dict[str, Union[str, int, list[MACRO_ACTION]]]
 
 
 PROFILES: list[Profile] = []
+MACROS: list[MACRO] = []
 
 
 def config_exists() -> bool:

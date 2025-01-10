@@ -289,7 +289,7 @@
     <string>Serial Monitor...</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+M</string>
+    <string>Ctrl+Alt+Shift+M</string>
    </property>
   </action>
   <action name="actionLog">
