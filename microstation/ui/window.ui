@@ -136,11 +136,11 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="actionSerial_Monitor"/>
+    <addaction name="actionSerialMonitor"/>
     <addaction name="separator"/>
     <addaction name="actionLog"/>
-    <addaction name="actionSerial_Log"/>
-    <addaction name="actionExport_Serial_History"/>
+    <addaction name="actionSerialLog"/>
+    <addaction name="actionExportSerialHistory"/>
    </widget>
    <widget class="QMenu" name="menuAbout">
     <property name="title">
@@ -155,9 +155,9 @@
     <property name="title">
      <string>Microcontroller</string>
     </property>
-    <addaction name="actionUpload_Code"/>
-    <addaction name="actionInstall_additional_Boards"/>
-    <addaction name="actionUpdate_Libraries"/>
+    <addaction name="actionUploadCode"/>
+    <addaction name="actionInstallAdditionalBoards"/>
+    <addaction name="actionUpdateLibraries"/>
     <addaction name="separator"/>
     <addaction name="actionSettingsMC"/>
    </widget>
@@ -280,7 +280,7 @@
     <string>Ctrl+P</string>
    </property>
   </action>
-  <action name="actionSerial_Monitor">
+  <action name="actionSerialMonitor">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/monitor.svg</normaloff>:/icons/monitor.svg</iconset>
@@ -304,7 +304,7 @@
     <string>Ctrl+Alt+L</string>
    </property>
   </action>
-  <action name="actionSerial_Log">
+  <action name="actionSerialLog">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/tool.svg</normaloff>:/icons/tool.svg</iconset>
@@ -316,7 +316,7 @@
     <string>Ctrl+Alt+Shift+L</string>
    </property>
   </action>
-  <action name="actionExport_Serial_History">
+  <action name="actionExportSerialHistory">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/clock.svg</normaloff>:/icons/clock.svg</iconset>
@@ -367,7 +367,7 @@
     <string>Ctrl+M</string>
    </property>
   </action>
-  <action name="actionUpload_Code">
+  <action name="actionUploadCode">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/upload.svg</normaloff>:/icons/upload.svg</iconset>
@@ -422,7 +422,7 @@
     <string>Ctrl+Shift+R</string>
    </property>
   </action>
-  <action name="actionInstall_additional_Boards">
+  <action name="actionInstallAdditionalBoards">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/download.svg</normaloff>:/icons/download.svg</iconset>
@@ -434,7 +434,7 @@
     <string>Ctrl+Shift+I</string>
    </property>
   </action>
-  <action name="actionUpdate_Libraries">
+  <action name="actionUpdateLibraries">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/book.svg</normaloff>:/icons/book.svg</iconset>

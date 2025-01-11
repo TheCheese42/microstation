@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Dialog</class>
- <widget class="QDialog" name="Dialog">
+ <class>InstallBoards</class>
+ <widget class="QDialog" name="InstallBoards">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Install Boards</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="../icons/icons.qrc">
+    <normaloff>:/icons/download.svg</normaloff>:/icons/download.svg</iconset>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item alignment="Qt::AlignHCenter">
@@ -62,7 +66,7 @@
       </font>
      </property>
      <property name="text">
-      <string>By default, only a few Arduino boards are supported. If you need to install a different board, select it in the list below and &quot;Install Selected&quot;.</string>
+      <string>By default, only a few Arduino boards are supported. If you need to install a different board, select it in the list below and click &quot;Install Selected&quot;.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -107,12 +111,14 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../icons/icons.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>Dialog</receiver>
+   <receiver>InstallBoards</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -128,7 +134,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>Dialog</receiver>
+   <receiver>InstallBoards</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

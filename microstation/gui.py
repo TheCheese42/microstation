@@ -18,7 +18,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
 from serial.tools.list_ports import comports
 
 try:
-    from . import config
+    from . import config, utils
     from .actions import auto_activaters
     from .actions.signals_slots import (SignalOrSlot, find_signal_slot,
                                         query_by_device, query_signals_slots)
@@ -28,9 +28,10 @@ try:
     from .icons import resource as _  # noqa: F811
     from .model import (MODS, Component, Profile, find_device, gen_profile_id,
                         validate_components)
-    from .paths import ICONS_PATH, STYLES_PATH
+    from .paths import ARDUINO_SKETCH_PATH, ICONS_PATH, STYLES_PATH
     from .ui.component_editor_ui import Ui_ComponentEditor
     from .ui.create_component_ui import Ui_CreateComponent
+    from .ui.install_boards_ui import Ui_InstallBoards
     from .ui.macro_action_editor_ui import Ui_MacroActionEditor
     from .ui.macro_editor_ui import Ui_MacroEditor
     from .ui.profile_editor_ui import Ui_ProfileEditor
@@ -41,7 +42,7 @@ try:
 except ImportError:
     import config  # type: ignore[no-redef]
     try:
-        from icons import resource as _  # noqa: F401
+        from icons import resource as _
     except ImportError:
         config.log(
             "Failed to load icons. Did you forget to run the compile-icons "
@@ -49,7 +50,7 @@ except ImportError:
             "ERROR",
         )
     try:
-        from external_styles.breeze import breeze_pyqt6 as _  # noqa: F401,F811
+        from external_styles.breeze import breeze_pyqt6 as _  # noqa
     except ImportError:
         config.log(
             "Failed to load styles. Did you forget to run the compile-styles "
@@ -59,6 +60,7 @@ except ImportError:
     try:
         from ui.component_editor_ui import Ui_ComponentEditor
         from ui.create_component_ui import Ui_CreateComponent
+        from ui.install_boards_ui import Ui_InstallBoards
         from ui.macro_action_editor_ui import Ui_MacroActionEditor
         from ui.macro_editor_ui import Ui_MacroEditor
         from ui.profile_editor_ui import Ui_ProfileEditor
@@ -70,22 +72,24 @@ except ImportError:
             "Failed to load UI. Did you forget to run the compile-ui script?"
             "ERROR",
         )
-    from actions import auto_activaters  # type: ignore[no-redef]  # noqa: F401
+    import utils  # type: ignore[no-redef]
+    from actions import auto_activaters  # type: ignore[no-redef]
     from actions.signals_slots import SignalOrSlot  # type: ignore[no-redef]
     from actions.signals_slots import find_signal_slot  # type: ignore
     from actions.signals_slots import query_by_device  # type: ignore
     from actions.signals_slots import query_signals_slots  # type: ignore
-    from daemon import Daemon  # type: ignore[no-redef]  # noqa: F401
-    from enums import Issue, Tag  # type: ignore[no-redef]  # noqa: F401
+    from daemon import Daemon  # type: ignore[no-redef]
+    from enums import Issue, Tag  # type: ignore[no-redef]
     from model import MODS  # type: ignore[no-redef]
-    from model import Component  # type: ignore[no-redef]  # noqa: F401
-    from model import Profile  # type: ignore[no-redef]  # noqa: F401
-    from model import find_device  # type: ignore[no-redef]  # noqa: F401
-    from model import gen_profile_id  # type: ignore[no-redef]  # noqa: F401
-    from model import validate_components  # type: ignore[no-redef] # noqa F401
-    from paths import ICONS_PATH  # type: ignore[no-redef]  # noqa: F401
-    from paths import STYLES_PATH  # type: ignore[no-redef]  # noqa: F401
-    from utils import get_device_info  # type: ignore[no-redef]  # noqa: F401
+    from model import Component  # type: ignore[no-redef]
+    from model import Profile  # type: ignore[no-redef]
+    from model import find_device  # type: ignore[no-redef]
+    from model import gen_profile_id  # type: ignore[no-redef]
+    from model import validate_components  # type: ignore[no-redef]
+    from paths import ARDUINO_SKETCH_PATH  # type: ignore[no-redef]
+    from paths import ICONS_PATH  # type: ignore[no-redef]
+    from paths import STYLES_PATH  # type: ignore[no-redef]
+    from utils import get_device_info  # type: ignore[no-redef]
 
 
 tr = QApplication.translate
@@ -99,6 +103,35 @@ def show_error(parent: QWidget, title: str, desc: str) -> int:
     messagebox.setStandardButtons(QMessageBox.StandardButton.Ok)
     messagebox.setDefaultButton(QMessageBox.StandardButton.Ok)
     return messagebox.exec()
+
+
+def show_question(parent: QWidget, title: str, desc: str) -> int:
+    messagebox = QMessageBox(parent)
+    messagebox.setIcon(QMessageBox.Icon.Question)
+    messagebox.setWindowTitle(title)
+    messagebox.setText(desc)
+    messagebox.setStandardButtons(
+        QMessageBox.StandardButton.No | QMessageBox.StandardButton.Yes
+    )
+    messagebox.setDefaultButton(QMessageBox.StandardButton.Yes)
+    return messagebox.exec()
+
+
+def ask_install_arduino_cli(parent: QWidget) -> None:
+    if show_question(
+        parent, tr("Microstation", "Install arduino-cli"),
+        tr("Microstation", "Microstation depends on arduino-cli to "
+            "interact with Microcontrollers. Should we install arduino-cli "
+            "for you?"),
+    ) == QMessageBox.StandardButton.Yes:
+        try:
+            utils.install_arduino_cli()
+        except RuntimeError as e:
+            show_error(
+                parent, tr("Microstation", "Install failed"),
+                tr("Microstation", f"An error occurred while installing: {e}")
+            )
+            return
 
 
 class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
@@ -220,6 +253,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.actionProfiles.triggered.connect(self.open_profiles)
         self.actionMacros.triggered.connect(self.open_macros)
 
+        self.actionUploadCode.triggered.connect(self.upload_code)
+        self.actionInstallAdditionalBoards.triggered.connect(self.install_boards)
+
         self.actionThemeDefault.triggered.connect(
             lambda: self.setStyleSheet("")
         )
@@ -230,6 +266,20 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.actionOpenGitHub.triggered.connect(partial(
             self.open_url, "https://github.com/TheCheese42/microstation"
         ))
+
+    def upload_code(self) -> None:
+        try:
+            utils.upload_code(self.daemon.port, str(ARDUINO_SKETCH_PATH))
+        except utils.MissingArduinoCLIError:
+            ask_install_arduino_cli(self)
+            return
+        except RuntimeError as e:
+            show_error(self, tr("Microstation", "Error uploading"), str(e))
+            return
+
+    def install_boards(self) -> None:
+        dialog = InstallBoards(self)
+        dialog.exec()
 
     def open_url(self, url: str) -> None:
         try:
@@ -555,6 +605,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                        f"Components: Pin {0} was used multiple "
                        "times.").format(info['pin']),
                 )
+                return
             case Issue.COMPONENT_PINS_NOT_MATCHING_DEVICE:
                 show_error(
                     self,
@@ -564,6 +615,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                        "those of its device. Please delete and recreate that "
                        "component.").format(info['component_name']),
                 )
+                return
 
     def new_component(self) -> None:
         dialog = ComponentCreator(self)
@@ -1451,6 +1503,66 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
                 if not isinstance(self.mod_combo, QComboBox):
                     return
                 self.value = self.mod_combo.currentText()
+
+
+class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.cores_items: list[tuple[str, QListWidgetItem]] = []
+        self.setupUi(self)
+        self.connectSignalsSlots()
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+        self.updateUi()
+
+    def updateUi(self) -> None:
+        self.boardsList.clear()
+        self.cores_items.clear()
+        try:
+            boards = list(utils.available_cores())
+        except utils.MissingArduinoCLIError:
+            ask_install_arduino_cli(self)
+            return
+        except RuntimeError as e:
+            show_error(
+                self, tr("InstallBoards", "Error fetching Boards"), str(e)
+            )
+            return
+        for name, installed, core in boards:
+            text = tr("InstallBoards", "{name} ({core})").format(
+                name=name, core=core
+            )
+            if installed:
+                text += tr("InstallBoards", " [{0}]").format(
+                    tr("InstallBoards", "Installed")
+                )
+            item = QListWidgetItem(text)
+            self.boardsList.addItem(item)
+            self.cores_items.append((core, item))
+
+    def connectSignalsSlots(self) -> None:
+        self.installBtn.clicked.connect(self.install_selected)
+
+    def install_selected(self) -> None:
+        try:
+            selected = self.boardsList.selectedItems()[0]
+        except IndexError:
+            return
+        for core, item in self.cores_items:
+            if item == selected:
+                try:
+                    config.log("Installing core " + core)
+                    utils.install_core(core)
+                except utils.MissingArduinoCLIError:
+                    ask_install_arduino_cli(self)
+                    return
+                except RuntimeError as e:
+                    show_error(
+                        self, tr("InstallBoards", "Error installing"), str(e)
+                    )
+                    return
+        self.updateUi()
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:

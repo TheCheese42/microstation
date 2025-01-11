@@ -6,8 +6,16 @@ from urllib.request import urlretrieve
 from zipfile import ZipFile
 
 import serial.tools.list_ports_common
-from paths import LIB_DIR
 from serial.tools.list_ports import comports
+
+try:
+    from .paths import LIB_DIR
+except ImportError:
+    from paths import LIB_DIR  # type: ignore[no-redef]
+
+
+class MissingArduinoCLIError(FileNotFoundError):
+    pass
 
 
 def get_port_info(port_str: str) -> str | None:
@@ -83,7 +91,7 @@ def lookup_fqbn(port: str) -> str:
 
     :param port: The port the board is at
     :type port: str
-    :raises LookupError: arduino-cli is not installed
+    :raises MissingArduinoCLIError: arduino-cli is not installed
     :raises RuntimeError: arduino-cli returned non-zero exit code
     :raises RuntimeError: arduino-cli returned an unexpected JSON structure
     :raises RuntimeError: The specified port was not found
@@ -91,7 +99,7 @@ def lookup_fqbn(port: str) -> str:
     :rtype: str
     """
     if not is_arduino_cli_available():
-        raise LookupError("arduino-cli is not installed")
+        raise MissingArduinoCLIError("arduino-cli is not installed")
     status, output = getstatusoutput("arduino-cli board list --json")
     if status:
         raise RuntimeError(f"{output} (status code {status})")
@@ -111,8 +119,19 @@ def lookup_fqbn(port: str) -> str:
 
 
 def upload_code(port: str, path: str) -> None:
+    """
+    Upload a sketch to a Microcontroller.
+
+    :param port: The port of the Microcontroller
+    :type port: str
+    :param path: The path to the sketch folder
+    :type path: str
+    :raises MissingArduinoCLIError: arduino-cli is not installed
+    :raises RuntimeError: arduino-cli returned non-zero exit code when compiling
+    :raises RuntimeError: arduino-cli returned non-zero exit code when compiling
+    """
     if not is_arduino_cli_available():
-        raise LookupError("arduino-cli is not installed")
+        raise MissingArduinoCLIError("arduino-cli is not installed")
     fqbn = lookup_fqbn(port)
     status, output = getstatusoutput(
         f"arduino-cli compile --fqbn {fqbn} {path}"
@@ -131,6 +150,14 @@ def upload_code(port: str, path: str) -> None:
 
 
 def update_core_index() -> None:
+    """
+    Update the arduino-cli core index.
+
+    :raises MissingArduinoCLIError: arduino-cli is not installed
+    :raises RuntimeError: arduino-cli returned non-zero exit code
+    """
+    if not is_arduino_cli_available():
+        raise MissingArduinoCLIError("arduino-cli is not installed")
     status, output = getstatusoutput("arduino-cli core update-index")
     if status:
         raise RuntimeError(
@@ -139,6 +166,16 @@ def update_core_index() -> None:
 
 
 def install_core(core: str) -> None:
+    """
+    Install an arduino-cli core.
+
+    :param core: The core to install. Has the format `PACKAGER:ARCH`
+    :type core: str
+    :raises MissingArduinoCLIError: arduino-cli is not installed
+    :raises RuntimeError: arduino-cli returned a non-zero exit code
+    """
+    if not is_arduino_cli_available():
+        raise MissingArduinoCLIError("arduino-cli is not installed")
     update_core_index()
     status, output = getstatusoutput(f"arduino-cli core install {core}")
     if status:
@@ -147,28 +184,48 @@ def install_core(core: str) -> None:
         )
 
 
-def available_boards() -> Generator[tuple[str, str], None, None]:
+def available_cores() -> Generator[tuple[str, bool, str], None, None]:
     """
-    Get a list of available boards and their cores.
+    Fetch a list of available cores.
 
+    :raises MissingArduinoCLIError: arduino-cli is not installed
     :raises RuntimeError: arduino-cli returned a non-zero exit code.
-    :yield: A pair of a board name and its core.
+    :yield: A pair of a core's display name, wether it's installed and its id.
     :rtype: Generator[tuple[str, str], None, None]
     """
+    if not is_arduino_cli_available():
+        raise MissingArduinoCLIError("arduino-cli is not installed")
     update_core_index()
-    status, output = getstatusoutput("arduino-cli board listall --json")
+    status, output = getstatusoutput("arduino-cli core search --json")
     if status:
         raise RuntimeError(
-            f"Error fetching boards: {output} (status code {status})"
+            f"Error fetching cores: {output} (status code {status})"
         )
-    for board in json.loads(output)["boards"]:
-        name: str = board["name"]
-        fqbn: str = board["fqbn"]
-        core = ":".join(fqbn.split(":")[:2])
-        yield name, core
+    for platform in json.loads(output)["platforms"]:
+        try:
+            id: str = platform["id"]
+            latest_version = platform["latest_version"]
+            name = platform["releases"][latest_version]["name"]
+            try:
+                installed = platform["releases"][latest_version]["installed"]
+            except KeyError:
+                installed = False
+        except Exception:
+            raise RuntimeError(
+                "Unexpected JSON structure. Outdated arduino-cli?"
+            )
+        yield name, installed, id
 
 
 def update_lib_index() -> None:
+    """
+    Update the arduino-cli lib index.
+
+    :raises MissingArduinoCLIError: arduino-cli is not installed
+    :raises RuntimeError: arduino-cli returned non-zero exit code
+    """
+    if not is_arduino_cli_available():
+        raise MissingArduinoCLIError("arduino-cli is not installed")
     status, output = getstatusoutput("arduino-cli lib update-index")
     if status:
         raise RuntimeError(
@@ -177,6 +234,16 @@ def update_lib_index() -> None:
 
 
 def install_library(name: str) -> None:
+    """
+    Install an arduino-cli library.
+
+    :param name: The name of the library
+    :type name: str
+    :raises MissingArduinoCLIError: arduino-cli is not installed
+    :raises RuntimeError: arduino-cli returned non-zero exit code
+    """
+    if not is_arduino_cli_available():
+        raise MissingArduinoCLIError("arduino-cli is not installed")
     update_lib_index()
     status, output = getstatusoutput(f"arduino-cli lib install {name}")
     if status:
@@ -186,6 +253,14 @@ def install_library(name: str) -> None:
 
 
 def upgrade_libraries() -> None:
+    """
+    Upgrade all installed arduino-cli libraries.
+
+    :raises MissingArduinoCLIError: arduino-cli is not installed
+    :raises RuntimeError: arduino-cli returned non-zero exit code
+    """
+    if not is_arduino_cli_available():
+        raise MissingArduinoCLIError("arduino-cli is not installed")
     update_lib_index()
     status, output = getstatusoutput("arduino-cli lib upgrade")
     if status:
