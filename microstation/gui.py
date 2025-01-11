@@ -1062,10 +1062,10 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
             value = None
         elif what == 10:  # Scroll Up
             type = "scroll_up"
-            value = None
+            value = 1
         elif what == 11:  # Scroll Down
             type = "scroll_down"
-            value = None
+            value = 1
         elif what == 12:  # Type Text
             type = "type_text"
             value = ""
@@ -1121,7 +1121,11 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
         if action["type"] in (
             "press_key", "release_key", "delay", "type_text"
         ):
-            name = tr("MacroEditor", "{0}: {1}").format(name, action['value'])
+            name = tr("MacroEditor", "{0}: {1}").format(name, action["value"])
+        elif action["type"] in ("scroll_up", "scroll_down"):
+            name = tr(
+                "MacroEditor", "{0}: {1} times"
+            ).format(name, action["value"])
         elif action["type"] == "delay":
             name = tr("MacroEditor", "{0}ms").format(name)
         return name
@@ -1219,7 +1223,7 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
             self.runTimesRadio.setChecked(True)
             self.runTimesSpin.setValue(cur_macro["mode"])
         self.untilReleasedRadio.blockSignals(False)
-        self.runTimesSpin.blockSignals(False)
+        self.untilPressedRadio.blockSignals(False)
         self.runTimesRadio.blockSignals(False)
         self.runTimesSpin.blockSignals(False)
 
@@ -1235,9 +1239,11 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
         if cur_action is None:
             return
 
-        mode: Literal["delay", "key", "text"]
+        mode: Literal["delay", "scroll", "key", "text"]
         if cur_action["type"] == "delay":
             mode = "delay"
+        elif cur_action["type"] in ("scroll_up", "scroll_down"):
+            mode = "scroll"
         elif cur_action["type"] in ("press_key", "release_key"):
             mode = "key"
         elif cur_action["type"] == "type_text":
@@ -1356,6 +1362,14 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
             box.addWidget(combo)
             widget = QKeySequenceEdit(self.value)
             widget.keySequenceChanged.connect(self.key_value_changed)
+        elif self.mode == "scroll":
+            if not isinstance(self.value, int):
+                self.value = 0
+            widget = QSpinBox()
+            widget.setMinimum(1)
+            widget.setMaximum(9999)
+            widget.setValue(self.value)
+            widget.valueChanged.connect(self.spin_value_changed)
         else:
             if not isinstance(self.value, str):
                 self.value = ""
@@ -1369,7 +1383,6 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
         self.widget = widget
 
     def spin_value_changed(self, value: int) -> None:
-        print("spin")
         self.value = value
 
     def key_value_changed(self, value: QKeySequence) -> None:
