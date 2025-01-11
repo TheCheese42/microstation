@@ -1,21 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>InstallBoards</class>
- <widget class="QDialog" name="InstallBoards">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>374</width>
-    <height>407</height>
+    <width>400</width>
+    <height>390</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Install Additional Boards</string>
-  </property>
-  <property name="windowIcon">
-   <iconset resource="../icons/icons.qrc">
-    <normaloff>:/icons/hard-drive.svg</normaloff>:/icons/hard-drive.svg</iconset>
+   <string>Dialog</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item alignment="Qt::AlignHCenter">
@@ -48,13 +44,25 @@
    </item>
    <item>
     <widget class="QLabel" name="label_2">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>356</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="font">
       <font>
-       <pointsize>10</pointsize>
+       <pointsize>11</pointsize>
       </font>
      </property>
      <property name="text">
-      <string>By default, only a few Arduino boards are supported. If you need to install a different board, look up its Name in the field below and install the appropriate FQBN (right column)</string>
+      <string>By default, only a few Arduino boards are supported. If you need to install a different board, select it in the list below and &quot;Install Selected&quot;.</string>
      </property>
      <property name="wordWrap">
       <bool>true</bool>
@@ -78,43 +86,14 @@
     </spacer>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
-     <item>
-      <widget class="QLineEdit" name="searchEdit">
-       <property name="placeholderText">
-        <string>Enter a Board to search for</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="searchBtn">
-       <property name="text">
-        <string>Search</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QListWidget" name="boardsList"/>
    </item>
    <item>
-    <widget class="QTextBrowser" name="textBrowser"/>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
-     <item>
-      <widget class="QLineEdit" name="installEdit">
-       <property name="placeholderText">
-        <string>Enter a Board to install</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="installBtn">
-       <property name="text">
-        <string>Install</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QPushButton" name="installBtn">
+     <property name="text">
+      <string>Install Selected</string>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -128,14 +107,12 @@
    </item>
   </layout>
  </widget>
- <resources>
-  <include location="../icons/icons.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>InstallBoards</receiver>
+   <receiver>Dialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -151,7 +128,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>InstallBoards</receiver>
+   <receiver>Dialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">

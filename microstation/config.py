@@ -6,12 +6,12 @@ from typing import Any, Callable, Optional, Union
 
 try:
     from .model import Profile
-    from .paths import (CONFIG_DIR, CONFIG_PATH, LOGGER_PATH, MACROS_PATH,
-                        MC_DEBUG_LOG_PATH, PROFILES_PATH)
+    from .paths import (CONFIG_DIR, CONFIG_PATH, LIB_DIR, LOGGER_PATH,
+                        MACROS_PATH, MC_DEBUG_LOG_PATH, PROFILES_PATH)
 except ImportError:
     from model import Profile  # type: ignore[no-redef]
     from paths import (CONFIG_DIR, CONFIG_PATH,  # type: ignore[no-redef]
-                       LOGGER_PATH, MACROS_PATH, MC_DEBUG_LOG_PATH,
+                       LIB_DIR, LOGGER_PATH, MACROS_PATH, MC_DEBUG_LOG_PATH,
                        PROFILES_PATH)
 
 
@@ -40,6 +40,10 @@ def create_app_dir() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
+def create_lib_dir() -> None:
+    LIB_DIR.mkdir(parents=True, exist_ok=True)
+
+
 def trunc_log() -> None:
     with open(LOGGER_PATH, "w") as fp:
         fp.write("")
@@ -62,6 +66,7 @@ def ensure_macros_file() -> None:
 
 def init_config() -> None:
     create_app_dir()
+    create_lib_dir()
     trunc_log()
     ensure_profiles_file()
     ensure_macros_file()
