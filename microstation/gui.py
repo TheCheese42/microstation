@@ -1247,7 +1247,7 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
         translation = self._action_tr(cur_action["type"])  # type: ignore[arg-type]  # noqa
         dialog = MacroActionEditor(
             self, mode, translation, cur_action["value"]  # type: ignore[arg-type]  # noqa
-        )  # type: ignore[arg-type]  # noqa
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             value = dialog.value
             if mode == "key" and isinstance(value, str):
