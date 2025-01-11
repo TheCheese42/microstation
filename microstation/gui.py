@@ -243,6 +243,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def open_macros(self) -> None:
         dialog = MacroEditor(self, deepcopy(config.MACROS))
         if dialog.exec() == QDialog.DialogCode.Accepted:
+            dialog.reorder_actions()
             config.MACROS = dialog.macros
             config.save_macros(config.MACROS)
 
@@ -1165,11 +1166,25 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
         self.actionList.removeItemWidget(selected)
         self.macro_list_selection()
 
+    def reorder_actions(self) -> None:
+        if not self.cur_macro:
+            return
+        new_actions_items: list[tuple[config.MACRO_ACTION, QListWidgetItem]] = []
+        for item in [
+            self.actionList.item(x) for x in range(self.actionList.count())
+        ]:
+            for action_, item_ in self.actions_items:
+                if item == item_:
+                    new_actions_items.append((action_, item_))
+        self.actions_items = new_actions_items
+        self.cur_macro["actions"] = [i[0] for i in self.actions_items]
+
     def macro_list_selection(self) -> None:
         try:
             selected = self.macroList.selectedItems()[0]
         except IndexError:
             return
+        self.reorder_actions()
         cur_macro: config.MACRO | None = None
         for macro, item in self.macros_items:
             if selected == item:
