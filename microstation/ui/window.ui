@@ -191,7 +191,7 @@
     <property name="title">
      <string>Help</string>
     </property>
-    <addaction name="actionOpen_Wiki"/>
+    <addaction name="actionOpenWiki"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -446,7 +446,7 @@
     <string>Ctrl+Shift+L</string>
    </property>
   </action>
-  <action name="actionOpen_Wiki">
+  <action name="actionOpenWiki">
    <property name="icon">
     <iconset resource="../icons/icons.qrc">
      <normaloff>:/icons/book-open.svg</normaloff>:/icons/book-open.svg</iconset>

@@ -1,11 +1,14 @@
+import platform
 import sys
+import webbrowser
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
+from subprocess import getoutput
 from typing import Any, Literal
 
 from PyQt6.QtCore import QLocale, QModelIndex, Qt, QTimer, QTranslator
-from PyQt6.QtGui import QCloseEvent, QKeySequence, QMouseEvent
+from PyQt6.QtGui import QCloseEvent, QIcon, QKeySequence, QMouseEvent
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
                              QDoubleSpinBox, QFrame, QHBoxLayout,
                              QKeySequenceEdit, QLabel, QLineEdit, QListWidget,
@@ -25,7 +28,7 @@ try:
     from .icons import resource as _  # noqa: F811
     from .model import (MODS, Component, Profile, find_device, gen_profile_id,
                         validate_components)
-    from .paths import STYLES_PATH
+    from .paths import ICONS_PATH, STYLES_PATH
     from .ui.component_editor_ui import Ui_ComponentEditor
     from .ui.create_component_ui import Ui_CreateComponent
     from .ui.macro_action_editor_ui import Ui_MacroActionEditor
@@ -74,12 +77,13 @@ except ImportError:
     from actions.signals_slots import query_signals_slots  # type: ignore
     from daemon import Daemon  # type: ignore[no-redef]  # noqa: F401
     from enums import Issue, Tag  # type: ignore[no-redef]  # noqa: F401
+    from model import MODS  # type: ignore[no-redef]
     from model import Component  # type: ignore[no-redef]  # noqa: F401
     from model import Profile  # type: ignore[no-redef]  # noqa: F401
     from model import find_device  # type: ignore[no-redef]  # noqa: F401
     from model import gen_profile_id  # type: ignore[no-redef]  # noqa: F401
     from model import validate_components  # type: ignore[no-redef] # noqa F401
-    from model import MODS  # type: ignore[no-redef]
+    from paths import ICONS_PATH  # type: ignore[no-redef]  # noqa: F401
     from paths import STYLES_PATH  # type: ignore[no-redef]  # noqa: F401
     from utils import get_device_info  # type: ignore[no-redef]  # noqa: F401
 
@@ -197,6 +201,14 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                         )
                     )
 
+        action = self.menuHelp.addAction(
+            QIcon(str(ICONS_PATH / "music.svg")), "Need Help?"
+        )
+        action.triggered.connect(partial(
+            self.open_url,
+            "https://archive.org/details/undertaleoriginalsoundtrack/"
+        ))
+
     def connectSignalsSlots(self) -> None:
         self.actionRefresh_Ports.triggered.connect(self.update_ports)
         self.actionRestart_Daemon.triggered.connect(self.daemon.queue_restart)
@@ -211,6 +223,40 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.actionThemeDefault.triggered.connect(
             lambda: self.setStyleSheet("")
         )
+
+        self.actionOpenWiki.triggered.connect(partial(
+            self.open_url, "https://github.com/TheCheese42/microstation/wiki"
+        ))
+        self.actionOpenGitHub.triggered.connect(partial(
+            self.open_url, "https://github.com/TheCheese42/microstation"
+        ))
+
+    def open_url(self, url: str) -> None:
+        try:
+            webbrowser.WindowsDefault().open(url)  # type: ignore[attr-defined]
+        except Exception:
+            system = platform.system()
+            if system == "Windows":
+                getoutput(
+                    f"start {url}"
+                )
+            else:
+                getoutput(
+                    f"open {url}"
+                )
+
+    def open_file(self, path: str | Path) -> None:
+        try:
+            # Webbrowser module can well be used to open regular file as well.
+            # The system will use the default application, for the file type,
+            # not necessarily the webbrowser.
+            webbrowser.WindowsDefault().open(str(path))  # type: ignore[attr-defined]  # noqa
+        except Exception:
+            system = platform.system()
+            if system == "Windows":
+                getoutput(f"start {path}")
+            else:
+                getoutput(f"open {path}")
 
     def open_settings(self) -> None:
         dialog = Settings(self)
@@ -1173,7 +1219,9 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
     def reorder_actions(self) -> None:
         if not self.cur_macro:
             return
-        new_actions_items: list[tuple[config.MACRO_ACTION, QListWidgetItem]] = []
+        new_actions_items: list[
+            tuple[config.MACRO_ACTION, QListWidgetItem]
+        ] = []
         for item in [
             self.actionList.item(x) for x in range(self.actionList.count())
         ]:
