@@ -125,6 +125,7 @@ def ask_install_arduino_cli(parent: QWidget) -> None:
             "for you?"),
     ) == QMessageBox.StandardButton.Yes:
         try:
+            config.log("Installing arduino-cli")
             utils.install_arduino_cli()
         except RuntimeError as e:
             show_error(
@@ -254,7 +255,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.actionMacros.triggered.connect(self.open_macros)
 
         self.actionUploadCode.triggered.connect(self.upload_code)
-        self.actionInstallAdditionalBoards.triggered.connect(self.install_boards)
+        self.actionInstallAdditionalBoards.triggered.connect(
+            self.install_boards
+        )
 
         self.actionThemeDefault.triggered.connect(
             lambda: self.setStyleSheet("")
@@ -269,6 +272,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
     def upload_code(self) -> None:
         try:
+            config.log(f"Uploading sketch to port {self.daemon.port}")
             utils.upload_code(self.daemon.port, str(ARDUINO_SKETCH_PATH))
         except utils.MissingArduinoCLIError:
             ask_install_arduino_cli(self)
@@ -1520,6 +1524,7 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
         self.boardsList.clear()
         self.cores_items.clear()
         try:
+            config.log("Fetching available cores")
             boards = list(utils.available_cores())
         except utils.MissingArduinoCLIError:
             ask_install_arduino_cli(self)
@@ -1552,7 +1557,7 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
         for core, item in self.cores_items:
             if item == selected:
                 try:
-                    config.log("Installing core " + core)
+                    config.log(f"Installing core {core}")
                     utils.install_core(core)
                 except utils.MissingArduinoCLIError:
                     ask_install_arduino_cli(self)

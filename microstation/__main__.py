@@ -20,6 +20,7 @@ except ImportError:
 
 
 def main() -> None:
+    config.log_basic()
     config.init_config()
     daemon = Daemon(
         config.get_config_value("default_port"),

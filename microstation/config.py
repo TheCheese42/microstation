@@ -1,18 +1,21 @@
 import json
 import locale
 import platform
+from collections.abc import Callable
 from datetime import datetime
-from typing import Any, Callable, Optional, Union
+from typing import Any
 
 try:
     from .model import Profile
     from .paths import (CONFIG_DIR, CONFIG_PATH, LIB_DIR, LOGGER_PATH,
                         MACROS_PATH, MC_DEBUG_LOG_PATH, PROFILES_PATH)
+    from .version import version_string
 except ImportError:
     from model import Profile  # type: ignore[no-redef]
     from paths import (CONFIG_DIR, CONFIG_PATH,  # type: ignore[no-redef]
                        LIB_DIR, LOGGER_PATH, MACROS_PATH, MC_DEBUG_LOG_PATH,
                        PROFILES_PATH)
+    from version import version_string  # type: ignore[no-redef]
 
 
 DEFAULT_CONFIG = {
@@ -24,8 +27,8 @@ DEFAULT_CONFIG = {
     "hide_to_tray_startup": True,
 }
 
-type MACRO_ACTION = dict[str, Optional[Union[str, int]]]
-type MACRO = dict[str, Union[str, int, list[MACRO_ACTION]]]
+type MACRO_ACTION = dict[str, str | int | None]
+type MACRO = dict[str, str | int | list[MACRO_ACTION]]
 
 
 PROFILES: list[Profile] = []
@@ -95,7 +98,7 @@ def get_config_value(key: str) -> Any:
     return val
 
 
-def set_config_value(key: str, value: Union[str, int, float, bool]) -> None:
+def set_config_value(key: str, value: str | int | float | bool) -> None:
     config = _get_config()
     config[key] = value
     _overwrite_config(config)
@@ -139,3 +142,8 @@ class LogStream:
 
     def write(self, text: str) -> None:
         log(text, self.level)
+
+
+def log_basic() -> None:
+    log(f"Microstation - Version {version_string}")
+    log(f"Running on {platform.platform()}")
