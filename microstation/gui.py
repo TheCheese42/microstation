@@ -1612,7 +1612,7 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
             boards = list(utils.available_cores())
         except utils.MissingArduinoCLIError:
             ask_install_arduino_cli(self)
-            self.reject()
+            QTimer.singleShot(0, self.close)
             return
         except RuntimeError as e:
             show_error(
@@ -1646,7 +1646,7 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
                     utils.install_core(core)
                 except utils.MissingArduinoCLIError:
                     ask_install_arduino_cli(self)
-                    self.reject()
+                    QTimer.singleShot(0, self.close)
                     return
                 except RuntimeError as e:
                     show_error(
