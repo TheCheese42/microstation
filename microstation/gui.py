@@ -5,6 +5,7 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from subprocess import getoutput
+from threading import Thread
 from typing import Any, Literal
 
 from PyQt6.QtCore import QLocale, QModelIndex, Qt, QTimer, QTranslator
@@ -28,7 +29,9 @@ try:
     from .icons import resource as _  # noqa: F811
     from .model import (MODS, Component, Profile, find_device, gen_profile_id,
                         validate_components)
-    from .paths import ARDUINO_SKETCH_PATH, ICONS_PATH, STYLES_PATH
+    from .paths import (ARDUINO_SKETCH_PATH, ICONS_PATH, LOGGER_PATH,
+                        MC_DEBUG_LOG_PATH, SER_HISTORY_PATH, STYLES_PATH)
+    from .ui.about_ui import Ui_About
     from .ui.component_editor_ui import Ui_ComponentEditor
     from .ui.create_component_ui import Ui_CreateComponent
     from .ui.install_boards_ui import Ui_InstallBoards
@@ -40,6 +43,7 @@ try:
     from .ui.settings_ui import Ui_Settings
     from .ui.window_ui import Ui_Microstation
     from .utils import get_device_info
+    from .version import version_string
 except ImportError:
     import config  # type: ignore[no-redef]
     try:
@@ -59,6 +63,7 @@ except ImportError:
             "ERROR",
         )
     try:
+        from ui.about_ui import Ui_About
         from ui.component_editor_ui import Ui_ComponentEditor
         from ui.create_component_ui import Ui_CreateComponent
         from ui.install_boards_ui import Ui_InstallBoards
@@ -90,8 +95,12 @@ except ImportError:
     from model import validate_components  # type: ignore[no-redef]
     from paths import ARDUINO_SKETCH_PATH  # type: ignore[no-redef]
     from paths import ICONS_PATH  # type: ignore[no-redef]
+    from paths import LOGGER_PATH  # type: ignore[no-redef]
+    from paths import MC_DEBUG_LOG_PATH  # type: ignore[no-redef]
+    from paths import SER_HISTORY_PATH  # type: ignore[no-redef]
     from paths import STYLES_PATH  # type: ignore[no-redef]
     from utils import get_device_info  # type: ignore[no-redef]
+    from version import version_string  # type: ignore[no-redef]
 
 
 tr = QApplication.translate
@@ -264,6 +273,11 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         )
 
         self.actionSerialMonitor.triggered.connect(self.open_serial_monitor)
+        self.actionLog.triggered.connect(self.open_log)
+        self.actionSerialLog.triggered.connect(self.open_serial_log)
+        self.actionExportSerialHistory.triggered.connect(
+            self.export_serial_history
+        )
 
         self.actionThemeDefault.triggered.connect(
             lambda: self.setStyleSheet("")
@@ -272,6 +286,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.actionOpenWiki.triggered.connect(partial(
             self.open_url, "https://github.com/TheCheese42/microstation/wiki"
         ))
+        self.actionAboutMicrostation.triggered.connect(self.open_about)
         self.actionOpenGitHub.triggered.connect(partial(
             self.open_url, "https://github.com/TheCheese42/microstation"
         ))
@@ -301,7 +316,27 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.serial_monitor_from_index = dialog.from_index
         self.daemon.received_task_callbacks.remove(dialog.queue_new_task)
 
+    def open_log(self) -> None:
+        self.open_file(LOGGER_PATH)
+
+    def open_serial_log(self) -> None:
+        self.open_file(MC_DEBUG_LOG_PATH)
+
+    def export_serial_history(self) -> None:
+        SER_HISTORY_PATH.write_text(
+            "\n".join(self.daemon.full_history), "utf-8",
+        )
+        self.open_file(SER_HISTORY_PATH)
+
+    def open_about(self) -> None:
+        dialog = About(self)
+        dialog.exec()
+
     def open_url(self, url: str) -> None:
+        thread = Thread(target=self._open_url_threaded, args=(url,))
+        thread.start()
+
+    def _open_url_threaded(self, url: str) -> None:
         try:
             webbrowser.WindowsDefault().open(url)  # type: ignore[attr-defined]
         except Exception:
@@ -316,6 +351,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 )
 
     def open_file(self, path: str | Path) -> None:
+        thread = Thread(target=self._open_file_threaded, args=(path,))
+        thread.start()
+
+    def _open_file_threaded(self, path: str | Path) -> None:
         try:
             # Webbrowser module can well be used to open regular file as well.
             # The system will use the default application, for the file type,
@@ -1644,6 +1683,16 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
     def autoscroll_changed(self) -> None:
         state = self.autoscrollCheck.isChecked()
         config.set_config_value("autoscroll_serial_monitor", state)
+
+
+class About(QDialog, Ui_About):  # type: ignore[misc]
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+        self.versionDisplay.setText(version_string)
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:

@@ -20,8 +20,8 @@ except ImportError:
 
 
 def main() -> None:
-    config.log_basic()
     config.init_config()
+    config.log_basic()
     daemon = Daemon(
         config.get_config_value("default_port"),
         config.get_config_value("baudrate"),
