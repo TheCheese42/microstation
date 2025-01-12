@@ -113,6 +113,7 @@ class Daemon:
         self.paused = False
         self.restart_queued = False
         self.stop_queued = False
+        self.should_discard_incoming_data = False
 
         self.in_history: list[str] = []
         self.out_history: list[str] = []
@@ -139,14 +140,21 @@ class Daemon:
                 self.device = Device(self.port, self.baudrate)
             with self.device as device:
                 while True:
+                    await asyncio.sleep(0.01)
                     if self.paused:
-                        return
+                        continue
                     if self.restart_queued:
                         should_restart = True
                         break
                     if self.stop_queued:
                         should_stop = True
                         break
+                    if self.paused:
+                        continue
+                    if self.should_discard_incoming_data:
+                        self.should_discard_incoming_data = False
+                        while device.in_waiting():
+                            device.readline()
                     if device.in_waiting():
                         data = device.readline().strip()
                         self.in_history.append(data)
@@ -160,7 +168,6 @@ class Daemon:
                         self.out_history.append(data)
                         self.full_history.append(f"[OUT] {data}")
                         device.writeline(data)
-                    await asyncio.sleep(0.01)
         await asyncio.sleep(0.1)
 
     def queue_restart(self) -> None:
@@ -172,7 +179,11 @@ class Daemon:
     def set_paused(self, paused: bool) -> None:
         """
         Pauses or unpauses the daemon.
+        While paused, serial communication will be lost.
         """
+        if self.paused and not paused:
+            self.write_queue.clear()
+            self.should_discard_incoming_data = True
         self.paused = paused
 
 
