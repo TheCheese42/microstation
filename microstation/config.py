@@ -24,7 +24,8 @@ DEFAULT_CONFIG = {
     "default_port": "COM0" if platform.system() == "Windows" else "/dev/ttyS0",
     "baudrate": 9600,
     "auto_detect_profiles": True,
-    "hide_to_tray_startup": True,
+    "hide_to_tray_startup": False,
+    "autoscroll_serial_monitor": True,
 }
 
 type MACRO_ACTION = dict[str, str | int | None]
@@ -81,13 +82,30 @@ def init_config() -> None:
 
 def _get_config() -> dict[str, Any]:
     with open(CONFIG_PATH, "r", encoding="utf-8") as fp:
-        conf: dict[str, Any] = json.load(fp)
+        text = fp.read()
+    try:
+        conf: dict[str, Any] = json.loads(text)
+    except json.JSONDecodeError as e:
+        log(f"Failed to decode configuration file: {e}", "ERROR")
+        log("Creating new config")
+        conf = DEFAULT_CONFIG
+    for key in conf:
+        if key not in DEFAULT_CONFIG:
+            del conf[key]
+    for key in DEFAULT_CONFIG:
+        if key not in conf:
+            conf[key] = DEFAULT_CONFIG[key]
     return conf
 
 
 def _overwrite_config(config: dict[str, Any]) -> None:
+    try:
+        text = json.dumps(config)
+    except Exception as e:
+        log(f"Failed to dump configuration: {e}", "ERROR")
+        return
     with open(CONFIG_PATH, "w", encoding="utf-8") as fp:
-        json.dump(config, fp)
+        fp.write(text)
 
 
 def get_config_value(key: str) -> Any:

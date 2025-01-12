@@ -1,6 +1,7 @@
 import asyncio
 from collections import deque
 from typing import Self
+from collections.abc import Callable
 
 import serial
 
@@ -113,6 +114,12 @@ class Daemon:
         self.restart_queued = False
         self.stop_queued = False
 
+        self.in_history: list[str] = []
+        self.out_history: list[str] = []
+        self.full_history: list[str] = []
+
+        self.received_task_callbacks: list[Callable[[str], None]] = []
+
     def queue_write(self, data: str) -> None:
         if not self.running:
             log("Queued write while daemon wasn't running", "INFO")
@@ -141,11 +148,17 @@ class Daemon:
                         should_stop = True
                         break
                     if device.in_waiting():
-                        data = device.readline()
+                        data = device.readline().strip()
+                        self.in_history.append(data)
+                        self.full_history.append(f"[IN] {data}")
+                        for cb in self.received_task_callbacks:
+                            cb(data)
                         task = Task(data)
                         await task.run()
                     if self.write_queue:
                         data = self.write_queue.popleft()
+                        self.out_history.append(data)
+                        self.full_history.append(f"[OUT] {data}")
                         device.writeline(data)
                     await asyncio.sleep(0.01)
         await asyncio.sleep(0.1)

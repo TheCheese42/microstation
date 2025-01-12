@@ -157,7 +157,6 @@
     </property>
     <addaction name="actionUploadCode"/>
     <addaction name="actionInstallAdditionalBoards"/>
-    <addaction name="actionUpdateLibraries"/>
     <addaction name="separator"/>
     <addaction name="actionSettingsMC"/>
    </widget>

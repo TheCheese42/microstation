@@ -36,6 +36,7 @@ try:
     from .ui.macro_editor_ui import Ui_MacroEditor
     from .ui.profile_editor_ui import Ui_ProfileEditor
     from .ui.profiles_ui import Ui_Profiles
+    from .ui.serial_monitor_ui import Ui_SerialMonitor
     from .ui.settings_ui import Ui_Settings
     from .ui.window_ui import Ui_Microstation
     from .utils import get_device_info
@@ -65,6 +66,7 @@ except ImportError:
         from ui.macro_editor_ui import Ui_MacroEditor
         from ui.profile_editor_ui import Ui_ProfileEditor
         from ui.profiles_ui import Ui_Profiles
+        from ui.serial_monitor_ui import Ui_SerialMonitor
         from ui.settings_ui import Ui_Settings
         from ui.window_ui import Ui_Microstation
     except ImportError:
@@ -152,6 +154,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self._previous_comports: list[str] = []
         self._previous_profiles: list[str] = []
         self.selected_profile: Profile | None = None
+
+        self.serial_monitor_from_index = 0
 
         self.setupUi(self)
         self.connectSignalsSlots()
@@ -259,6 +263,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             self.install_boards
         )
 
+        self.actionSerialMonitor.triggered.connect(self.open_serial_monitor)
+
         self.actionThemeDefault.triggered.connect(
             lambda: self.setStyleSheet("")
         )
@@ -272,6 +278,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
     def upload_code(self) -> None:
         try:
+            config.log("Upgrading Arduino libraries")
+            utils.upgrade_libraries()
             config.log(f"Uploading sketch to port {self.daemon.port}")
             utils.upload_code(self.daemon.port, str(ARDUINO_SKETCH_PATH))
         except utils.MissingArduinoCLIError:
@@ -284,6 +292,14 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def install_boards(self) -> None:
         dialog = InstallBoards(self)
         dialog.exec()
+
+    def open_serial_monitor(self) -> None:
+        dialog = SerialMonitor(
+            self, self.daemon, self.serial_monitor_from_index
+        )
+        dialog.exec()
+        self.serial_monitor_from_index = dialog.from_index
+        self.daemon.received_task_callbacks.remove(dialog.queue_new_task)
 
     def open_url(self, url: str) -> None:
         try:
@@ -1568,6 +1584,66 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
                     )
                     return
         self.updateUi()
+
+
+class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
+    def __init__(
+        self, parent: QWidget, daemon: Daemon, from_index: int
+    ) -> None:
+        super().__init__(parent)
+        self.daemon = daemon
+        self.from_index = from_index
+        self.setupUi(self)
+        self.connectSignalsSlots()
+        self.daemon.received_task_callbacks.append(self.queue_new_task)
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+        self.update_text()
+
+    def update_text(self) -> None:
+        # history = self.daemon.in_history.copy()
+        # history.append("")
+        # self.textBrowser.setPlainText(
+        #     "\n".join(history[self.from_index:])
+        # )
+        try:
+            self.textBrowser.setPlainText(
+                "\n".join(self.daemon.in_history[self.from_index:])
+            )
+        except IndexError:
+            self.textBrowser.setPlainText("")
+        self.textBrowser.verticalScrollBar().setValue(
+            self.textBrowser.verticalScrollBar().maximum()
+        )
+
+    def queue_new_task(self, task: str) -> None:
+        QTimer.singleShot(0, partial(self.new_task, task))
+
+    def new_task(self, task: str) -> None:
+        self.textBrowser.append(task)
+        if config.get_config_value("autoscroll_serial_monitor"):
+            self.textBrowser.verticalScrollBar().setValue(
+                self.textBrowser.verticalScrollBar().maximum()
+            )
+
+    def connectSignalsSlots(self) -> None:
+        self.enterBtn.clicked.connect(self.send_command)
+        self.clearBtn.clicked.connect(self.clear_history)
+        self.autoscrollCheck.checkStateChanged.connect(self.autoscroll_changed)
+
+    def send_command(self) -> None:
+        text = self.cmdLine.text()
+        self.cmdLine.clear()
+        self.daemon.queue_write(text)
+
+    def clear_history(self) -> None:
+        self.from_index += len(self.textBrowser.toPlainText().splitlines()) + 1
+        self.update_text()
+
+    def autoscroll_changed(self) -> None:
+        state = self.autoscrollCheck.isChecked()
+        config.set_config_value("autoscroll_serial_monitor", state)
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:

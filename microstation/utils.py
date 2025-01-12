@@ -127,8 +127,10 @@ def upload_code(port: str, path: str) -> None:
     :param path: The path to the sketch folder
     :type path: str
     :raises MissingArduinoCLIError: arduino-cli is not installed
-    :raises RuntimeError: arduino-cli returned non-zero exit code when compiling
-    :raises RuntimeError: arduino-cli returned non-zero exit code when compiling
+    :raises RuntimeError: arduino-cli returned non-zero exit code when
+    compiling
+    :raises RuntimeError: arduino-cli returned non-zero exit code when
+    compiling
     """
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
