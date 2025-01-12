@@ -100,7 +100,7 @@ def lookup_fqbn(port: str) -> str:
     """
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
-    status, output = getstatusoutput("arduino-cli board list --json")
+    status, output = getstatusoutput(f"{arduino_cli_path()} board list --json")
     if status:
         raise RuntimeError(f"{output} (status code {status})")
     json_output: dict[str, list[
@@ -136,14 +136,14 @@ def upload_code(port: str, path: str) -> None:
         raise MissingArduinoCLIError("arduino-cli is not installed")
     fqbn = lookup_fqbn(port)
     status, output = getstatusoutput(
-        f"arduino-cli compile --fqbn {fqbn} {path}"
+        f"{arduino_cli_path()} compile --fqbn {fqbn} {path}"
     )
     if status:
         raise RuntimeError(
             f"Error compiling sketch: {output} (status code {status})"
         )
     status, output = getstatusoutput(
-        f"arduino-cli upload --port {port} --fqbn {fqbn} {path}"
+        f"{arduino_cli_path()} upload --port {port} --fqbn {fqbn} {path}"
     )
     if status:
         raise RuntimeError(
@@ -160,7 +160,7 @@ def update_core_index() -> None:
     """
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
-    status, output = getstatusoutput("arduino-cli core update-index")
+    status, output = getstatusoutput(f"{arduino_cli_path()} core update-index")
     if status:
         raise RuntimeError(
             f"Error updating core index: {output} (status code {status})"
@@ -179,7 +179,9 @@ def install_core(core: str) -> None:
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
     update_core_index()
-    status, output = getstatusoutput(f"arduino-cli core install {core}")
+    status, output = getstatusoutput(
+        f"{arduino_cli_path()} core install {core}"
+    )
     if status:
         raise RuntimeError(
             f"Error installing core: {output} (status code {status})"
@@ -198,7 +200,9 @@ def available_cores() -> Generator[tuple[str, bool, str], None, None]:
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
     update_core_index()
-    status, output = getstatusoutput("arduino-cli core search --json")
+    status, output = getstatusoutput(
+        f"{arduino_cli_path()} core search --json"
+    )
     if status:
         raise RuntimeError(
             f"Error fetching cores: {output} (status code {status})"
@@ -228,7 +232,7 @@ def update_lib_index() -> None:
     """
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
-    status, output = getstatusoutput("arduino-cli lib update-index")
+    status, output = getstatusoutput(f"{arduino_cli_path()} lib update-index")
     if status:
         raise RuntimeError(
             f"Error updating lib index: {output} (status code {status})"
@@ -247,7 +251,9 @@ def install_library(name: str) -> None:
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
     update_lib_index()
-    status, output = getstatusoutput(f"arduino-cli lib install {name}")
+    status, output = getstatusoutput(
+        f"{arduino_cli_path()} lib install {name}"
+    )
     if status:
         raise RuntimeError(
             f"Error installing library: {output} (status code {status})"
@@ -264,7 +270,7 @@ def upgrade_libraries() -> None:
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
     update_lib_index()
-    status, output = getstatusoutput("arduino-cli lib upgrade")
+    status, output = getstatusoutput(f"{arduino_cli_path()} lib upgrade")
     if status:
         raise RuntimeError(
             f"Error upgrading libraries: {output} (status code {status})"
