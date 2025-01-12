@@ -42,6 +42,7 @@ try:
     from .ui.serial_monitor_ui import Ui_SerialMonitor
     from .ui.settings_ui import Ui_Settings
     from .ui.window_ui import Ui_Microstation
+    from .ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
     from .utils import get_device_info
     from .version import version_string
 except ImportError:
@@ -71,6 +72,7 @@ except ImportError:
         from ui.macro_editor_ui import Ui_MacroEditor
         from ui.profile_editor_ui import Ui_ProfileEditor
         from ui.profiles_ui import Ui_Profiles
+        from ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
         from ui.serial_monitor_ui import Ui_SerialMonitor
         from ui.settings_ui import Ui_Settings
         from ui.window_ui import Ui_Microstation
@@ -271,6 +273,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.actionInstallAdditionalBoards.triggered.connect(
             self.install_boards
         )
+        self.actionSettingsMC.triggered.connect(self.open_mc_settings)
 
         self.actionSerialMonitor.triggered.connect(self.open_serial_monitor)
         self.actionLog.triggered.connect(self.open_log)
@@ -301,12 +304,38 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             ask_install_arduino_cli(self)
             return
         except RuntimeError as e:
-            show_error(self, tr("Microstation", "Error uploading"), str(e))
+            show_error(
+                self, tr("Microstation", "Error uploading"),
+                tr("Microstation", "Uploading failed: {0}"
+                   "\n\nMake sure your board is connected and the correct port"
+                   " is selected.").format(str(e))
+            )
             return
 
     def install_boards(self) -> None:
         dialog = InstallBoards(self)
         dialog.exec()
+
+    def open_mc_settings(self) -> None:
+        dialog = MicrocontrollerSettings(self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            something_changed = False
+            max_adc_value = dialog.adcSpin.value()
+            prev_max_adc_value = config.get_config_value("max_adc_value")
+            if max_adc_value != prev_max_adc_value:
+                something_changed = True
+            config.set_config_value("max_adc_value", max_adc_value)
+
+            if something_changed:
+                if show_question(
+                    self, tr("Microstation", "Upload updated code"),
+                    tr("Microstation", "Your settings were updated "
+                       "successfully. To apply them to your Microcontroller, "
+                       "you need to upload the newly generated code. You can "
+                       "do this here or under \"Microcontroller\" -> "
+                       "\"Upload Code\".\n\nUpload the new code?")
+                ) == QMessageBox.StandardButton.Yes:
+                    self.upload_code()
 
     def open_serial_monitor(self) -> None:
         dialog = SerialMonitor(
@@ -1623,6 +1652,37 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
                     )
                     return
         self.updateUi()
+
+
+class MicrocontrollerSettings(QDialog, Ui_MicrocontrollerSettings):  # type: ignore[misc]  # noqa
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+        self.connectSignalsSlots()
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+        self.adcSpin.setValue(config.get_config_value("max_adc_value"))
+
+    def connectSignalsSlots(self) -> None:
+        self.buttonBox.accepted.connect(self.accept_requested)
+
+    def accept_requested(self) -> None:
+        adc_value = self.adcSpin.value()
+        for i in range(21):
+            if adc_value == 2 ** i:
+                self.accept()
+                break
+        else:
+            show_error(
+                self, tr("MicrocontrollerSettings",  "Invalid ADC Value"),
+                tr("MicrocontrollerSettings", "You maximum ADC value is "
+                   "invalid. Only powers of 2 are allowed, else the input "
+                   "values of analog components will be wrong. "
+                   "Microcontrollers always use powers of 2 for their maximum "
+                   "ADC value.\n\nCommon example values:\n - 1024 (Most "
+                   "Arduino Boards)\n - 4096 (esp32 Boards)")
+            )
 
 
 class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]

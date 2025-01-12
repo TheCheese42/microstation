@@ -26,6 +26,7 @@ DEFAULT_CONFIG = {
     "auto_detect_profiles": True,
     "hide_to_tray_startup": False,
     "autoscroll_serial_monitor": True,
+    "max_adc_value": 1024,
 }
 
 type MACRO_ACTION = dict[str, str | int | None]
