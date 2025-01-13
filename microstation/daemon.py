@@ -139,6 +139,9 @@ class Daemon:
                 self.restart_queued = False
                 self.device = Device(self.port, self.baudrate)
             with self.device as device:
+                if not device.is_open():
+                    await asyncio.sleep(1)
+                    continue
                 while True:
                     await asyncio.sleep(0.01)
                     if self.paused:
