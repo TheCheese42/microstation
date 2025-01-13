@@ -1,6 +1,8 @@
 import platform
 import sys
+import time
 import webbrowser
+from collections.abc import Callable
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
@@ -37,12 +39,12 @@ try:
     from .ui.install_boards_ui import Ui_InstallBoards
     from .ui.macro_action_editor_ui import Ui_MacroActionEditor
     from .ui.macro_editor_ui import Ui_MacroEditor
+    from .ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
     from .ui.profile_editor_ui import Ui_ProfileEditor
     from .ui.profiles_ui import Ui_Profiles
     from .ui.serial_monitor_ui import Ui_SerialMonitor
     from .ui.settings_ui import Ui_Settings
     from .ui.window_ui import Ui_Microstation
-    from .ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
     from .utils import get_device_info
     from .version import version_string
 except ImportError:
@@ -70,9 +72,9 @@ except ImportError:
         from ui.install_boards_ui import Ui_InstallBoards
         from ui.macro_action_editor_ui import Ui_MacroActionEditor
         from ui.macro_editor_ui import Ui_MacroEditor
+        from ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
         from ui.profile_editor_ui import Ui_ProfileEditor
         from ui.profiles_ui import Ui_Profiles
-        from ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
         from ui.serial_monitor_ui import Ui_SerialMonitor
         from ui.settings_ui import Ui_Settings
         from ui.window_ui import Ui_Microstation
@@ -1597,16 +1599,22 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
     def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
         self.cores_items: list[tuple[str, QListWidgetItem]] = []
+        self.install_job_time = 0.0
+        self.install_job_thread: Thread | None = None
+        self.timer: QTimer | None = None
+        self.install_job_error_args: tuple[str, str] | None = None
         self.setupUi(self)
         self.connectSignalsSlots()
 
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
         self.updateUi()
+        if "breeze" in config.get_config_value("theme").lower():
+            self.progressHBox.insertSpacerItem(0, QSpacerItem(
+                20, 1, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed,
+            ))
 
     def updateUi(self) -> None:
-        self.boardsList.clear()
-        self.cores_items.clear()
         try:
             config.log("Fetching available cores")
             boards = list(utils.available_cores())
@@ -1618,7 +1626,10 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
             show_error(
                 self, tr("InstallBoards", "Error fetching Boards"), str(e)
             )
+            QTimer.singleShot(0, self.close)
             return
+        self.boardsList.clear()
+        self.cores_items.clear()
         for name, installed, core in boards:
             text = tr("InstallBoards", "{name} ({core})").format(
                 name=name, core=core
@@ -1632,13 +1643,14 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
             self.cores_items.append((core, item))
 
     def connectSignalsSlots(self) -> None:
-        self.installBtn.clicked.connect(self.install_selected)
+        self.installBtn.clicked.connect(partial(
+            self.start_install_job, self.install_selected
+        ))
+        self.removeBtn.clicked.connect(partial(
+            self.start_install_job, self.remove_selected
+        ))
 
-    def install_selected(self) -> None:
-        try:
-            selected = self.boardsList.selectedItems()[0]
-        except IndexError:
-            return
+    def install_selected(self, selected: QListWidgetItem) -> None:
         for core, item in self.cores_items:
             if item == selected:
                 try:
@@ -1649,12 +1661,72 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
                     QTimer.singleShot(0, self.close)
                     return
                 except RuntimeError as e:
-                    show_error(
-                        self, tr("InstallBoards", "Error installing"), str(e)
+                    self.install_job_error_args = (
+                        tr("InstallBoards", "Error installing"), str(e)
                     )
                     return
-        self.updateUi()
 
+    def remove_selected(self, selected: QListWidgetItem) -> None:
+        for core, item in self.cores_items:
+            if item == selected:
+                try:
+                    config.log(f"Removing core {core}")
+                    utils.remove_core(core)
+                except utils.MissingArduinoCLIError:
+                    ask_install_arduino_cli(self)
+                    QTimer.singleShot(0, self.close)
+                    return
+                except RuntimeError as e:
+                    self.install_job_error_args = (
+                        tr("InstallBoards", "Error removing"), str(e)
+                    )
+                    return
+
+    def start_install_job(
+        self, job: Callable[[QListWidgetItem], None]
+    ) -> None:
+        if self.install_job_thread:
+            show_error(
+                self, tr("InstallBoards", "Already installing"),
+                tr("InstallBoards", "An install or remove job is already "
+                   "running.")
+            )
+            return
+        try:
+            selected = self.boardsList.selectedItems()[0]
+        except IndexError:
+            return
+        self.install_job_thread = Thread(target=job, args=(selected,))
+        self.install_job_thread.start()
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.update_progress_bar)
+        self.timer.start(10)
+        self.install_job_time = time.time()
+
+    def update_progress_bar(self) -> None:
+        if (
+            not self.install_job_thread
+            or not self.install_job_thread.is_alive()
+        ):
+            self.install_job_thread = None
+            self.install_job_time = 0
+            if self.install_job_error_args:
+                show_error(self, *self.install_job_error_args)
+            self.install_job_error_args = None
+            if self.timer:
+                self.timer.stop()
+                self.timer = None
+            self.progressBar.setValue(0)
+            self.updateUi()
+            return
+        progress, ltr = utils.progress_bar_animation_snappy(
+            time.time() - self.install_job_time
+        )
+        self.progressBar.setLayoutDirection(
+            Qt.LayoutDirection.LeftToRight if ltr
+            else Qt.LayoutDirection.RightToLeft
+        )
+        self.progressBar.setValue(progress)
 
 class MicrocontrollerSettings(QDialog, Ui_MicrocontrollerSettings):  # type: ignore[misc]  # noqa
     def __init__(self, parent: QWidget) -> None:

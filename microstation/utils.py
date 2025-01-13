@@ -188,6 +188,27 @@ def install_core(core: str) -> None:
         )
 
 
+def remove_core(core: str) -> None:
+    """
+    Remove an arduino-cli core.
+
+    :param core: The core to remove. Has the format `PACKAGER:ARCH`
+    :type core: str
+    :raises MissingArduinoCLIError: arduino-cli is not installed
+    :raises RuntimeError: arduino-cli returned a non-zero exit code
+    """
+    if not is_arduino_cli_available():
+        raise MissingArduinoCLIError("arduino-cli is not installed")
+    update_core_index()
+    status, output = getstatusoutput(
+        f"{arduino_cli_path()} core uninstall {core}"
+    )
+    if status:
+        raise RuntimeError(
+            f"Error uninstalling core: {output} (status code {status})"
+        )
+
+
 def available_cores() -> Generator[tuple[str, bool, str], None, None]:
     """
     Fetch a list of available cores.
@@ -274,4 +295,50 @@ def upgrade_libraries() -> None:
     if status:
         raise RuntimeError(
             f"Error upgrading libraries: {output} (status code {status})"
+        )
+
+
+def progress_bar_animation_snappy(
+    time: float, time_per_loop: float = 1.8,
+) -> tuple[int, bool]:
+    """
+    Create a hopefully snappy animation for a progress bar to act like a
+    loading bar. Returns values from 0 to 1000. Goes infinitely.
+
+    :param time: Time since animation start in seconds
+    :type time: float
+    :return: The progress bar value and wether the direction should be
+    left-to-right (True) or right-to-left (False)
+    :rtype: tuple[int, bool]
+    """
+    def f(x: float) -> float:
+        result: float = 1.148177 ** x - 10
+        return result
+
+    time_withing_loop = time % time_per_loop
+    num_loops_past = time // time_per_loop
+    max_time_one_side = time_per_loop / 2
+    if num_loops_past % 2 == 0:
+        if time_withing_loop < time_per_loop / 2:
+            return (
+                round(f(time_withing_loop * (100 / max_time_one_side) / 2)),
+                True
+            )
+        time_from_half = time_withing_loop - max_time_one_side
+        time_withing_loop -= time_from_half * 2
+        return (
+            round(f(time_withing_loop * (100 / max_time_one_side) / 2)),
+            False
+        )
+    else:
+        if time_withing_loop < time_per_loop / 2:
+            return (
+                round(f(time_withing_loop * (100 / max_time_one_side) / 2)),
+                False
+            )
+        time_from_half = time_withing_loop - max_time_one_side
+        time_withing_loop -= time_from_half * 2
+        return (
+            round(f(time_withing_loop * (100 / max_time_one_side) / 2)),
+            True
         )
