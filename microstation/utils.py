@@ -299,7 +299,7 @@ def upgrade_libraries() -> None:
 
 
 def progress_bar_animation_snappy(
-    time: float, time_per_loop: float = 1.8,
+    time: float, time_per_loop: float = 1.4,
 ) -> tuple[int, bool]:
     """
     Create a hopefully snappy animation for a progress bar to act like a
@@ -312,8 +312,10 @@ def progress_bar_animation_snappy(
     :rtype: tuple[int, bool]
     """
     def f(x: float) -> float:
-        result: float = 1.148177 ** x - 10
-        return result
+        x = x / 1000 * 500 + 500
+        #result: float = 1.148177 ** x - 30
+        result: float = 1.007 ** x - 70
+        return result if result >= 0 else 0
 
     time_withing_loop = time % time_per_loop
     num_loops_past = time // time_per_loop
@@ -321,24 +323,24 @@ def progress_bar_animation_snappy(
     if num_loops_past % 2 == 0:
         if time_withing_loop < time_per_loop / 2:
             return (
-                round(f(time_withing_loop * (100 / max_time_one_side) / 2)),
+                round(f(time_withing_loop * (100 / max_time_one_side) * 10)),
                 True
             )
         time_from_half = time_withing_loop - max_time_one_side
         time_withing_loop -= time_from_half * 2
         return (
-            round(f(time_withing_loop * (100 / max_time_one_side) / 2)),
+            round(f(time_withing_loop * (100 / max_time_one_side) * 10)),
             False
         )
     else:
         if time_withing_loop < time_per_loop / 2:
             return (
-                round(f(time_withing_loop * (100 / max_time_one_side) / 2)),
+                round(f(time_withing_loop * (100 / max_time_one_side) * 10)),
                 False
             )
         time_from_half = time_withing_loop - max_time_one_side
         time_withing_loop -= time_from_half * 2
         return (
-            round(f(time_withing_loop * (100 / max_time_one_side) / 2)),
+            round(f(time_withing_loop * (100 / max_time_one_side) * 10)),
             True
         )
