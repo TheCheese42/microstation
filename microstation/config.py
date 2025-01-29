@@ -21,7 +21,10 @@ except ImportError:
 DEFAULT_CONFIG = {
     "theme": "",
     "locale": locale.getdefaultlocale()[0],
-    "default_port": "COM0" if platform.system() == "Windows" else "/dev/ttyS0",
+    "default_port": (
+        "COM0" if platform.system() == "Windows"
+        else "/dev/ttyACM0"
+    ),
     "baudrate": 9600,
     "auto_detect_profiles": True,
     "hide_to_tray_startup": False,

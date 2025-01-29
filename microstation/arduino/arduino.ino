@@ -5,12 +5,15 @@
   Microstation is licensed under GPLv3
 */
 
+const String VERSION = "0.1.0";
+
 // Constants are set at compile time by the Microstation client
-const String VERSION = "{version}";
 const String COMPILE_CORE = "{core}";
 const String COMPILE_BOARD = "{board}";
 const String COMPILE_MICROSTATION_VERSION = "{microstation_version}";
 const String COMPILE_ARDUINO_CLI_VERSION = "{arduino_cli_version}";
+const String COMPILE_ARDUINO_CLI_COMMIT = "{arduino_cli_commit}";
+const String COMPILE_ARDUINO_CLI_DATE = "{arduino_cli_date}";
 const int DIGITAL_JITTER_DELAY = {digital_jitter_delay};
 
 int digital_input_pins[200] = {};
@@ -44,7 +47,7 @@ void print_debug() {
   Serial.println(__FILE__);
   Serial.println("DEBUG [INFO] Compiled for core " + COMPILE_CORE + " and board " + COMPILE_BOARD);
   Serial.println("DEBUG [INFO] Compiled by Microstation v" + COMPILE_MICROSTATION_VERSION);
-  Serial.println("DEBUG [INFO] Using arduino-cli v" + COMPILE_ARDUINO_CLI_VERSION);
+  Serial.println("DEBUG [INFO] Using arduino-cli v" + COMPILE_ARDUINO_CLI_VERSION + " (Commit: " + COMPILE_ARDUINO_CLI_COMMIT + "; Date: " + COMPILE_ARDUINO_CLI_DATE + ")");
 }
 
 
@@ -57,15 +60,12 @@ void setup() {
 
 
 void loop() {
-  int time_start = millis();
   if (Serial.available() > 0) {
     String receivedData = Serial.readStringUntil('\n');
     exec_task(receivedData);
   }
   poll_digital_input();
   poll_analog_input();
-  Serial.print("TPS: ");
-  Serial.println(1 / (millis() - time_start));
 }
 
 

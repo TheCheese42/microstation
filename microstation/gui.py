@@ -31,8 +31,9 @@ try:
     from .icons import resource as _  # noqa: F811
     from .model import (MODS, Component, Profile, find_device, gen_profile_id,
                         validate_components)
-    from .paths import (ARDUINO_SKETCH_PATH, ICONS_PATH, LOGGER_PATH,
-                        MC_DEBUG_LOG_PATH, SER_HISTORY_PATH, STYLES_PATH)
+    from .paths import (ARDUINO_SKETCH_FORMATTED_PATH, ARDUINO_SKETCH_PATH,
+                        ICONS_PATH, LOGGER_PATH, MC_DEBUG_LOG_PATH,
+                        SER_HISTORY_PATH, STYLES_PATH)
     from .ui.about_ui import Ui_About
     from .ui.component_editor_ui import Ui_ComponentEditor
     from .ui.create_component_ui import Ui_CreateComponent
@@ -97,6 +98,7 @@ except ImportError:
     from model import find_device  # type: ignore[no-redef]
     from model import gen_profile_id  # type: ignore[no-redef]
     from model import validate_components  # type: ignore[no-redef]
+    from paths import ARDUINO_SKETCH_FORMATTED_PATH  # type: ignore[no-redef]
     from paths import ARDUINO_SKETCH_PATH  # type: ignore[no-redef]
     from paths import ICONS_PATH  # type: ignore[no-redef]
     from paths import LOGGER_PATH  # type: ignore[no-redef]
@@ -297,11 +299,30 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         ))
 
     def upload_code(self) -> None:
+        port = self.daemon.port
+        code = (ARDUINO_SKETCH_PATH / "arduino.ino").read_text("utf-8")
         try:
+            cli_information = utils.lookup_arduino_cli_information()
+            code = utils.format_string(
+                code,
+                core=utils.core_from_fqbn(fqbn := utils.lookup_fqbn(port)),
+                board=fqbn,
+                microstation_version=version_string,
+                arduino_cli_version=cli_information.version,
+                arduino_cli_commit=cli_information.commit,
+                arduino_cli_date=cli_information.date,
+                digital_jitter_delay="20",
+            )
+            ARDUINO_SKETCH_FORMATTED_PATH.mkdir(exist_ok=True)
+            with open(
+                ARDUINO_SKETCH_FORMATTED_PATH / "arduino.ino",
+                "w", encoding="utf-8"
+            ) as fp:
+                fp.write(code)
             config.log("Upgrading Arduino libraries")
             utils.upgrade_libraries()
-            config.log(f"Uploading sketch to port {self.daemon.port}")
-            utils.upload_code(self.daemon.port, str(ARDUINO_SKETCH_PATH))
+            config.log(f"Uploading sketch to port {port}")
+            utils.upload_code(port, str(ARDUINO_SKETCH_FORMATTED_PATH))
         except utils.MissingArduinoCLIError:
             ask_install_arduino_cli(self)
             return

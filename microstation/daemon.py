@@ -6,10 +6,10 @@ from collections.abc import Callable
 import serial
 
 try:
-    from .config import log
+    from .config import log, log_mc
     from .utils import get_port_info
 except ImportError:
-    from config import log  # type: ignore[no-redef]
+    from config import log, log_mc  # type: ignore[no-redef]
     from utils import get_port_info  # type: ignore[no-redef]
 
 
@@ -64,10 +64,16 @@ class Device:
         return data
 
     def read(self, size: int) -> str:
-        return self._read(size).decode("utf-8")
+        try:
+            return self._read(size).decode("utf-8")
+        except UnicodeDecodeError:
+            return ""
 
     def readline(self) -> str:
-        return self._readline().decode("utf-8")
+        try:
+            return self._readline().decode("utf-8")
+        except UnicodeDecodeError:
+            return ""
 
     def in_waiting(self) -> int:
         in_waiting = 0
@@ -195,4 +201,8 @@ class Task:
         self.data = data
 
     async def run(self) -> None:
-        print("Task:", self.data)
+        print("Task:", self.data)  # XXX
+        log(f"Received Task {self.data}", "DEBUG")
+
+        if self.data.startswith("DEBUG "):
+            log_mc(self.data.split(" ", 1)[1])

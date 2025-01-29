@@ -2,6 +2,7 @@ import json
 from collections.abc import Generator
 from platform import system
 from subprocess import getstatusoutput
+from typing import NamedTuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -16,6 +17,21 @@ except ImportError:
 
 class MissingArduinoCLIError(FileNotFoundError):
     pass
+
+
+def format_string(text: str, **kwargs: str) -> str:
+    """
+    Format a string by replacing {keys} with values from keyword arguments.
+    The {} are added automatically.
+
+    :param text: The text to format
+    :type text: str
+    :return: The formatted text
+    :rtype: str
+    """
+    for key, val in kwargs.items():
+        text = text.replace(f"{{{key}}}", val)
+    return text
 
 
 def get_port_info(port_str: str) -> str | None:
@@ -51,6 +67,41 @@ def arduino_cli_path() -> str | None:
 
 def is_arduino_cli_available() -> bool:
     return bool(arduino_cli_path())
+
+
+class ArduinoCLIVersionInformation(NamedTuple):
+    name: str
+    version: str
+    commit: str
+    date: str
+
+
+def lookup_arduino_cli_information() -> ArduinoCLIVersionInformation:
+    """
+    Lookup the version information of arduino-cli.
+
+    :raises MissingArduinoCLIError: arduino-cli is not installed
+    :raises RuntimeError: arduino-cli returned non-zero exit code
+    :raises RuntimeError: arduino-cli returned an unexpected JSON structure
+    :return: A named tuple containing all given information
+    :rtype: str
+    """
+    if not is_arduino_cli_available():
+        raise MissingArduinoCLIError("arduino-cli is not installed")
+    status, output = getstatusoutput(f"{arduino_cli_path()} version --json")
+    if status:
+        raise RuntimeError(f"{output} (status code {status})")
+    json_output: dict[str, str] = json.loads(output)
+    try:
+        name = json_output["Application"]
+        version = json_output["VersionString"]
+        commit = json_output["Commit"]
+        date = json_output["Date"]
+        return ArduinoCLIVersionInformation(name, version, commit, date)
+    except Exception:
+        raise RuntimeError(
+            "Unexpected JSON structure. Outdated arduino-cli?"
+        )
 
 
 def install_arduino_cli() -> None:
@@ -116,6 +167,10 @@ def lookup_fqbn(port: str) -> str:
                 "Unexpected JSON structure. Outdated arduino-cli?"
             )
     raise RuntimeError(f"Couldn't find port {port}")
+
+
+def core_from_fqbn(fqbn: str) -> str:
+    return ":".join(fqbn.split(":")[0:2])
 
 
 def upload_code(port: str, path: str) -> None:
@@ -313,7 +368,6 @@ def progress_bar_animation_snappy(
     """
     def f(x: float) -> float:
         x = x / 1000 * 500 + 500
-        #result: float = 1.148177 ** x - 30
         result: float = 1.007 ** x - 70
         return result if result >= 0 else 0
 
