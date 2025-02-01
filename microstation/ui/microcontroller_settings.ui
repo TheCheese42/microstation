@@ -65,6 +65,9 @@
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum Value the ADC (Analog-Digital Converter) of your Board.&lt;/p&gt;&lt;p&gt;Usually 1024 for Arduino Boards or 4096 for esp32 Boards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Max ADC Value:</string>
        </property>
@@ -72,6 +75,9 @@
      </item>
      <item>
       <widget class="QSpinBox" name="adcSpin">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Value must be a power of 2 (e.g. 1024)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="maximum">
         <number>1048576</number>
        </property>

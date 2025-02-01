@@ -76,14 +76,6 @@
       </item>
       <item>
        <property name="text">
-        <string>Switch</string>
-       </property>
-       <property name="toolTip">
-        <string notr="true">Switch</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
         <string>4x4 KeyPad</string>
        </property>
        <property name="toolTip">

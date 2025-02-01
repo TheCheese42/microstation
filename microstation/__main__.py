@@ -16,7 +16,7 @@ except ImportError:
     import config  # type: ignore[no-redef]
     from daemon import Daemon  # type: ignore[no-redef]
     from gui import launch_gui  # type: ignore[no-redef]
-    from paths import CONFIG_PATH, ICONS_PATH  # type: ignore[no-redef]
+    from paths import ICONS_PATH  # type: ignore[no-redef]
 
 
 def main() -> None:

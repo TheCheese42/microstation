@@ -69,6 +69,9 @@
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>The Port that will be checked for connected Microcontrollers when starting Microstation</string>
+       </property>
        <property name="text">
         <string>Default Port:</string>
        </property>
@@ -76,6 +79,9 @@
      </item>
      <item>
       <widget class="QComboBox" name="portBox">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select a Port that will be checked for connected Microcontrollers when starting Microstation&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <item>
         <property name="text">
          <string>None</string>
@@ -113,6 +119,9 @@
          <pointsize>12</pointsize>
         </font>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Baudrate used for communicating with the Microcontroller.&lt;/p&gt;&lt;p&gt;Commonly 9600&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string>Baudrate:</string>
        </property>
@@ -120,6 +129,9 @@
      </item>
      <item>
       <widget class="QSpinBox" name="baudrateSpin">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Baudrate used for communicating with the Microcontroller.&lt;/p&gt;&lt;p&gt;Commonly 9600&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="minimum">
         <number>300</number>
        </property>
@@ -141,6 +153,9 @@
        <pointsize>12</pointsize>
       </font>
      </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allow Profiles to activate themselves when configured to do so.&lt;/p&gt;&lt;p&gt;You can also change this value in the Main Window.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
      <property name="text">
       <string>Auto detect Profiles</string>
      </property>
@@ -153,6 +168,9 @@
        <family>Liberation Sans</family>
        <pointsize>12</pointsize>
       </font>
+     </property>
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Microstation will hide in the System Tray after Startup.&lt;/p&gt;&lt;p&gt;You can click the Tray Icon to bring it back.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="text">
       <string>Hide to System Tray on Startup</string>

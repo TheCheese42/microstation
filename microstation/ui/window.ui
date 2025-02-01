@@ -43,6 +43,9 @@
           <pointsize>20</pointsize>
          </font>
         </property>
+        <property name="toolTip">
+         <string>The Name of the Board</string>
+        </property>
         <property name="text">
          <string>Not connected</string>
         </property>
@@ -74,6 +77,9 @@
           <pointsize>16</pointsize>
          </font>
         </property>
+        <property name="toolTip">
+         <string>Select a Profile</string>
+        </property>
        </widget>
       </item>
      </layout>
@@ -102,6 +108,9 @@
          <font>
           <pointsize>16</pointsize>
          </font>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allow Profiles to activate themselves when configured to do so.&lt;/p&gt;&lt;p&gt;If you want to manually activate a Profile you can deactivate this to avoid switching back to a different Profile automatically.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Auto Activate Profiles</string>
@@ -138,13 +147,22 @@
     <property name="title">
      <string>File</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <widget class="QMenu" name="menuPort">
+     <property name="toolTip">
+      <string>Select the Port a Microcontroller is connected to</string>
+     </property>
      <property name="title">
       <string>Port</string>
      </property>
      <property name="icon">
       <iconset resource="../icons/icons.qrc">
        <normaloff>:/icons/hard-drive.svg</normaloff>:/icons/hard-drive.svg</iconset>
+     </property>
+     <property name="toolTipsVisible">
+      <bool>true</bool>
      </property>
     </widget>
     <addaction name="menuPort"/>
@@ -160,13 +178,19 @@
     <property name="title">
      <string>Edit</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <addaction name="actionSettings"/>
     <addaction name="actionProfiles"/>
     <addaction name="actionMacros"/>
    </widget>
-   <widget class="QMenu" name="menuTool">
+   <widget class="QMenu" name="menuTools">
     <property name="title">
      <string>Tools</string>
+    </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
     </property>
     <addaction name="actionSerialMonitor"/>
     <addaction name="separator"/>
@@ -178,6 +202,9 @@
     <property name="title">
      <string>About</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <addaction name="actionAboutMicrostation"/>
     <addaction name="separator"/>
     <addaction name="actionOpenGitHub"/>
@@ -186,6 +213,9 @@
    <widget class="QMenu" name="menuMicrocontroller">
     <property name="title">
      <string>Microcontroller</string>
+    </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
     </property>
     <addaction name="actionUploadCode"/>
     <addaction name="actionInstallAdditionalBoards"/>
@@ -196,7 +226,13 @@
     <property name="title">
      <string>View</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <widget class="QMenu" name="menuLanguage">
+     <property name="toolTip">
+      <string>Select a Language</string>
+     </property>
      <property name="title">
       <string>Language</string>
      </property>
@@ -206,6 +242,9 @@
      </property>
     </widget>
     <widget class="QMenu" name="menuTheme">
+     <property name="toolTip">
+      <string>Select a Theme</string>
+     </property>
      <property name="title">
       <string>Theme</string>
      </property>
@@ -222,12 +261,15 @@
     <property name="title">
      <string>Help</string>
     </property>
+    <property name="toolTipsVisible">
+     <bool>true</bool>
+    </property>
     <addaction name="actionOpenWiki"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuMicrocontroller"/>
-   <addaction name="menuTool"/>
+   <addaction name="menuTools"/>
    <addaction name="menuView"/>
    <addaction name="menuHelp"/>
    <addaction name="menuAbout"/>
@@ -240,6 +282,9 @@
    </property>
    <property name="text">
     <string>Refresh Ports</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Force a Refresh of the Port list.&lt;/p&gt;&lt;p&gt;Shouldn't be required as the list refreshes itself.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="shortcut">
     <string>F5</string>
@@ -259,6 +304,9 @@
    <property name="text">
     <string>Pause</string>
    </property>
+   <property name="toolTip">
+    <string>Stop all communication with the Microcontroller until unpaused</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Shift+P</string>
    </property>
@@ -270,6 +318,9 @@
    </property>
    <property name="text">
     <string>Run in Background</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Hide the Application in the System Tray.&lt;/p&gt;&lt;p&gt;You can always bring it back by clicking the Tray Icon.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Q</string>
@@ -283,6 +334,9 @@
    <property name="text">
     <string>Quit</string>
    </property>
+   <property name="toolTip">
+    <string>Completely Quit Microstation</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Shift+Q</string>
    </property>
@@ -294,6 +348,9 @@
    </property>
    <property name="text">
     <string>Settings...</string>
+   </property>
+   <property name="toolTip">
+    <string>General Settings for Microstation</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+S</string>
@@ -307,6 +364,9 @@
    <property name="text">
     <string>Profiles...</string>
    </property>
+   <property name="toolTip">
+    <string>Manages your Profiles</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+P</string>
    </property>
@@ -318,6 +378,9 @@
    </property>
    <property name="text">
     <string>Serial Monitor...</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the Serial Monitor for Debugging purposes</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+Shift+M</string>
@@ -331,6 +394,9 @@
    <property name="text">
     <string>Open Log</string>
    </property>
+   <property name="toolTip">
+    <string>Open the Log File in your default Text Editor</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Alt+L</string>
    </property>
@@ -342,6 +408,9 @@
    </property>
    <property name="text">
     <string>Microcontroller Log</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the Microcontroller Debug Log File in your default Text Editor</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Alt+Shift+L</string>
@@ -355,6 +424,9 @@
    <property name="text">
     <string>Export Serial History</string>
    </property>
+   <property name="toolTip">
+    <string>Export the entire Serial communication History and open it in your default Text Editor</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Alt+H</string>
    </property>
@@ -367,6 +439,9 @@
    <property name="text">
     <string>About Microstation</string>
    </property>
+   <property name="toolTip">
+    <string>About Microstation</string>
+   </property>
   </action>
   <action name="actionOpenGitHub">
    <property name="icon">
@@ -375,6 +450,9 @@
    </property>
    <property name="text">
     <string>Open GitHub</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the Microstation GitHub Page</string>
    </property>
   </action>
   <action name="actionOpenSourceLicenses">
@@ -385,6 +463,9 @@
    <property name="text">
     <string>Open Source Licenses</string>
    </property>
+   <property name="toolTip">
+    <string>View the Open Source Licenses</string>
+   </property>
   </action>
   <action name="actionMacros">
    <property name="icon">
@@ -393,6 +474,9 @@
    </property>
    <property name="text">
     <string>Macros...</string>
+   </property>
+   <property name="toolTip">
+    <string>Manage your Macros</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+M</string>
@@ -406,6 +490,9 @@
    <property name="text">
     <string>Upload Code</string>
    </property>
+   <property name="toolTip">
+    <string>Upload the Microstation Code to the Microcontroller</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Shift+U</string>
    </property>
@@ -418,6 +505,9 @@
    <property name="text">
     <string>Settings...</string>
    </property>
+   <property name="toolTip">
+    <string>Specific Settings for connected Microcontrollers</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Shift+S</string>
    </property>
@@ -425,6 +515,9 @@
   <action name="actionThemeDefault">
    <property name="text">
     <string>Default</string>
+   </property>
+   <property name="toolTip">
+    <string>The Default Theme that should adapt to your Operating System</string>
    </property>
   </action>
   <action name="actionThemeBreezeDark">
@@ -449,6 +542,9 @@
    <property name="text">
     <string>Restart Daemon</string>
    </property>
+   <property name="toolTip">
+    <string>Restart the Daemon communicating with the Microcontroller in case something goes wrong</string>
+   </property>
    <property name="shortcut">
     <string>Ctrl+Shift+R</string>
    </property>
@@ -460,6 +556,9 @@
    </property>
    <property name="text">
     <string>Install Additional Boards...</string>
+   </property>
+   <property name="toolTip">
+    <string>Add Support for additional Microcontrollers</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+Shift+I</string>
@@ -484,6 +583,9 @@
    </property>
    <property name="text">
     <string>Open Wiki</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the Microstation Wiki Page</string>
    </property>
   </action>
  </widget>

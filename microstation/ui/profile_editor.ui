@@ -135,6 +135,9 @@
               <pointsize>14</pointsize>
              </font>
             </property>
+            <property name="toolTip">
+             <string>Enter a Name for your Profile</string>
+            </property>
             <property name="text">
              <string/>
             </property>
@@ -177,6 +180,9 @@
                 <pointsize>14</pointsize>
                </font>
               </property>
+              <property name="toolTip">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select under which conditions the Profile should activate itself.&lt;/p&gt;&lt;p&gt;Off means that the Profile will never try to activate itself.&lt;/p&gt;&lt;p&gt;Default means that the Profile will always activate automatically, useful for creating a default Profile.&lt;/p&gt;&lt;p&gt;Default Profiles should have a low Priority to allow others to take precedence.&lt;/p&gt;&lt;p&gt;See also &amp;quot;Auto activate priority&amp;quot;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
              </widget>
             </item>
            </layout>
@@ -215,6 +221,9 @@
              <font>
               <pointsize>14</pointsize>
              </font>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When there are multiple Profiles that want to activate themselves at the same time, this can be used to regulate which one takes predence.&lt;/p&gt;&lt;p&gt;The Profile with the highest Priority will win.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -339,6 +348,9 @@
              <font>
               <pointsize>14</pointsize>
              </font>
+            </property>
+            <property name="toolTip">
+             <string>Select a new Component</string>
             </property>
             <property name="text">
              <string>New</string>

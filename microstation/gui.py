@@ -45,8 +45,8 @@ try:
     from .ui.profiles_ui import Ui_Profiles
     from .ui.serial_monitor_ui import Ui_SerialMonitor
     from .ui.settings_ui import Ui_Settings
-    from .ui.window_ui import Ui_Microstation
     from .ui.welcome_ui import Ui_Welcome
+    from .ui.window_ui import Ui_Microstation
     from .utils import get_device_info
     from .version import version_string
 except ImportError:
@@ -360,6 +360,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 arduino_cli_commit=cli_information.commit,
                 arduino_cli_date=cli_information.date,
                 digital_jitter_delay="20",
+                baudrate=config.get_config_value("baudrate"),
             )
             ARDUINO_SKETCH_FORMATTED_PATH.mkdir(exist_ok=True)
             with open(
@@ -490,7 +491,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             )
 
     def open_profiles(self) -> None:
-        dialog = Profiles(self, deepcopy(config.PROFILES), self.daemon)
+        dialog = Profiles(
+            self, deepcopy(config.PROFILES), self.daemon, self.open_wiki
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             config.PROFILES = dialog.profiles
             config.save_profiles(config.PROFILES)
@@ -576,11 +579,16 @@ class Settings(QDialog, Ui_Settings):  # type: ignore[misc]
 
 class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
     def __init__(
-        self, parent: QWidget, profiles: list[Profile], daemon: Daemon
+        self,
+        parent: QWidget,
+        profiles: list[Profile],
+        daemon: Daemon,
+        open_wiki_method: Callable[[], None],
     ) -> None:
         super().__init__(parent)
         self.profiles = profiles
         self.daemon = daemon
+        self.open_wiki_method = open_wiki_method
         self.setupUi(self)
         self.connectSignalsSlots()
 
@@ -631,7 +639,10 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
         except IndexError:
             return
         dialog = ProfileEditor(
-            self, deepcopy(self.profiles[selected]), self.daemon
+            self,
+            deepcopy(self.profiles[selected]),
+            self.daemon,
+            self.open_wiki_method,
         )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             new_profile = dialog.profile
@@ -645,17 +656,27 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
             selected = self.profilesList.selectedIndexes()[0].row()
         except IndexError:
             return
-        self.profiles.pop(selected)
-        self.updateProfileList()
+        if show_question(
+            self, tr("Profiles", "Delete Profile"),
+            tr("Profiles", "Do you really want to delete the Profile "
+               f"{self.profilesList.currentItem().text()}?")
+        ) == QMessageBox.StandardButton.Yes:
+            self.profiles.pop(selected)
+            self.updateProfileList()
 
 
 class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
     def __init__(
-        self, parent: QWidget, profile: Profile, daemon: Daemon
+        self,
+        parent: QWidget,
+        profile: Profile,
+        daemon: Daemon,
+        open_wiki_method: Callable[[], None],
     ) -> None:
         super().__init__(parent)
         self.profile = profile
         self.daemon = daemon
+        self.open_wiki_method = open_wiki_method
         self.activate_config_widgets: list[QWidget] = []
         self.component_widgets: list[QWidget] = []
         self.setupUi(self)
@@ -722,12 +743,18 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                 1, 1, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed,
             ))
             edit_btn = QPushButton(tr("ProfileEditor", "Edit"))
+            edit_btn.setToolTip(
+                tr("ProfileEditor", "Edit this Component")
+            )
             edit_font = edit_btn.font()
             edit_font.setPointSize(14)
             edit_btn.setFont(edit_font)
             edit_btn.clicked.connect(partial(self.edit_component, i))
             rest_hbox.addWidget(edit_btn)
             delete_btn = QPushButton(tr("ProfileEditor", "Delete"))
+            delete_btn.setToolTip(
+                tr("ProfileEditor", "Delete this Component")
+            )
             delete_font = delete_btn.font()
             delete_font.setPointSize(14)
             delete_btn.setFont(delete_font)
@@ -746,7 +773,9 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
 
     def edit_component(self, index: int) -> None:
         component = self.profile.components[index]
-        dialog = ComponentEditor(self, deepcopy(component))
+        dialog = ComponentEditor(
+            self, deepcopy(component), self.open_wiki_method
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.profile.components[index] = dialog.component
         self.setup_components()
@@ -898,11 +927,18 @@ class ComponentCreator(QDialog, Ui_CreateComponent):  # type: ignore[misc]
 
 
 class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
-    def __init__(self, parent: QWidget, component: Component) -> None:
+    def __init__(
+        self,
+        parent: QWidget,
+        component: Component,
+        open_wiki_method: Callable[[], None],
+    ) -> None:
         super().__init__(parent)
         self.component = component
+        self.open_wiki_method = open_wiki_method
         self.entry_hbox: dict[str, QHBoxLayout] = {}
         self.setupUi(self)
+        self.connectSignalsSlots()
 
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
@@ -1095,6 +1131,9 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         rb.addSpacerItem(QSpacerItem(
             1, 1, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed,
         ))
+
+    def connectSignalsSlots(self) -> None:
+        self.wikiBtn.clicked.connect(self.open_wiki_method)
 
     def pin_changed(self, name: str, num: int) -> None:
         self.component.pins[name] = num
@@ -1614,6 +1653,9 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
             if not isinstance(self.value, int):
                 self.value = 0
             widget = QSpinBox()
+            widget.setToolTip(
+                tr("MacroActionEditor", "Set a delay in Milliseconds")
+            )
             widget.setMinimum(0)
             widget.setMaximum(999999)
             widget.setValue(self.value)
@@ -1622,6 +1664,10 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
             if not isinstance(self.value, str):
                 self.value = ""
             combo = QComboBox()
+            combo.setToolTip(
+                tr("MacroActionEditor",
+                   "Select a modifier key or define a custom shortcut")
+            )
             combo.addItem(tr("MacroActionEditor", "Shortcut"))
             for mod in MODS:
                 combo.addItem(mod)
@@ -1632,11 +1678,17 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
             self.mod_combo = combo
             box.addWidget(combo)
             widget = QKeySequenceEdit(self.value)
+            widget.setToolTip(
+                tr("MacroActionEditor", "Select a Key Sequence to execute")
+            )
             widget.keySequenceChanged.connect(self.key_value_changed)
         elif self.mode == "scroll":
             if not isinstance(self.value, int):
                 self.value = 0
             widget = QSpinBox()
+            widget.setToolTip(
+                tr("MacroActionEditor", "Set the number of scrolls to perform")
+            )
             widget.setMinimum(1)
             widget.setMaximum(9999)
             widget.setValue(self.value)
@@ -1645,6 +1697,9 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
             if not isinstance(self.value, str):
                 self.value = ""
             widget = QLineEdit(self.value)
+            widget.setToolTip(
+                tr("MacroActionEditor", "Set a text to type")
+            )
             widget.textChanged.connect(self.text_value_changed)
 
         font = widget.font()
@@ -1856,11 +1911,6 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
         self.update_text()
 
     def update_text(self) -> None:
-        # history = self.daemon.in_history.copy()
-        # history.append("")
-        # self.textBrowser.setPlainText(
-        #     "\n".join(history[self.from_index:])
-        # )
         try:
             self.textBrowser.setPlainText(
                 "\n".join(self.daemon.in_history[self.from_index:])
@@ -1888,6 +1938,8 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
 
     def send_command(self) -> None:
         text = self.cmdLine.text()
+        if not text:
+            return
         self.cmdLine.clear()
         self.daemon.queue_write(text)
 

@@ -15,6 +15,7 @@ const String COMPILE_ARDUINO_CLI_VERSION = "{arduino_cli_version}";
 const String COMPILE_ARDUINO_CLI_COMMIT = "{arduino_cli_commit}";
 const String COMPILE_ARDUINO_CLI_DATE = "{arduino_cli_date}";
 const int DIGITAL_JITTER_DELAY = {digital_jitter_delay};
+const int BAUDRATE = {baudrate};
 
 int digital_input_pins[200] = {};
 int digital_input_states[200] = {};
@@ -52,7 +53,7 @@ void print_debug() {
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(BAUDRATE);
   delay(1000);  // Prevent first bytes to be lost
   print_debug();
   Serial.println("PINS_REQUESTED");

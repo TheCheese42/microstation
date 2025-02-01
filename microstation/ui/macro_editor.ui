@@ -67,12 +67,19 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
-        <widget class="QListWidget" name="macroList"/>
+        <widget class="QListWidget" name="macroList">
+         <property name="toolTip">
+          <string>Click on a Macro to select it!</string>
+         </property>
+        </widget>
        </item>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <widget class="QPushButton" name="newBtn">
+           <property name="toolTip">
+            <string>Create a new, empty Macro</string>
+           </property>
            <property name="text">
             <string>New</string>
            </property>
@@ -80,6 +87,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="deleteBtn">
+           <property name="toolTip">
+            <string>Delete the selected Macro</string>
+           </property>
            <property name="text">
             <string>Delete</string>
            </property>
@@ -152,6 +162,9 @@
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
             <widget class="QListWidget" name="actionList">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Click on an Action to select it!&lt;/p&gt;&lt;p&gt;Click somewhere else to deselect.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="dragDropMode">
               <enum>QAbstractItemView::InternalMove</enum>
              </property>
@@ -161,6 +174,9 @@
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <item>
               <widget class="QPushButton" name="editActionBtn">
+               <property name="toolTip">
+                <string>Edit this Action</string>
+               </property>
                <property name="text">
                 <string>Edit</string>
                </property>
@@ -168,6 +184,9 @@
              </item>
              <item>
               <widget class="QPushButton" name="deleteActionBtn">
+               <property name="toolTip">
+                <string>Delete this Action</string>
+               </property>
                <property name="text">
                 <string>Delete</string>
                </property>
@@ -208,6 +227,9 @@
                <pointsize>14</pointsize>
               </font>
              </property>
+             <property name="toolTip">
+              <string>This specifies how a Macro will run</string>
+             </property>
              <property name="text">
               <string>Mode</string>
              </property>
@@ -215,6 +237,9 @@
            </item>
            <item>
             <widget class="QRadioButton" name="untilReleasedRadio">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Macro will run until a digital Input device changes its state.&lt;/p&gt;&lt;p&gt;Often this is a Button or Switch.&lt;/p&gt;&lt;p&gt;As soon as the Button is released, this Macro will stop running.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Run until released</string>
              </property>
@@ -222,6 +247,9 @@
            </item>
            <item>
             <widget class="QRadioButton" name="untilPressedRadio">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Macro will run until a digital Input device changes its state twice.&lt;/p&gt;&lt;p&gt;Often this is a Button or Switch.&lt;/p&gt;&lt;p&gt;As soon as the Button is pressed for the second time, this Macro will stop running.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Run until pressed again</string>
              </property>
@@ -231,6 +259,9 @@
             <layout class="QVBoxLayout" name="verticalLayout_3">
              <item>
               <widget class="QRadioButton" name="runTimesRadio">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Macro will run a certain number of times.&lt;/p&gt;&lt;p&gt;There is no way to cancel the Macro unless Microstation is closed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
                 <string>Run n times</string>
                </property>
@@ -255,7 +286,11 @@
                 </spacer>
                </item>
                <item>
-                <widget class="QSpinBox" name="runTimesSpin"/>
+                <widget class="QSpinBox" name="runTimesSpin">
+                 <property name="toolTip">
+                  <string>The Number of Times the Macro will run</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </item>
@@ -290,6 +325,9 @@
              </item>
              <item>
               <widget class="QComboBox" name="actionCombo">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add a new Action to the Macro.&lt;/p&gt;&lt;p&gt;The Action will be added before the currently selected Action. If no Action is selected, it will be appended to the end.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="placeholderText">
                 <string>Select Action</string>
                </property>

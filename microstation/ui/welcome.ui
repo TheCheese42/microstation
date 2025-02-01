@@ -84,6 +84,9 @@
        <pointsize>10</pointsize>
       </font>
      </property>
+     <property name="toolTip">
+      <string>The message will never ever be shown to you again</string>
+     </property>
      <property name="text">
       <string>Don't show this message again</string>
      </property>
@@ -93,6 +96,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QPushButton" name="wikiBtn">
+       <property name="toolTip">
+        <string>Opens the Wiki. Suprise surprise!</string>
+       </property>
        <property name="text">
         <string>Open Wiki</string>
        </property>
@@ -100,6 +106,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="githubBtn">
+       <property name="toolTip">
+        <string>This indeed opens Microstation's GitHub Page</string>
+       </property>
        <property name="text">
         <string>Open GitHub</string>
        </property>
@@ -107,6 +116,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="closeBtn">
+       <property name="toolTip">
+        <string>Yes, the hover thing actually works, just like this close Button</string>
+       </property>
        <property name="text">
         <string>Close</string>
        </property>

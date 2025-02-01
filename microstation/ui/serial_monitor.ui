@@ -32,6 +32,9 @@
    </item>
    <item>
     <widget class="QTextBrowser" name="textBrowser">
+     <property name="toolTip">
+      <string>Everything that is received by a connected Microcontroller at the selected Port will be displayed here.</string>
+     </property>
      <property name="placeholderText">
       <string>Serial input will be displayed here...</string>
      </property>
@@ -41,6 +44,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
       <widget class="QLineEdit" name="cmdLine">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Enter a command and press &amp;quot;Send&amp;quot; to send it to the Microcontroller.&lt;/p&gt;&lt;p&gt;Only do this if you really know what you're doing!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
         <string/>
        </property>
@@ -57,8 +63,11 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Send the command to the Microcontroller.&lt;/p&gt;&lt;p&gt;Only do this if you really know what you're doing!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
        <property name="text">
-        <string>Enter</string>
+        <string>Send</string>
        </property>
       </widget>
      </item>
@@ -68,6 +77,9 @@
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <item>
       <widget class="QCheckBox" name="autoscrollCheck">
+       <property name="toolTip">
+        <string>Automatically scroll to the bottom when new messages come in.</string>
+       </property>
        <property name="text">
         <string>Autoscroll</string>
        </property>
@@ -80,6 +92,9 @@
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Clear the entire Serial Monitor.&lt;/p&gt;&lt;p&gt;This will persist if you close and reopen the Monitor.&lt;/p&gt;&lt;p&gt;You can still see previous content by exporting the Serial History in the Main Window.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Clear</string>

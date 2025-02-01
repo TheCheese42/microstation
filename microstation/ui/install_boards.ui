@@ -90,7 +90,11 @@
     </spacer>
    </item>
    <item>
-    <widget class="QListWidget" name="boardsList"/>
+    <widget class="QListWidget" name="boardsList">
+     <property name="toolTip">
+      <string>Click on a board to select it!</string>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
