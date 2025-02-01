@@ -107,7 +107,7 @@ class SerialDevice:
         try:
             self.ser.open()
         except Exception:
-            log(f"Failed to open device {self}", "ERROR")
+            log(f"Failed to open device {self}", "INFO")
         return self
 
     def __exit__(
@@ -122,7 +122,6 @@ class Daemon:
         self.baudrate = baudrate
         self.device = SerialDevice(port, baudrate)
         self.write_queue: deque[str] = deque()
-        self.running = False
         self.paused = False
         self.restart_queued = False
         self.stop_queued = False
@@ -131,6 +130,7 @@ class Daemon:
         self.profile: Profile | None = self.load_auto_activate_profile()
         self.auto_activation_enabled = get_config_value("auto_detect_profiles")
         self.auto_activate_checker_running = False
+        self.profile_changed = False
 
         self.in_history: list[str] = []
         self.out_history: list[str] = []
@@ -160,35 +160,41 @@ class Daemon:
             out = None
         return out
 
-    def set_profile(self, profile: Profile) -> None:
+    def set_profile(self, profile: Profile | None) -> None:
         self.profile = profile
+        self.profile_changed = True
 
     def set_auto_activation_enabled(self, enabled: bool) -> None:
         self.auto_activation_enabled = enabled
 
     def queue_write(self, data: str) -> None:
-        if not self.running:
+        if self.paused:
             log(f"Queued write while daemon wasn't running ({data})", "INFO")
             return
         self.write_queue.append(data)
 
     async def run(self) -> None:
         if not self.auto_activate_checker_running:
-            await self.check_for_auto_activate_updates_periodically()
+            asyncio.get_event_loop().create_task(
+                self.check_for_auto_activate_updates_periodically()
+            )
             self.auto_activate_checker_running = True
         should_stop = False
         should_restart = False
         while True:
             self.write_queue.clear()
             if should_stop:
+                log("Stopping Daemon")
                 break
             elif should_restart:
+                log("Restarting Daemon")
                 should_restart = False
                 self.restart_queued = False
                 self.device = SerialDevice(self.port, self.baudrate)
             with self.device as device:
                 if not device.is_open():
                     await asyncio.sleep(1)
+                    should_restart = True
                     continue
                 while True:
                     await asyncio.sleep(0.01)
@@ -204,6 +210,11 @@ class Daemon:
                         self.should_discard_incoming_data = False
                         while device.in_waiting():
                             device.readline()
+                    if self.profile_changed:
+                        self.profile_changed = False
+                        await Task(
+                            "PINS_REQUESTED", self.queue_write, self.profile
+                        ).run()
                     if device.in_waiting():
                         data = device.readline().strip()
                         self.in_history.append(data)
@@ -261,3 +272,20 @@ class Task:
             log_mc(self.data.split(" ", 1)[1])
         if self.data.startswith("PINS_REQUESTED"):
             self.write_method("RESET_PINS")
+            if not self.profile:
+                return
+            for component in self.profile.components:
+                for pin_name, pin_num in component.pins.items():
+                    for device_pin in component.device.PINS:
+                        if device_pin.name == pin_name:
+                            io_type = (
+                                "INP" if device_pin.io_type == "input"
+                                else "OUT"
+                            )
+                            type_ = (
+                                "DIG" if device_pin.type == "digital"
+                                else "ANA"
+                            )
+                            self.write_method(
+                                f"PINMODE {type_} {io_type} {pin_num:0>3}"
+                            )
