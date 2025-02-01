@@ -184,7 +184,18 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.mcDisplay.setText(
             self.daemon.device.name or tr("Microstation", "Not connected")
         )
+
+        self.selected_profile = self.daemon.profile
+
+        # To avoid disabling autodetection
+        self.profileCombo.blockSignals(True)
         self.update_profile_combo()
+        if (
+            self.selected_profile
+            and self.profileCombo.currentText() != self.selected_profile.name
+        ):
+            self.profileCombo.setCurrentText(self.selected_profile.name)
+        self.profileCombo.blockSignals(False)
 
     def update_profile_combo(self) -> None:
         profiles = [profile.name for profile in config.PROFILES]
@@ -192,6 +203,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             return
         self._previous_profiles = profiles
         self.profileCombo.clear()
+        self.profileCombo.addItem(tr("Microstation", "No Profile"))
         for i, profile in enumerate(profiles):
             self.profileCombo.addItem(profile)
             if self.selected_profile and self.selected_profile.name == profile:
@@ -223,6 +235,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         super().setupUi(window)
         self.setWindowTitle(tr("Microstation", "Microstation"))
         self.update_ports(True)
+        self.autoActivateCheck.setChecked(
+            config.get_config_value("auto_detect_profiles")
+        )
         self.refresh()
 
         # Language menu
@@ -297,6 +312,22 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.actionOpenGitHub.triggered.connect(partial(
             self.open_url, "https://github.com/TheCheese42/microstation"
         ))
+
+        self.profileCombo.currentTextChanged.connect(self.set_profile)
+        self.autoActivateCheck.stateChanged.connect(self.set_auto_activate)
+
+    def set_profile(self, profile_name: str) -> None:
+        for profile in config.PROFILES:
+            if profile.name == profile_name:
+                self.daemon.set_profile(profile)
+                config.set_config_value("auto_detect_profiles", False)
+                self.autoActivateCheck.setChecked(False)
+                self.daemon.set_auto_activation_enabled(False)
+                break
+
+    def set_auto_activate(self, state: bool) -> None:
+        self.daemon.set_auto_activation_enabled(state)
+        config.set_config_value("auto_detect_profiles", state)
 
     def upload_code(self) -> None:
         port = self.daemon.port
@@ -434,6 +465,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             config.set_config_value(
                 "auto_detect_profiles", auto_detect_profiles
             )
+            self.autoActivateCheck.setChecked(auto_detect_profiles)
+            self.daemon.set_auto_activation_enabled(auto_detect_profiles)
             hide_to_tray_startup = dialog.hideToTrayCheck.isChecked()
             config.set_config_value(
                 "hide_to_tray_startup", hide_to_tray_startup
@@ -549,6 +582,16 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
         self.copyBtn.clicked.connect(self.copy_profile)
         self.editBtn.clicked.connect(self.edit_profile)
         self.deleteBtn.clicked.connect(self.delete_profile)
+        self.buttonBox.accepted.connect(self.accept_received)
+
+    def accept_received(self) -> None:
+        names = [p.name for p in self.profiles]
+        if len(names) != len(set(names)):
+            show_error(self, tr("Profiles", "Duplicated Profile Names"),
+                       tr("Profiles", "Some Profiles have the same name. "
+                          "All Profiles deserve their own names, don't they?"))
+        else:
+            self.accept()
 
     def add_profile(self) -> None:
         self.profiles.append(Profile.new(

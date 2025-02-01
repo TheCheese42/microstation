@@ -1,7 +1,9 @@
 # from abc import ABCMeta, abstractmethod
+from collections.abc import Callable
 from functools import cache
 from importlib import import_module
-from typing import Any, Callable, Literal
+from typing import Any, Literal
+
 from pynput.keyboard import Key
 
 from .enums import Issue, Tag
@@ -117,7 +119,9 @@ class Profile:
                 "Profile auto_activate_manager must be either str or bool, "
                 f"got {type(self.auto_activate_priority)}"
             )
-        self.auto_activate_params: dict[str, Any] = {}
+        self.auto_activate_params: dict[str, Any] = data[
+            "auto_activate_params"
+        ]
         if not (isinstance(self.auto_activate_params, dict)):
             raise ValueError(
                 "Profile auto_activate_params must be a dict, got "

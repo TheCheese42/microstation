@@ -70,7 +70,7 @@ void loop() {
 
 
 void exec_task(String task) {
-  if (task.startsWith("RESETPINS")) {
+  if (task.startsWith("RESET_PINS")) {
     digital_input_count = 0;
     analog_input_count = 0;
     digital_output_count = 0;

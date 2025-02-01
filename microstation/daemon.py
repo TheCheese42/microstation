@@ -1,19 +1,26 @@
 import asyncio
 from collections import deque
-from typing import Self
 from collections.abc import Callable
+from typing import Self
 
 import serial
 
 try:
-    from .config import log, log_mc
+    from . import config
+    from .actions import auto_activaters
+    from .config import get_config_value, log, log_mc
+    from .model import Profile
     from .utils import get_port_info
 except ImportError:
+    import config  # type: ignore[no-redef]  # noqa
+    from actions import auto_activaters  # type: ignore[no-redef]
+    from config import get_config_value  # type: ignore[no-redef]
     from config import log, log_mc  # type: ignore[no-redef]
+    from model import Profile  # type: ignore[no-redef]
     from utils import get_port_info  # type: ignore[no-redef]
 
 
-class Device:
+class SerialDevice:
     """
     Represents a Serial Device. Should be used as context manager.
     """
@@ -113,7 +120,7 @@ class Daemon:
     def __init__(self, port: str, baudrate: int) -> None:
         self.port = port
         self.baudrate = baudrate
-        self.device = Device(port, baudrate)
+        self.device = SerialDevice(port, baudrate)
         self.write_queue: deque[str] = deque()
         self.running = False
         self.paused = False
@@ -121,19 +128,54 @@ class Daemon:
         self.stop_queued = False
         self.should_discard_incoming_data = False
 
+        self.profile: Profile | None = self.load_auto_activate_profile()
+        self.auto_activation_enabled = get_config_value("auto_detect_profiles")
+        self.auto_activate_checker_running = False
+
         self.in_history: list[str] = []
         self.out_history: list[str] = []
         self.full_history: list[str] = []
 
         self.received_task_callbacks: list[Callable[[str], None]] = []
 
+    def load_auto_activate_profile(self) -> Profile | None:
+        true_profiles: list[Profile] = []
+        for profile in config.PROFILES:
+            if profile.auto_activate_manager is True:
+                true_profiles.append(profile)
+            elif profile.auto_activate_manager:
+                for name, activater in auto_activaters.ACTIVATERS.items():
+                    if name == profile.auto_activate_manager:
+                        callab = activater[0]
+                        params = profile.auto_activate_params
+                        if callab(**params):
+                            true_profiles.append(profile)
+        try:
+            out = sorted(
+                true_profiles,
+                key=lambda p: p.auto_activate_priority,
+                reverse=True,
+            )[0]
+        except IndexError:
+            out = None
+        return out
+
+    def set_profile(self, profile: Profile) -> None:
+        self.profile = profile
+
+    def set_auto_activation_enabled(self, enabled: bool) -> None:
+        self.auto_activation_enabled = enabled
+
     def queue_write(self, data: str) -> None:
         if not self.running:
-            log("Queued write while daemon wasn't running", "INFO")
+            log(f"Queued write while daemon wasn't running ({data})", "INFO")
             return
         self.write_queue.append(data)
 
     async def run(self) -> None:
+        if not self.auto_activate_checker_running:
+            await self.check_for_auto_activate_updates_periodically()
+            self.auto_activate_checker_running = True
         should_stop = False
         should_restart = False
         while True:
@@ -143,7 +185,7 @@ class Daemon:
             elif should_restart:
                 should_restart = False
                 self.restart_queued = False
-                self.device = Device(self.port, self.baudrate)
+                self.device = SerialDevice(self.port, self.baudrate)
             with self.device as device:
                 if not device.is_open():
                     await asyncio.sleep(1)
@@ -158,8 +200,6 @@ class Daemon:
                     if self.stop_queued:
                         should_stop = True
                         break
-                    if self.paused:
-                        continue
                     if self.should_discard_incoming_data:
                         self.should_discard_incoming_data = False
                         while device.in_waiting():
@@ -170,7 +210,7 @@ class Daemon:
                         self.full_history.append(f"[IN] {data}")
                         for cb in self.received_task_callbacks:
                             cb(data)
-                        task = Task(data)
+                        task = Task(data, self.queue_write, self.profile)
                         await task.run()
                     if self.write_queue:
                         data = self.write_queue.popleft()
@@ -195,10 +235,23 @@ class Daemon:
             self.should_discard_incoming_data = True
         self.paused = paused
 
+    async def check_for_auto_activate_updates_periodically(self) -> None:
+        while True:
+            await asyncio.sleep(0.5)
+            if self.auto_activation_enabled:
+                self.profile = self.load_auto_activate_profile()
+
 
 class Task:
-    def __init__(self, data: str) -> None:
+    def __init__(
+        self,
+        data: str,
+        write_method: Callable[[str], None],
+        profile: Profile | None,
+    ) -> None:
         self.data = data
+        self.write_method = write_method
+        self.profile = profile
 
     async def run(self) -> None:
         print("Task:", self.data)  # XXX
@@ -206,3 +259,5 @@ class Task:
 
         if self.data.startswith("DEBUG "):
             log_mc(self.data.split(" ", 1)[1])
+        if self.data.startswith("PINS_REQUESTED"):
+            self.write_method("RESET_PINS")
