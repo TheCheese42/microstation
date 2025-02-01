@@ -19,6 +19,7 @@ except ImportError:
 
 
 DEFAULT_CONFIG = {
+    "show_welcome_popup": True,
     "theme": "",
     "locale": locale.getdefaultlocale()[0],
     "default_port": (

@@ -46,6 +46,7 @@ try:
     from .ui.serial_monitor_ui import Ui_SerialMonitor
     from .ui.settings_ui import Ui_Settings
     from .ui.window_ui import Ui_Microstation
+    from .ui.welcome_ui import Ui_Welcome
     from .utils import get_device_info
     from .version import version_string
 except ImportError:
@@ -175,6 +176,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.setupUi(self)
         self.connectSignalsSlots()
 
+        if config.get_config_value("show_welcome_popup"):
+            self.open_welcome()
+
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh)
         self.timer.start(500)
@@ -188,14 +192,14 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.selected_profile = self.daemon.profile
 
         # To avoid disabling autodetection
-        self.profileCombo.blockSignals(True)
+        is_autodetection_enabled = self.autoActivateCheck.isChecked()
         self.update_profile_combo()
         if (
             self.selected_profile
             and self.profileCombo.currentText() != self.selected_profile.name
         ):
             self.profileCombo.setCurrentText(self.selected_profile.name)
-        self.profileCombo.blockSignals(False)
+        self.autoActivateCheck.setChecked(is_autodetection_enabled)
 
     def update_profile_combo(self) -> None:
         profiles = [profile.name for profile in config.PROFILES]
@@ -305,16 +309,25 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             lambda: self.setStyleSheet("")
         )
 
-        self.actionOpenWiki.triggered.connect(partial(
-            self.open_url, "https://github.com/TheCheese42/microstation/wiki"
-        ))
+        self.actionOpenWiki.triggered.connect(self.open_wiki)
         self.actionAboutMicrostation.triggered.connect(self.open_about)
-        self.actionOpenGitHub.triggered.connect(partial(
-            self.open_url, "https://github.com/TheCheese42/microstation"
-        ))
+        self.actionOpenGitHub.triggered.connect(self.open_github)
 
         self.profileCombo.currentTextChanged.connect(self.set_profile)
         self.autoActivateCheck.stateChanged.connect(self.set_auto_activate)
+
+    def open_welcome(self) -> None:
+        dialog = Welcome(self, self.open_wiki, self.open_github)
+        dialog.exec()
+        config.set_config_value(
+            "show_welcome_popup", not dialog.doNotShowAgainCheck.isChecked()
+        )
+
+    def open_wiki(self) -> None:
+        self.open_url("https://github.com/TheCheese42/microstation/wiki")
+
+    def open_github(self) -> None:
+        self.open_url("https://github.com/TheCheese42/microstation")
 
     def set_profile(self, profile_name: str) -> None:
         for profile in config.PROFILES:
@@ -324,6 +337,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 self.autoActivateCheck.setChecked(False)
                 self.daemon.set_auto_activation_enabled(False)
                 break
+        else:
+            self.daemon.set_profile(None)
+            self.autoActivateCheck.setChecked(False)
+            self.daemon.set_auto_activation_enabled(False)
 
     def set_auto_activate(self, state: bool) -> None:
         self.daemon.set_auto_activation_enabled(state)
@@ -1891,6 +1908,30 @@ class About(QDialog, Ui_About):  # type: ignore[misc]
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
         self.versionDisplay.setText(version_string)
+
+
+class Welcome(QDialog, Ui_Welcome):  # type: ignore[misc]
+    def __init__(
+        self, parent: QWidget,
+        open_wiki_method: Callable[[], None],
+        open_github_method: Callable[[], None],
+    ) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+        self.open_wiki_method = open_wiki_method
+        self.open_github_method = open_github_method
+        self.connectSignalsSlots()
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+        self.doNotShowAgainCheck.setChecked(
+            not config.get_config_value("show_welcome_popup")
+        )
+
+    def connectSignalsSlots(self) -> None:
+        self.wikiBtn.clicked.connect(self.open_wiki_method)
+        self.githubBtn.clicked.connect(self.open_github_method)
+        self.closeBtn.clicked.connect(self.close)
 
 
 def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:
