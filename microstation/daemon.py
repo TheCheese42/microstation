@@ -212,9 +212,9 @@ class Daemon:
                             device.readline()
                     if self.profile_changed:
                         self.profile_changed = False
-                        await Task(
+                        asyncio.get_event_loop().create_task(Task(
                             "PINS_REQUESTED", self.queue_write, self.profile
-                        ).run()
+                        ).run())
                     if device.in_waiting():
                         data = device.readline().strip()
                         self.in_history.append(data)
@@ -222,7 +222,7 @@ class Daemon:
                         for cb in self.received_task_callbacks:
                             cb(data)
                         task = Task(data, self.queue_write, self.profile)
-                        await task.run()
+                        asyncio.get_event_loop().create_task(task.run())
                     if self.write_queue:
                         data = self.write_queue.popleft()
                         self.out_history.append(data)
@@ -265,12 +265,20 @@ class Task:
         self.profile = profile
 
     async def run(self) -> None:
+        if not self.data:
+            return
         print("Task:", self.data)  # XXX
         log(f"Received Task {self.data}", "DEBUG")
+        try:
+            await self.exec_task()
+        except Exception as e:
+            log(f"Task raised an exception ({self.data}): "
+                f"{e.__class__.__name__}: {e}")
 
+    async def exec_task(self) -> None:
         if self.data.startswith("DEBUG "):
             log_mc(self.data.split(" ", 1)[1])
-        if self.data.startswith("PINS_REQUESTED"):
+        elif self.data.startswith("PINS_REQUESTED"):
             self.write_method("RESET_PINS")
             if not self.profile:
                 return
@@ -289,3 +297,14 @@ class Task:
                             self.write_method(
                                 f"PINMODE {type_} {io_type} {pin_num:0>3}"
                             )
+        elif self.data.startswith("EVENT"):
+            if not self.profile:
+                return
+            _, type_, pin, state = self.data.split()
+            for component in self.profile.components:
+                if int(pin) in component.pins.values():
+                    if type_ == "DIGITAL":
+                        component.emit_signal("digital_changed", state)
+                        component.emit_signal("digital_high", state)
+                    elif type_ == "ANALOG":
+                        component.emit_signal("analog_changed", state)

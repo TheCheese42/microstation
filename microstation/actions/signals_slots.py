@@ -110,8 +110,11 @@ class LogToFile(SignalOrSlot):
             print(value)
         else:
             if (p := Path(self.path)).exists():
-                with open(p, mode="a", encoding="utf-8") as fp:
-                    fp.write(str(value) + "\n")
+                mode = "a"
+            else:
+                mode = "w"
+            with open(p, mode=mode, encoding="utf-8") as fp:
+                fp.write(str(value) + "\n")
 
 
 # ##################### SLOTS ######################

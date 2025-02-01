@@ -6,6 +6,7 @@ from typing import NamedTuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
+import pyudev._errors
 import serial.tools.list_ports_common
 from serial.tools.list_ports import comports
 
@@ -42,19 +43,23 @@ def get_port_info(port_str: str) -> str | None:
 
 
 def get_device_info(port: serial.tools.list_ports_common.ListPortInfo) -> str:
+    default_text = "Unknown Board"
     if system() == "Linux":
         import pyudev
         context = pyudev.Context()
-        device = pyudev.Devices.from_device_file(context, port.device)
+        try:
+            device = pyudev.Devices.from_device_file(context, port.device)
+        except pyudev.DeviceNotFoundByFileError:
+            return default_text
         model: str = device.properties.get(
             "ID_MODEL_FROM_DATABASE",
-            device.properties.get("ID_MODEL", "Unknown Board"),
+            device.properties.get("ID_MODEL", default_text),
         )
         return model
     elif system() == "Windows":
-        return port.description or "Unknown Board"
+        return port.description or default_text
     else:
-        return "Unknown Board"
+        return default_text
 
 
 def arduino_cli_path() -> str | None:

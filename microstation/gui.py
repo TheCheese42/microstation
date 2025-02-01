@@ -360,7 +360,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 arduino_cli_commit=cli_information.commit,
                 arduino_cli_date=cli_information.date,
                 digital_jitter_delay="20",
-                baudrate=config.get_config_value("baudrate"),
+                baudrate=f"{config.get_config_value("baudrate")}",
             )
             ARDUINO_SKETCH_FORMATTED_PATH.mkdir(exist_ok=True)
             with open(
@@ -368,8 +368,6 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 "w", encoding="utf-8"
             ) as fp:
                 fp.write(code)
-            config.log("Upgrading Arduino libraries")
-            utils.upgrade_libraries()
             config.log(f"Uploading sketch to port {port}")
             utils.upload_code(port, str(ARDUINO_SKETCH_FORMATTED_PATH))
         except utils.MissingArduinoCLIError:

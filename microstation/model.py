@@ -292,7 +292,12 @@ class Component:
                     f"Action name for signal {signal} must be a string, got "
                     f"{type(name)}"
                 )
-            get_ss_instance(find_signal_slot(name)).call(signal, *args)
+            instance = get_ss_instance(find_signal_slot(name))
+            if isinstance(action["params"], dict):
+                params = action["params"].items()
+                for attr, value in params:
+                    setattr(instance, attr, value)
+            instance.call(signal, *args)
 
     def call_slot(self, slot: str, *args: Any) -> None:
         self.device.call_slot(slot, self.pins, *args)
