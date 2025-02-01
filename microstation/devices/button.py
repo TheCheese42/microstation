@@ -10,6 +10,11 @@ class Button(Device):
     NAME = "Button"
     TAGS = [Tag.INPUT, Tag.DIGITAL]
     PINS = [Pin(type="digital", io_type="input")]
+    CONFIG = {
+        "debounce_time": {
+            "type": int, "default": 20, "min": 0, "max": 9999
+        }
+    }
 
 
 __all__ = ["Button"]

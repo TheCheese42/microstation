@@ -297,6 +297,28 @@ class Task:
                             self.write_method(
                                 f"PINMODE {type_} {io_type} {pin_num:0>3}"
                             )
+                            if "debounce_time" in component.device.CONFIG:
+                                if not (dt := component.properties.get(
+                                    "debounce_time"
+                                )):
+                                    dt = component.device.CONFIG[
+                                        "debounce_time"
+                                    ]["default"]  # type: ignore[assignment]
+                                self.write_method(
+                                    f"DIGITAL_DEBOUNCE {pin_num:0>3} "
+                                    f"{dt:0>4}"
+                                )
+                            if "jitter_tolerance" in component.device.CONFIG:
+                                if not (jt := component.properties.get(
+                                    "jitter_tolerance"
+                                )):
+                                    jt = component.device.CONFIG[
+                                        "jitter_tolerance"
+                                    ]["default"]  # type: ignore[assignment]
+                                self.write_method(
+                                    f"ANALOG_TOLERANCE {pin_num:0>3} "
+                                    f"{jt:0>6}"
+                                )
         elif self.data.startswith("EVENT"):
             if not self.profile:
                 return

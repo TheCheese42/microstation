@@ -14,16 +14,17 @@ const String COMPILE_MICROSTATION_VERSION = "{microstation_version}";
 const String COMPILE_ARDUINO_CLI_VERSION = "{arduino_cli_version}";
 const String COMPILE_ARDUINO_CLI_COMMIT = "{arduino_cli_commit}";
 const String COMPILE_ARDUINO_CLI_DATE = "{arduino_cli_date}";
-const int DIGITAL_JITTER_DELAY = {digital_jitter_delay};
 const int BAUDRATE = {baudrate};
 
 int digital_input_pins[200] = {};
 int digital_input_states[200] = {};
 int digital_input_start_times[200] = {};  // Digital input devices may jitter and need a small delay
+int digital_input_debounce_times[200] = {};
 int digital_input_count = 0;
 
 int analog_input_pins[200] = {};
 int analog_input_states[200] = {};
+int analog_input_tolerances[200] = {};
 int analog_input_count = 0;
 
 int digital_output_pins[200] = {};
@@ -52,6 +53,18 @@ void print_debug() {
 }
 
 
+void reset_data() {
+  digital_input_count = 0;
+  analog_input_count = 0;
+  digital_output_count = 0;
+  digital_input_count = 0;
+  for (int i = 0; i < 200; i++) {
+    digital_input_debounce_times[i] = 0;
+    analog_input_tolerances[i] = 0;
+  }
+}
+
+
 void setup() {
   Serial.begin(BAUDRATE);
   delay(1000);  // Prevent first bytes to be lost
@@ -72,10 +85,7 @@ void loop() {
 
 void exec_task(String task) {
   if (task.startsWith("RESET_PINS")) {
-    digital_input_count = 0;
-    analog_input_count = 0;
-    digital_output_count = 0;
-    digital_input_count = 0;
+    reset_data();
   } else if (task.startsWith("PINMODE")) {
     String mode = task.substring(8, 11);
     String io_mode = task.substring(12, 15);
@@ -121,6 +131,14 @@ void exec_task(String task) {
       Serial.print("DEBUG [ERROR] Invalid mode: ");
       Serial.println(mode);
     }
+  } else if (task.startsWith("DIGITAL_DEBOUNCE")) {
+    int pin = task.substring(17, 20).toInt();
+    int time = task.substring(21, 25).toInt();
+    digital_input_debounce_times[pin] = time;
+  } else if (task.startsWith("ANALOG_TOLERANCE")) {
+    int pin = task.substring(17, 20).toInt();
+    int tolerance = task.substring(21, 27).toInt();
+    analog_input_tolerances[pin] = tolerance;
   } else {
     Serial.print("DEBUG [ERROR] Invalid task: ");
     Serial.println(task);
@@ -138,7 +156,8 @@ void poll_digital_input() {
         digital_input_start_times[i] = millis();
         return;
       }
-      if (millis() - digital_input_start_times[i] <= DIGITAL_JITTER_DELAY) {
+      unsigned int jitter_delay = digital_input_debounce_times[pin];
+      if (millis() - digital_input_start_times[i] <= jitter_delay) {
         return;
       }
       digital_input_start_times[i] = 0;
@@ -157,12 +176,17 @@ void poll_analog_input() {
     int pin = analog_input_pins[i];
     int prev_state = analog_input_states[i];
     int current_state = analogRead(pin);
-    if (current_state != prev_state) {
-      analog_input_states[i] = current_state;
-      Serial.print("EVENT ANALOG ");
-      Serial.print(pin);
-      Serial.print(" ");
-      Serial.println(current_state);
+    int jitter_tolerance = analog_input_tolerances[pin];
+    if (
+      (current_state <= prev_state && current_state >= prev_state - jitter_tolerance)
+      || (current_state >= prev_state && current_state <= prev_state + jitter_tolerance)
+    ) {
+      return;
     }
+    analog_input_states[i] = current_state;
+    Serial.print("EVENT ANALOG ");
+    Serial.print(pin);
+    Serial.print(" ");
+    Serial.println(current_state);
   }
 }

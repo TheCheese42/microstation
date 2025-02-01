@@ -359,7 +359,6 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 arduino_cli_version=cli_information.version,
                 arduino_cli_commit=cli_information.commit,
                 arduino_cli_date=cli_information.date,
-                digital_jitter_delay="20",
                 baudrate=f"{config.get_config_value("baudrate")}",
             )
             ARDUINO_SKETCH_FORMATTED_PATH.mkdir(exist_ok=True)
@@ -497,6 +496,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             config.save_profiles(config.PROFILES)
             self.selected_profile = None
             self.refresh()
+            if dialog.modified_profiles:
+                self.daemon.queue_restart()
 
     def open_macros(self) -> None:
         dialog = MacroEditor(self, deepcopy(config.MACROS))
@@ -587,6 +588,7 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
         self.profiles = profiles
         self.daemon = daemon
         self.open_wiki_method = open_wiki_method
+        self.modified_profiles: list[Profile] = []
         self.setupUi(self)
         self.connectSignalsSlots()
 
@@ -648,6 +650,7 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
             new_profile.auto_activate_priority = dialog.prioritySpin.value()
             self.profiles[selected] = new_profile
             self.updateProfileList()
+            self.modified_profiles.append(new_profile)
 
     def delete_profile(self) -> None:
         try:
