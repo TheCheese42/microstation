@@ -290,6 +290,9 @@
                  <property name="toolTip">
                   <string>The Number of Times the Macro will run</string>
                  </property>
+                 <property name="maximum">
+                  <number>99999</number>
+                 </property>
                 </widget>
                </item>
               </layout>
@@ -453,22 +456,6 @@
   <include location="../icons/icons.qrc"/>
  </resources>
  <connections>
-  <connection>
-   <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>MacroEditor</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>

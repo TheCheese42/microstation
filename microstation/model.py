@@ -1,10 +1,18 @@
 # from abc import ABCMeta, abstractmethod
-from collections.abc import Callable
+import time
+from collections.abc import Callable, Generator
+from contextlib import contextmanager
 from functools import cache
 from importlib import import_module
+from threading import Thread
 from typing import Any, Literal
 
-from pynput.keyboard import Key
+from pynput.keyboard import Controller as KController
+from pynput.keyboard import Key, KeyCode
+from pynput.keyboard import Listener as KListener
+from pynput.mouse import Button
+from pynput.mouse import Controller as MController
+from pynput.mouse import Listener as MListener
 
 from .enums import Issue, Tag
 
@@ -19,6 +27,8 @@ except ImportError:
 
 type COMPONENT = dict[str, Any]
 type PROFILE = dict[str, Any]
+type MACRO_ACTION = dict[str, str | int | None]
+type MACRO = dict[str, str | int | list[MACRO_ACTION]]
 
 MODS = ["Ctrl", "Shift", "Alt", "AltGr", "Tab"]
 KEY_LOOKUP = {
@@ -302,16 +312,6 @@ class Component:
     def call_slot(self, slot: str, *args: Any) -> None:
         self.device.call_slot(slot, self.pins, *args)
 
-    # XXX
-    # def control_pin(self, pin_name: str, pin_number: int, value: int) -> None:  # noqa XXX
-    #     for pin in self.device.PINS:
-    #         if pin.name == pin_name:
-    #             type = pin.type
-    #             io_type = pin.io_type
-    #             if io_type != "output":
-    #                 raise RuntimeError(f"Pin {pin_name} is not an output pin")  # noqa XXX
-    #             self.write_method(f"WRITE {type.upper()} {pin_number} {value}")  # noqa XXX
-
 
 class Pin:
     def __init__(
@@ -469,3 +469,340 @@ class Device:  # (ABCMeta):
                 f"Device {cls.NAME} has no analog output pin to trigger"
             )
         return f"WRITE ANALOG {pin} {args[0]}"
+
+
+class MacroThread(Thread):
+    def __init__(
+        self,
+        should_stop_list: set["MacroThread"],
+        target: Callable[..., None] | None,
+        *args: Any,
+        **kwargs: Any,
+    ):
+        self.should_stop_list = should_stop_list
+        super().__init__(
+            target=target,
+            args=args,
+            kwargs=kwargs,
+            daemon=True,
+        )
+        self._stop_triggered = False
+
+    def trigger_stop(self) -> None:
+        self._stop_triggered = True
+        self.should_stop_list.add(self)
+
+
+class Controller:
+    def __init__(self, delay: float = 0.01) -> None:
+        """
+        :param delay: Delay to wait between press and release, defaults to 0.01
+        :type delay: float, optional
+        """
+        self.kc = KController()
+        self.mc = MController()
+        self.delay = delay
+        self.keys_pressed: set[Key | KeyCode] = set()
+        self.btns_pressed = set(Button)
+
+        self._macros_threads: dict[str, MacroThread] = {}
+        self._macro_threads_that_should_stop: set[MacroThread] = set()
+        self._macro_threads_to_be_released: set[MacroThread] = set()
+
+    def on_key_pressed(self, key: Key | KeyCode) -> None:
+        self.keys_pressed.add(key)
+
+    def on_key_released(self, key: Key | KeyCode) -> None:
+        if key in self.keys_pressed:
+            self.keys_pressed.remove(key)
+
+    def on_btn_click(self, x: int, y: int, btn: Button, pressed: bool) -> None:
+        if pressed:
+            self.btns_pressed.add(btn)
+        else:
+            if btn in self.btns_pressed:
+                self.btns_pressed.remove(btn)
+
+    def is_pressed(self, thing: Key | KeyCode | Button) -> bool:
+        if isinstance(thing, Key) or isinstance(thing, KeyCode):
+            return thing in self.keys_pressed
+        return thing in self.btns_pressed
+
+    def press(
+        self,
+        key: Key | KeyCode | None = None,
+        but: Button | None = None,
+    ) -> None:
+        if key:
+            self.kc.press(key)
+        if but:
+            self.mc.press(but)
+
+    def release(
+        self,
+        key: Key | KeyCode | None = None,
+        but: Button | None = None,
+    ) -> None:
+        if key:
+            self.kc.release(key)
+        if but:
+            self.mc.release(but)
+
+    def tap(
+        self,
+        key: Key | KeyCode | None = None,
+        but: Button | None = None,
+        delay: float | None = None,
+    ) -> None:
+        """Press and release a key and/or button with self.delay in between."""
+        self.press(key, but)
+        time.sleep(self.delay if delay is None else delay)
+        self.release(key, but)
+
+    def scroll(self, dx: int, dy: int) -> None:
+        """Scroll a certain amount of times."""
+        try:
+            self.mc.scroll(dx, dy)
+        except ValueError:
+            pass
+
+    def type(self, text: str) -> None:
+        """Type a text."""
+        try:
+            self.kc.type(text)
+        except self.kc.InvalidCharacterException:
+            pass
+
+    @contextmanager
+    def mod(
+        self, *keys: tuple[Key | KeyCode]
+    ) -> Generator[None, None, None]:
+        """
+        Contextmanager to execute a block with some keys pressed. Checks and
+        preserves the previous key states of modifiers.
+        """
+        to_be_released: list[Key] = []
+        for key in keys:
+            if not self.is_pressed(key):
+                self.press(key)
+                to_be_released.append(key)
+
+        try:
+            yield
+        finally:
+            for key in reversed(to_be_released):
+                self.release(key)
+
+    def ctrl(
+        self,
+        key: Key | KeyCode | None = None,
+        but: Button | None = None,
+    ) -> None:
+        """Tap a key and/or button together with CTRL."""
+        with self.mod(Key.ctrl):
+            self.press(key, but)
+
+    def shift(
+        self,
+        key: Key | KeyCode | None = None,
+        but: Button | None = None,
+    ) -> None:
+        """Tap a key and/or button together with SHIFT."""
+        with self.mod(Key.shift):
+            self.press(key, but)
+
+    def alt(
+        self,
+        key: Key | KeyCode | None = None,
+        but: Button | None = None,
+    ) -> None:
+        """Tap a key and/or button together with ALT."""
+        with self.mod(Key.alt):
+            self.press(key, but)
+
+    def alt_gr(
+        self,
+        key: Key | KeyCode | None = None,
+        but: Button | None = None,
+    ) -> None:
+        """Tap a key and/or button together with ALT GR."""
+        with self.mod(Key.alt_gr):
+            self.press(key, but)
+
+    def cmd(
+        self,
+        key: Key | KeyCode | None = None,
+        but: Button | None = None,
+    ) -> None:
+        """Tap a key and/or button together with CMD."""
+        with self.mod(Key.cmd):
+            self.press(key, but)
+
+    @staticmethod
+    def _parse_shortcut(
+        shortcut: str
+    ) -> list[tuple[list[Key], KeyCode | None]]:
+        """
+        Parses Qt KeySequences into pynput keys.
+
+        :param shortcut: A string containing a Qt-Style Key Sequence
+        :type shortcut: str
+        :return: A list of key combinations. Those are tuple with first a list
+        of modifier keys, and second a single KeyCode (or None if the combo
+        only contains modifiers)
+        :rtype: list[tuple[list[Key], KeyCode | None]]
+        """
+        cuts: list[tuple[list[Key], KeyCode | None]] = []
+        combos = map(str.strip, shortcut.split(","))
+        for combo in combos:
+            key: str | None
+            *mods, key = combo.split("+")
+            if key in KEY_LOOKUP:
+                mods.append(key)
+                key = None
+            trans_mods: list[Key] = []
+            for mod in mods:
+                if (result := KEY_LOOKUP.get(mod)):
+                    trans_mods.append(result)
+            if key is None:
+                key_code = None
+            else:
+                try:
+                    key_code = KeyCode.from_char(key)
+                except Exception:
+                    pass
+            cuts.append((trans_mods, key_code))
+        return cuts
+
+    def issue_macro(self, state: bool, macro: MACRO) -> None:
+        mode: str | int = macro["mode"]  # type: ignore[assignment]
+        name: str = macro["name"]  # type: ignore[assignment]
+        actions: list[MACRO_ACTION] = macro["actions"]  # type: ignore[assignment]  # noqa
+
+        print(state, name in self._macros_threads)
+        if state:
+            if name in self._macros_threads:
+                if mode != "until_pressed_again":
+                    return
+                thread = self._macros_threads[name]
+                self._macros_threads[name].trigger_stop()
+                if thread in self._macro_threads_to_be_released:
+                    self._macro_threads_to_be_released.remove(thread)
+            else:
+                thread = MacroThread(
+                    self._macro_threads_that_should_stop,
+                    self._exec_macro,
+                    m_name=name,
+                    m_mode=mode,
+                    m_actions=actions,
+                )
+                self._macros_threads[name] = thread
+                if mode == "until_pressed_again":
+                    self._macro_threads_to_be_released.add(thread)
+                thread.start()
+        else:
+            if name in self._macros_threads:
+                if mode != "until_released":
+                    return
+                self._macros_threads[name].trigger_stop()
+
+    def _exec_macro(
+        self,
+        m_name: str,
+        m_mode: str,
+        m_actions: list[MACRO_ACTION],
+    ) -> None:
+        def run() -> None:
+            for action in m_actions:
+                type = action["type"]
+                value = action["value"]
+                if type in ("press_key", "release_key"):
+                    if not isinstance(value, str):
+                        return
+                    shortcuts = self._parse_shortcut(value)
+                    for combo in shortcuts:
+                        mods, key_code = combo
+                        all_keys: list[Key | KeyCode | None] = [
+                            *mods, key_code
+                        ]
+                        for key in all_keys:
+                            if key is None:
+                                continue
+                            if type == "press_key":
+                                self.press(key)
+                            else:
+                                self.release(key)
+                elif type == "delay":
+                    if not isinstance(value, int):
+                        return
+                    time.sleep(value / 1000)
+                elif type == "left_mouse_button_down":
+                    self.press(but=Button.left)
+                elif type == "left_mouse_button_up":
+                    self.press(but=Button.left)
+                elif type == "middle_mouse_button_down":
+                    self.press(but=Button.middle)
+                elif type == "middle_mouse_button_up":
+                    self.press(but=Button.middle)
+                elif type == "right_mouse_button_down":
+                    self.press(but=Button.right)
+                elif type == "right_mouse_button_up":
+                    self.press(but=Button.right)
+                elif type == "scroll_up":
+                    if not isinstance(value, int):
+                        return
+                    self.scroll(0, value)
+                elif type == "scroll_down":
+                    if not isinstance(value, int):
+                        return
+                    self.scroll(0, -value)
+                elif type == "type_text":
+                    if not isinstance(value, str):
+                        return
+                    self.type(value)
+
+        if isinstance(m_mode, int):
+            for _ in range(m_mode):
+                run()
+
+        else:
+            while True:
+                run()
+                thread = self._macros_threads[m_name]
+                if thread in self._macro_threads_that_should_stop:
+                    break
+                time.sleep(0.01)
+
+        del self._macros_threads[m_name]
+
+    def issue_shortcut(self, state: bool, shortcut: str) -> None:
+        shortcuts = self._parse_shortcut(shortcut)
+        for combo in shortcuts:
+            mods, key_code = combo
+            all_keys: list[Key | KeyCode | None] = [
+                *mods, key_code
+            ]
+            for key in all_keys:
+                if key is None:
+                    continue
+                if state:
+                    self.press(key)
+                else:
+                    self.release(key)
+
+
+def start_controller() -> Controller:
+    controller = Controller()
+    kl = KListener(
+        on_press=controller.on_key_pressed,
+        on_release=controller.on_key_released,
+    )
+    ml = MListener(
+        on_click=controller.on_btn_click,
+    )
+    kl.start()
+    ml.start()
+    return controller
+
+
+CONTROLLER = start_controller()

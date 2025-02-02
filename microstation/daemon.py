@@ -329,9 +329,11 @@ class Task:
         elif self.data.startswith("EVENT"):
             if not self.profile:
                 return
-            _, type_, pin, state = self.data.split()
+            _, type_, pin_string, state_string = self.data.split()
+            pin = int(pin_string)
+            state = int(state_string)
             for component in self.profile.components:
-                if int(pin) in component.pins.values():
+                if pin in component.pins.values():
                     if type_ == "DIGITAL":
                         component.emit_signal("digital_changed", state)
                         component.emit_signal("digital_high", state)

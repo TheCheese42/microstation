@@ -44,11 +44,11 @@ def get_port_info(port_str: str) -> str | None:
 def get_device_info(port: serial.tools.list_ports_common.ListPortInfo) -> str:
     default_text = "Unknown Board"
     if system() == "Linux":
-        import pyudev
-        context = pyudev.Context()
         try:
+            import pyudev
+            context = pyudev.Context()
             device = pyudev.Devices.from_device_file(context, port.device)
-        except pyudev.DeviceNotFoundByFileError:
+        except Exception:
             return default_text
         model: str = device.properties.get(
             "ID_MODEL_FROM_DATABASE",

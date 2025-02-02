@@ -1222,7 +1222,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                         self.param_changed, type_, entry, param.name
                     )
                 )
-            if param.type == float:
+            elif param.type == float:
                 widget = QDoubleSpinBox()
                 widget.setRange(param.info.get("min") or 0.0, param.info.get("max") or 999999.0)  # type: ignore[arg-type]  # noqa E501
                 widget.setValue(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
@@ -1231,10 +1231,29 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                         self.param_changed, type_, entry, param.name
                     )
                 )
-            if param.type == bool:
+            elif param.type == bool:
                 widget = QCheckBox()
                 widget.setChecked(bool(value) if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
                 widget.stateChanged.connect(
+                    partial(
+                        self.param_changed, type_, entry, param.name
+                    )
+                )
+            elif param.type == QKeySequence:
+                widget = QKeySequenceEdit()
+                widget.setKeySequence(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
+                widget.keySequenceChanged.connect(
+                    partial(
+                        self.param_changed, type_, entry, param.name
+                    )
+                )
+            elif param.type == "macro":
+                widget = QComboBox()
+                for i, macro in enumerate(config.MACROS):
+                    widget.addItem(macro["name"])  # type: ignore[arg-type]
+                    if macro["name"] == value:
+                        widget.setCurrentIndex(i)
+                widget.currentTextChanged.connect(
                     partial(
                         self.param_changed, type_, entry, param.name
                     )
@@ -1257,14 +1276,17 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         type_: str,
         entry: str,
         param: str,
-        value: int | float | bool | str,
+        value: int | float | bool | str | QKeySequence,
     ) -> None:
+        if isinstance(value, QKeySequence):
+            value = value.toString()
         if type_ == "signal":
             d = self.component.signals_actions.get(entry)
             if d:
                 p = d.get("params")
                 if isinstance(p, dict):
                     p[param] = value
+                    print(f"set {p} {param} to {value}")
                 else:
                     d["params"] = {param: value}
             else:
@@ -1347,6 +1369,16 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
         self.runTimesRadio.pressed.connect(self.mode_n_times)
         self.runTimesSpin.valueChanged.connect(self.update_n_times)
         self.actionCombo.currentTextChanged.connect(self.insert_action)
+        self.buttonBox.accepted.connect(self.accept_requested)
+
+    def accept_requested(self) -> None:
+        macro_names = [macro["name"] for macro in self.macros]
+        if len(macro_names) != len(set(macro_names)):
+            show_error(self, tr("MacroEditor", "Duplicated Macro Names"),
+                       tr("MacroEditor", "Some Macros have the same name. "
+                          "All Macros deserve their own names, don't they?"))
+        else:
+            self.accept()
 
     def insert_action(self) -> None:
         try:

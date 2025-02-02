@@ -1,27 +1,43 @@
+from functools import cache
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import psutil
+from PyQt6.QtGui import QKeySequence
 
 try:
     from ..enums import Tag
 except ImportError:
     from microstation.enums import Tag
 
+if TYPE_CHECKING:
+    from ..model import Controller
+
 
 INSTANCES: dict[type["SignalOrSlot"], "SignalOrSlot"] = {}
 
 
+@cache
+def get_controller() -> "Controller":
+    try:
+        from ..model import CONTROLLER
+    except ImportError:
+        from microstation.model import CONTROLLER
+    return CONTROLLER
+
+
 class Param:
     def __init__(
-        self, name: str, desc: str, type_: type,
+        self, name: str, desc: str, type_: type | str,
         default: int | float | bool | str | None = None,
         info: dict[str, int | float | bool | str] = {},
     ) -> None:
         self.name = name
         self.desc = desc
         self.type = type_
-        self.default = default or self.type()
+        self.default = (
+            default or self.type() if isinstance(self.type, type) else ""
+        )
         self.info = info
 
 
@@ -91,6 +107,100 @@ class NothingManager(SignalOrSlot):
 # #################### SIGNALS #####################
 
 
+class Shortcut(SignalOrSlot):
+    NAME = "Shortcut by Digital State"
+    TAGS = [Tag.INPUT, Tag.DIGITAL]
+    PARAMS = [
+        Param(
+            name="shortcut",
+            desc="Shortcut",
+            type_=QKeySequence,
+        )
+    ]
+
+    def __init__(self) -> None:
+        self.shortcut = ""
+
+    def call(self, signal_slot: str, value: int) -> None:
+        if not self.shortcut:
+            return
+        get_controller().issue_shortcut(bool(value), self.shortcut)
+
+
+class PressShortcut(Shortcut):
+    NAME = "Press Shortcut"
+
+    def __init__(self) -> None:
+        self.shortcut = ""
+
+    def call(self, signal_slot: str, value: int) -> None:
+        if not self.shortcut:
+            return
+        get_controller().issue_shortcut(True, self.shortcut)
+
+
+class ReleaseShortcut(Shortcut):
+    NAME = "Release Shortcut"
+
+    def __init__(self) -> None:
+        self.shortcut = ""
+
+    def call(self, signal_slot: str, value: int) -> None:
+        if not self.shortcut:
+            return
+        get_controller().issue_shortcut(False, self.shortcut)
+
+
+class TapShortcut(Shortcut):
+    NAME = "Tap Shortcut"
+
+    def __init__(self) -> None:
+        self.shortcut = ""
+
+    def call(self, signal_slot: str, value: int) -> None:
+        if not self.shortcut:
+            return
+        get_controller().issue_shortcut(True, self.shortcut)
+        get_controller().issue_shortcut(False, self.shortcut)
+
+
+class Macro(SignalOrSlot):
+    NAME = "Macro"
+    TAGS = [Tag.INPUT, Tag.DIGITAL]
+    PARAMS = [
+        Param(
+            name="macro",
+            desc="Macro",
+            type_="macro",
+        )
+    ]
+
+    def __init__(self) -> None:
+        self.macro = ""
+
+    def call(self, signal_slot: str, value: int) -> None:
+        if not self.macro:
+            return
+        try:
+            from ..config import MACROS
+        except ImportError:
+            from microstation.config import MACROS
+        for macro in MACROS:
+            if macro["name"] == self.macro:
+                target_macro = macro
+                break
+        else:
+            return
+        if signal_slot == "digital_changed":
+            get_controller().issue_macro(bool(value), target_macro)
+        else:
+            get_controller().issue_macro(True, target_macro)
+            # Immediate False because, if the mode is until_released_again and
+            # We only have True states, the Macro will run forever. If done
+            # like this, it will always run once.
+            get_controller().issue_macro(False, target_macro)
+
+
 class LogToFile(SignalOrSlot):
     NAME = "Log to File"
     TAGS = [Tag.INPUT, Tag.DIGITAL, Tag.ANALOG]
@@ -145,6 +255,11 @@ class ProgramRunning(SignalOrSlot):
 SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     Nothing,
     NothingManager,
+    Shortcut,
+    TapShortcut,
+    PressShortcut,
+    ReleaseShortcut,
+    Macro,
     LogToFile,
     ProgramRunning,
 ]
