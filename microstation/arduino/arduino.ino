@@ -5,12 +5,10 @@
   Microstation is licensed under GPLv3
 */
 
-const String VERSION = "0.1.0";
-
 // Constants are set at compile time by the Microstation client
 const String COMPILE_CORE = "{core}";
 const String COMPILE_BOARD = "{board}";
-const String COMPILE_MICROSTATION_VERSION = "{microstation_version}";
+const String VERSION = "{microstation_version}";
 const String COMPILE_ARDUINO_CLI_VERSION = "{arduino_cli_version}";
 const String COMPILE_ARDUINO_CLI_COMMIT = "{arduino_cli_commit}";
 const String COMPILE_ARDUINO_CLI_DATE = "{arduino_cli_date}";
@@ -48,7 +46,7 @@ void print_debug() {
   Serial.print("DEBUG [INFO] Compiled from file ");
   Serial.println(__FILE__);
   Serial.println("DEBUG [INFO] Compiled for core " + COMPILE_CORE + " and board " + COMPILE_BOARD);
-  Serial.println("DEBUG [INFO] Compiled by Microstation v" + COMPILE_MICROSTATION_VERSION);
+  Serial.println("DEBUG [INFO] Compiled by Microstation v" + VERSION);
   Serial.println("DEBUG [INFO] Using arduino-cli v" + COMPILE_ARDUINO_CLI_VERSION + " (Commit: " + COMPILE_ARDUINO_CLI_COMMIT + "; Date: " + COMPILE_ARDUINO_CLI_DATE + ")");
 }
 
@@ -65,11 +63,18 @@ void reset_data() {
 }
 
 
+void report_version() {
+  Serial.print("VERSION ");
+  Serial.println(VERSION);
+}
+
+
 void setup() {
   Serial.begin(BAUDRATE);
   delay(1000);  // Prevent first bytes to be lost
   print_debug();
   Serial.println("PINS_REQUESTED");
+  report_version();
 }
 
 
@@ -86,6 +91,8 @@ void loop() {
 void exec_task(String task) {
   if (task.startsWith("RESET_PINS")) {
     reset_data();
+  } else if (task.startsWith("GET_VERSION")) {
+    report_version();
   } else if (task.startsWith("PINMODE")) {
     String mode = task.substring(8, 11);
     String io_mode = task.substring(12, 15);

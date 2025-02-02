@@ -6,7 +6,6 @@ from typing import NamedTuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
-import pyudev._errors
 import serial.tools.list_ports_common
 from serial.tools.list_ports import comports
 

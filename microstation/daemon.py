@@ -131,6 +131,7 @@ class Daemon:
         self.auto_activation_enabled = get_config_value("auto_detect_profiles")
         self.auto_activate_checker_running = False
         self.profile_changed = False
+        self.mc_version: None | str = None
 
         self.in_history: list[str] = []
         self.out_history: list[str] = []
@@ -213,7 +214,8 @@ class Daemon:
                     if self.profile_changed:
                         self.profile_changed = False
                         asyncio.get_event_loop().create_task(Task(
-                            "PINS_REQUESTED", self.queue_write, self.profile
+                            "PINS_REQUESTED", self.queue_write, self,
+                            self.profile
                         ).run())
                     if device.in_waiting():
                         data = device.readline().strip()
@@ -221,7 +223,7 @@ class Daemon:
                         self.full_history.append(f"[IN] {data}")
                         for cb in self.received_task_callbacks:
                             cb(data)
-                        task = Task(data, self.queue_write, self.profile)
+                        task = Task(data, self.queue_write, self, self.profile)
                         asyncio.get_event_loop().create_task(task.run())
                     if self.write_queue:
                         data = self.write_queue.popleft()
@@ -258,10 +260,12 @@ class Task:
         self,
         data: str,
         write_method: Callable[[str], None],
+        daemon: Daemon,
         profile: Profile | None,
     ) -> None:
         self.data = data
         self.write_method = write_method
+        self.daemon = daemon
         self.profile = profile
 
     async def run(self) -> None:
@@ -278,6 +282,9 @@ class Task:
     async def exec_task(self) -> None:
         if self.data.startswith("DEBUG "):
             log_mc(self.data.split(" ", 1)[1])
+        elif self.data.startswith("VERSION"):
+            version = self.data.split(" ", 1)[1]
+            self.daemon.mc_version = version
         elif self.data.startswith("PINS_REQUESTED"):
             self.write_method("RESET_PINS")
             if not self.profile:

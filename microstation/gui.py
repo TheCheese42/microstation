@@ -48,7 +48,7 @@ try:
     from .ui.welcome_ui import Ui_Welcome
     from .ui.window_ui import Ui_Microstation
     from .utils import get_device_info
-    from .version import version_string
+    from .version import version_string, __version__
 except ImportError:
     import config  # type: ignore[no-redef]
     try:
@@ -107,7 +107,7 @@ except ImportError:
     from paths import SER_HISTORY_PATH  # type: ignore[no-redef]
     from paths import STYLES_PATH  # type: ignore[no-redef]
     from utils import get_device_info  # type: ignore[no-redef]
-    from version import version_string  # type: ignore[no-redef]
+    from version import version_string, __version__  # type: ignore[no-redef]
 
 
 tr = QApplication.translate
@@ -172,6 +172,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.selected_profile: Profile | None = None
 
         self.serial_monitor_from_index = 0
+        self.ignore_version_mismatch = False
 
         self.setupUi(self)
         self.connectSignalsSlots()
@@ -200,6 +201,26 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         ):
             self.profileCombo.setCurrentText(self.selected_profile.name)
         self.autoActivateCheck.setChecked(is_autodetection_enabled)
+
+        if self.daemon.mc_version and not self.ignore_version_mismatch:
+            mc_version_tuple = tuple(
+                map(int, self.daemon.mc_version.split("."))
+            )
+            if (
+                __version__[0] != mc_version_tuple[0]
+                or __version__[1] != mc_version_tuple[1]
+            ):
+                if show_question(
+                    self, tr("Microstation", "Version Mismatch"),
+                    tr("Microstation", "The Microcontroller runs a Sketch "
+                       "compiled by a previous version of Microstation. It "
+                       "is recommended to upload the newest code to ensure "
+                       "full functionality.\n\nDo you wish to upload the "
+                       "newest code?")
+                ) == QMessageBox.StandardButton.Yes:
+                    self.upload_code()
+                else:
+                    self.ignore_version_mismatch = True
 
     def update_profile_combo(self) -> None:
         profiles = [profile.name for profile in config.PROFILES]
