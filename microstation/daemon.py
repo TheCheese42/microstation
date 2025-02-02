@@ -277,7 +277,7 @@ class Task:
             await self.exec_task()
         except Exception as e:
             log(f"Task raised an exception ({self.data}): "
-                f"{e.__class__.__name__}: {e}")
+                f"{e.__class__.__name__}: {e}", "ERROR")
 
     async def exec_task(self) -> None:
         if self.data.startswith("DEBUG "):

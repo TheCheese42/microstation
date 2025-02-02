@@ -1253,6 +1253,10 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                     widget.addItem(macro["name"])  # type: ignore[arg-type]
                     if macro["name"] == value:
                         widget.setCurrentIndex(i)
+                self.param_changed(
+                    type_, entry, param.name, value
+                    if isinstance(value, str) else widget.currentText()
+                )
                 widget.currentTextChanged.connect(
                     partial(
                         self.param_changed, type_, entry, param.name
@@ -1286,7 +1290,6 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                 p = d.get("params")
                 if isinstance(p, dict):
                     p[param] = value
-                    print(f"set {p} {param} to {value}")
                 else:
                     d["params"] = {param: value}
             else:
