@@ -679,7 +679,6 @@ class Controller:
         name: str = macro["name"]  # type: ignore[assignment]
         actions: list[MACRO_ACTION] = macro["actions"]  # type: ignore[assignment]  # noqa
 
-        print(state, name in self._macros_threads)
         if state:
             if name in self._macros_threads:
                 if mode != "until_pressed_again":

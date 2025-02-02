@@ -271,7 +271,6 @@ class Task:
     async def run(self) -> None:
         if not self.data:
             return
-        print("Task:", self.data)  # XXX
         log(f"Received Task {self.data}", "DEBUG")
         try:
             await self.exec_task()
