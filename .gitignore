@@ -5,3 +5,4 @@ microstation/ui/*.py
 __pycache__/
 *.qm
 microstation/external_styles/breeze/
+build/
