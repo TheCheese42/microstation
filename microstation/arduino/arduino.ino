@@ -89,7 +89,9 @@ void loop() {
 
 
 void exec_task(String task) {
-  if (task.startsWith("RESET_PINS")) {
+  if (task == "") {
+    return;
+  } else if (task.startsWith("RESET_PINS")) {
     reset_data();
   } else if (task.startsWith("GET_VERSION")) {
     report_version();

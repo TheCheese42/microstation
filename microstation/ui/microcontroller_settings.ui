@@ -79,7 +79,7 @@
         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Value must be a power of 2 (e.g. 1024)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="maximum">
-        <number>1048576</number>
+        <number>8192</number>
        </property>
        <property name="value">
         <number>1024</number>

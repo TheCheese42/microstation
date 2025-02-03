@@ -3,6 +3,7 @@ import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import cache
+import random
 from importlib import import_module
 from threading import Thread
 from typing import Any, Literal
@@ -177,6 +178,7 @@ def gen_profile_id(profiles: list[Profile]) -> int:
 
 class Component:
     def __init__(self, data: COMPONENT, write_method: Callable[[str], None]):
+        self.id = random.randint(100000, 999999)
         self.write_method = write_method
         self.device = find_device(data["device"])
         self.pins: dict[str, int] = data["pins"]  # name: number
@@ -310,7 +312,9 @@ class Component:
             instance.call(signal, *args)
 
     def call_slot(self, slot: str, *args: Any) -> None:
-        self.device.call_slot(slot, self.pins, *args)
+        command = self.device.call_slot(slot, self.pins, *args)
+        if command:
+            self.write_method(command)
 
 
 class Pin:
@@ -386,7 +390,9 @@ class Device:  # (ABCMeta):
         cls, properties: dict[str, CONFIG_VALUE] | None = None,
     ) -> list[str]:
         if Tag.OUTPUT in cls.TAGS and Tag.DIGITAL in cls.TAGS:
-            return ["trigger_digital_high", "trigger_digital_low"]
+            return [
+                "trigger_digital_high", "trigger_digital_low", "value_digital"
+            ]
         return []
 
     @classmethod
@@ -412,63 +418,105 @@ class Device:  # (ABCMeta):
         return command
 
     @classmethod
-    def trigger_digital_high(cls, pin_data: dict[str, int]) -> str:
+    def trigger_digital_high(
+        cls, pin_data: dict[str, int], *args: bool
+    ) -> str:
+        if args[0] is not True:
+            return ""
         if "trigger_digital_high" not in cls.available_slots():
             raise ValueError(
                 f"Slot trigger_digital_high not available for {cls.NAME}"
             )
         pin: int | None = None
         for device_pin in cls.PINS:
-            if device_pin.type == "digital" and device_pin.io_type == "output":
+            if (
+                device_pin.type in ("digital", "both")
+                and device_pin.io_type == "output"
+            ):
                 pin = pin_data[device_pin.name]
                 break
         if pin is None:
             raise ValueError(
                 f"Device {cls.NAME} has no digital output pin to trigger"
             )
-        return f"WRITE DIGITAL {pin} 1"
+        return f"WRITE DIG {pin:0>3} 1"
 
     @classmethod
-    def trigger_digital_low(cls, pin_data: dict[str, int]) -> str:
+    def trigger_digital_low(cls, pin_data: dict[str, int], *args: bool) -> str:
+        if args[0] is not False:
+            return ""
         if "trigger_digital_low" not in cls.available_slots():
             raise ValueError(
                 f"Slot trigger_digital_low not available for {cls.NAME}"
             )
         pin: int | None = None
         for device_pin in cls.PINS:
-            if device_pin.type == "digital" and device_pin.io_type == "output":
+            if (
+                device_pin.type in ("digital", "both")
+                and device_pin.io_type == "output"
+            ):
                 pin = pin_data[device_pin.name]
                 break
         if pin is None:
             raise ValueError(
                 f"Device {cls.NAME} has no digital output pin to trigger"
             )
-        return f"WRITE DIGITAL {pin} 0"
+        return f"WRITE DIG {pin:0>3} 0"
 
     @classmethod
-    def value_analog(cls, pin_data: dict[str, int], *args: int) -> str:
+    def value_digital(cls, pin_data: dict[str, int], *args: bool) -> str:
+        if args[0] not in (True, False):
+            return ""
+        if "value_digital" not in cls.available_slots():
+            raise ValueError(
+                f"Slot value_digital not available for {cls.NAME}"
+            )
+        pin: int | None = None
+        for device_pin in cls.PINS:
+            if (
+                device_pin.type in ("digital", "both")
+                and device_pin.io_type == "output"
+            ):
+                pin = pin_data[device_pin.name]
+                break
+        if pin is None:
+            raise ValueError(
+                f"Device {cls.NAME} has no digital output pin to control"
+            )
+        return f"WRITE DIG {pin:0>3} {int(args[0])}"
+
+    @classmethod
+    def value_analog(cls, pin_data: dict[str, int], *args: float) -> str:
         if "value_analog" not in cls.available_slots():
             raise ValueError(
                 f"Slot value_analog not available for {cls.NAME}"
             )
         elif (
             len(args) != 1
-            or not isinstance(args[0], int)
+            or not isinstance(args[0], float)
         ):
             raise ValueError(
-                "Slot value_analog requires 1 argument of type int (got "
+                "Slot value_analog requires 1 argument of type float (got "
                 f"{args})"
             )
         pin: int | None = None
         for device_pin in cls.PINS:
-            if device_pin.type == "analog" and device_pin.io_type == "output":
+            if (
+                device_pin.type in ("digital", "both")
+                and device_pin.io_type == "output"
+            ):
                 pin = pin_data[device_pin.name]
                 break
         if pin is None:
             raise ValueError(
                 f"Device {cls.NAME} has no analog output pin to trigger"
             )
-        return f"WRITE ANALOG {pin} {args[0]}"
+        try:
+            from .config import get_config_value
+        except ImportError:
+            from config import get_config_value  # type: ignore[no-redef]
+        analog_adc = int(args[0] / 100.0 * get_config_value("max_adc_value"))
+        return f"WRITE ANA {pin:0>3} {analog_adc:0>4}"
 
 
 class MacroThread(Thread):

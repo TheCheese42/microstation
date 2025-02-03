@@ -1,19 +1,22 @@
 import asyncio
 from collections import deque
 from collections.abc import Callable
-from typing import Self
+from typing import Any, Self
 
 import serial
 
 try:
     from . import config
     from .actions import auto_activaters
+    from .actions.signals_slots import find_signal_slot, get_ss_instance
     from .config import get_config_value, log, log_mc
     from .model import Profile
     from .utils import get_port_info
 except ImportError:
     import config  # type: ignore[no-redef]  # noqa
     from actions import auto_activaters  # type: ignore[no-redef]
+    from actions.signals_slots import (  # type: ignore[no-redef]
+        find_signal_slot, get_ss_instance)
     from config import get_config_value  # type: ignore[no-redef]
     from config import log, log_mc  # type: ignore[no-redef]
     from model import Profile  # type: ignore[no-redef]
@@ -130,6 +133,7 @@ class Daemon:
         self.profile: Profile | None = self.load_auto_activate_profile()
         self.auto_activation_enabled = get_config_value("auto_detect_profiles")
         self.auto_activate_checker_running = False
+        self.slot_runner_running = False
         self.profile_changed = False
         self.mc_version: None | str = None
 
@@ -138,6 +142,7 @@ class Daemon:
         self.full_history: list[str] = []
 
         self.received_task_callbacks: list[Callable[[str], None]] = []
+        self.last_slot_returns: dict[str, Any] = {}
 
     def load_auto_activate_profile(self) -> Profile | None:
         true_profiles: list[Profile] = []
@@ -180,6 +185,9 @@ class Daemon:
                 self.check_for_auto_activate_updates_periodically()
             )
             self.auto_activate_checker_running = True
+        if not self.slot_runner_running:
+            asyncio.get_event_loop().create_task(self.run_slots())
+            self.slot_runner_running = True
         should_stop = False
         should_restart = False
         while True:
@@ -254,6 +262,32 @@ class Daemon:
             if self.auto_activation_enabled:
                 self.profile = self.load_auto_activate_profile()
 
+    async def run_slots(self) -> None:
+        while True:
+            await asyncio.sleep(0.1)
+            if not self.profile:
+                continue
+            for component in self.profile.components:
+                for slot, action in component.slots_actions.items():
+                    name = action["name"]
+                    if not isinstance(name, str):
+                        raise TypeError(
+                            f"Action name for slot {slot} must be a string, "
+                            f"got {type(name)}"
+                        )
+                    instance = get_ss_instance(find_signal_slot(name))
+                    if isinstance(params := action.get("params"), dict):
+                        for attr, value in params.items():
+                            setattr(instance, attr, value)
+                    last_result = self.last_slot_returns.get(
+                        f"{component.id}:{slot}"
+                    )
+                    result = instance.call(slot)
+                    if last_result == result:
+                        continue
+                    self.last_slot_returns[f"{component.id}:{slot}"] = result
+                    component.call_slot(slot, result)
+
 
 class Task:
     def __init__(
@@ -285,6 +319,8 @@ class Task:
             version = self.data.split(" ", 1)[1]
             self.daemon.mc_version = version
         elif self.data.startswith("PINS_REQUESTED"):
+            self.daemon.last_slot_returns.clear()
+            self.write_method("")  # Ensure that no half line was left over
             self.write_method("RESET_PINS")
             if not self.profile:
                 return

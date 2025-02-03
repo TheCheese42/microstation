@@ -210,6 +210,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 __version__[0] != mc_version_tuple[0]
                 or __version__[1] != mc_version_tuple[1]
             ):
+                self.ignore_version_mismatch = True
                 if show_question(
                     self, tr("Microstation", "Version Mismatch"),
                     tr("Microstation", "The Microcontroller runs a Sketch "
@@ -219,8 +220,6 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                        "newest code?")
                 ) == QMessageBox.StandardButton.Yes:
                     self.upload_code()
-                else:
-                    self.ignore_version_mismatch = True
 
     def update_profile_combo(self) -> None:
         profiles = [profile.name for profile in config.PROFILES]
@@ -235,7 +234,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 self.profileCombo.setCurrentIndex(i)
 
     def update_ports(self, force: bool = False) -> None:
-        current_comports = [port.device for port in comports()]
+        try:
+            current_comports = [port.device for port in comports()]
+        except ValueError:
+            return
         if current_comports == self._previous_comports and not force:
             return
         self._previous_comports = current_comports
@@ -1134,7 +1136,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             actions = query_signals_slots(tags, False)
             _add_signal_slot_entry(dig_slo, actions, "slot")
 
-        for ana_slo in self.component.device.available_slots_digital(
+        for ana_slo in self.component.device.available_slots_analog(
             self.component.properties
         ):
             tags = [Tag.OUTPUT, Tag.ANALOG]

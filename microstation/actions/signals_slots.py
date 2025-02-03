@@ -47,7 +47,7 @@ class SignalOrSlot:
     PARAMS: list[Param] = []
     DEVICES: list[str] = []
 
-    def call(self, signal_slot: str, *args: Any, **kwargs: Any) -> Any | None:
+    def call(self, signal_slot: str, *args: Any, **kwargs: Any) -> Any:
         return None
 
 
@@ -247,19 +247,22 @@ class ProgramRunning(SignalOrSlot):
     def call(self, signal_slot: str) -> bool:
         if not self.program:
             return False
-        return self.program in (
+        is_running = self.program in (
             p.name() for p in psutil.process_iter(attrs=['name'])
         )
+        return is_running
 
 
 SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     Nothing,
     NothingManager,
+    # Signals
     Shortcut,
     TapShortcut,
     PressShortcut,
     ReleaseShortcut,
     Macro,
     LogToFile,
+    # Slots
     ProgramRunning,
 ]
