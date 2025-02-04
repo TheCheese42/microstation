@@ -87,7 +87,7 @@ def fetch_devices() -> list[type["Device"]]:
             try:
                 module = import_module(f".devices.{file.stem}", "microstation")
             except (ImportError, TypeError):
-                module = import_module(f"microstation.devices.{file.stem}")
+                module = import_module(f"devices.{file.stem}")
             for device_type in module.__all__:
                 device = getattr(module, device_type)
                 devices.append(device)

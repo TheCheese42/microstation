@@ -8,7 +8,7 @@ from PyQt6.QtGui import QKeySequence
 try:
     from ..enums import Tag
 except ImportError:
-    from microstation.enums import Tag
+    from enums import Tag  # type: ignore[no-redef]
 
 if TYPE_CHECKING:
     from ..model import Controller

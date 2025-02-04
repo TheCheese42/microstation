@@ -73,6 +73,7 @@ except ImportError:
         from ui.component_editor_ui import Ui_ComponentEditor
         from ui.create_component_ui import Ui_CreateComponent
         from ui.install_boards_ui import Ui_InstallBoards
+        from ui.licenses_ui import Ui_Licenses
         from ui.macro_action_editor_ui import Ui_MacroActionEditor
         from ui.macro_editor_ui import Ui_MacroEditor
         from ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
@@ -80,6 +81,7 @@ except ImportError:
         from ui.profiles_ui import Ui_Profiles
         from ui.serial_monitor_ui import Ui_SerialMonitor
         from ui.settings_ui import Ui_Settings
+        from ui.welcome_ui import Ui_Welcome
         from ui.window_ui import Ui_Microstation
     except ImportError:
         config.log(
