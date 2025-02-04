@@ -38,6 +38,7 @@ try:
     from .ui.component_editor_ui import Ui_ComponentEditor
     from .ui.create_component_ui import Ui_CreateComponent
     from .ui.install_boards_ui import Ui_InstallBoards
+    from .ui.licenses_ui import Ui_Licenses
     from .ui.macro_action_editor_ui import Ui_MacroActionEditor
     from .ui.macro_editor_ui import Ui_MacroEditor
     from .ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
@@ -48,7 +49,7 @@ try:
     from .ui.welcome_ui import Ui_Welcome
     from .ui.window_ui import Ui_Microstation
     from .utils import get_device_info
-    from .version import version_string, __version__
+    from .version import __version__, version_string
 except ImportError:
     import config  # type: ignore[no-redef]
     try:
@@ -107,7 +108,7 @@ except ImportError:
     from paths import SER_HISTORY_PATH  # type: ignore[no-redef]
     from paths import STYLES_PATH  # type: ignore[no-redef]
     from utils import get_device_info  # type: ignore[no-redef]
-    from version import version_string, __version__  # type: ignore[no-redef]
+    from version import __version__, version_string  # type: ignore[no-redef]
 
 
 tr = QApplication.translate
@@ -333,8 +334,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         )
 
         self.actionOpenWiki.triggered.connect(self.open_wiki)
+
         self.actionAboutMicrostation.triggered.connect(self.open_about)
         self.actionOpenGitHub.triggered.connect(self.open_github)
+        self.actionOpenSourceLicenses.triggered.connect(self.open_licenses)
 
         self.profileCombo.currentTextChanged.connect(self.set_profile)
         self.autoActivateCheck.stateChanged.connect(self.set_auto_activate)
@@ -351,6 +354,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
     def open_github(self) -> None:
         self.open_url("https://github.com/TheCheese42/microstation")
+
+    def open_licenses(self) -> None:
+        dialog = Licenses(self)
+        dialog.exec()
 
     def set_profile(self, profile_name: str) -> None:
         for profile in config.PROFILES:
@@ -2019,6 +2026,26 @@ class About(QDialog, Ui_About):  # type: ignore[misc]
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
         self.versionDisplay.setText(version_string)
+
+
+class Licenses(QDialog, Ui_Licenses):  # type: ignore[misc]
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+        self.connectSignalsSlots()
+
+    def setupUi(self, *args: Any, **kwargs: Any) -> None:
+        super().setupUi(*args, **kwargs)
+
+    def connectSignalsSlots(self) -> None:
+        self.list.itemSelectionChanged.connect(self.show_license)
+
+    def show_license(self) -> None:
+        try:
+            selected = self.list.selectedItems()[0]
+        except IndexError:
+            return
+        self.browser.setText(selected.toolTip())
 
 
 class Welcome(QDialog, Ui_Welcome):  # type: ignore[misc]
