@@ -1,9 +1,9 @@
 # from abc import ABCMeta, abstractmethod
+import random
 import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import cache
-import random
 from importlib import import_module
 from threading import Thread
 from typing import Any, Literal
@@ -15,14 +15,14 @@ from pynput.mouse import Button
 from pynput.mouse import Controller as MController
 from pynput.mouse import Listener as MListener
 
-from .enums import Issue, Tag
-
 try:
     from .actions.signals_slots import find_signal_slot, get_ss_instance
+    from .enums import Issue, Tag
     from .paths import DEVICES_PATH
 except ImportError:
     from actions.signals_slots import (  # type: ignore  # noqa
         find_signal_slot, get_ss_instance)
+    from enums import Issue, Tag  # type: ignore[no-redef]
     from paths import DEVICES_PATH  # type: ignore[no-redef]
 
 
