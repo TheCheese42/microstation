@@ -247,9 +247,12 @@ class ProgramRunning(SignalOrSlot):
     def call(self, signal_slot: str) -> bool:
         if not self.program:
             return False
-        is_running = self.program in (
-            p.name() for p in psutil.process_iter(attrs=['name'])
-        )
+        try:
+            is_running = self.program in (
+                p.name() for p in psutil.process_iter(attrs=['name'])
+            )
+        except Exception:
+            is_running = False
         return is_running
 
 

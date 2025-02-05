@@ -358,7 +358,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.open_url("https://github.com/TheCheese42/microstation")
 
     def open_licenses(self) -> None:
-        dialog = Licenses(self)
+        dialog = Licenses(self, self.open_url)
         dialog.exec()
 
     def set_profile(self, profile_name: str) -> None:
@@ -2031,23 +2031,43 @@ class About(QDialog, Ui_About):  # type: ignore[misc]
 
 
 class Licenses(QDialog, Ui_Licenses):  # type: ignore[misc]
-    def __init__(self, parent: QWidget) -> None:
+    def __init__(
+        self, parent: QWidget, open_url_method: Callable[[str], None]
+    ) -> None:
         super().__init__(parent)
+        self.open_url = open_url_method
+        self.names_urls_licenses: dict[str, tuple[str, str]] = {}
         self.setupUi(self)
         self.connectSignalsSlots()
 
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
+        for i in range(self.list.count()):
+            item = self.list.item(i)
+            # Don't question this practice
+            license_text = item.toolTip()
+            url = item.statusTip()
+            item.setToolTip(
+                tr("Licenses", "{url} (double tap to open)").format(
+                    url=url
+                )
+            )
+            item.setStatusTip("")
+            self.names_urls_licenses[item.text()] = (url, license_text)
 
     def connectSignalsSlots(self) -> None:
         self.list.itemSelectionChanged.connect(self.show_license)
+        self.list.itemDoubleClicked.connect(self.double_clicked)
 
     def show_license(self) -> None:
         try:
             selected = self.list.selectedItems()[0]
         except IndexError:
             return
-        self.browser.setText(selected.toolTip())
+        self.browser.setText(self.names_urls_licenses[selected.text()][1])
+
+    def double_clicked(self, item: QListWidgetItem) -> None:
+        self.open_url(self.names_urls_licenses[item.text()][0])
 
 
 class Welcome(QDialog, Ui_Welcome):  # type: ignore[misc]
