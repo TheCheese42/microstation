@@ -4,6 +4,13 @@ from pathlib import Path
 from PyQt6.QtCore import QStandardPaths
 
 ROOT_PATH = Path(__file__).parent
+if "__compiled__" in globals():
+    # With nuitka, __file__ will show the file in a subfolder that doesn't
+    # exist.
+    # With nuitka: microstation.dist/microstation/paths.py
+    # Actual: microstation.dist/paths.py
+    # That's why we go back another folder using .parent twice.
+    ROOT_PATH = Path(__file__).parent.parent
 STYLES_PATH = ROOT_PATH / "external_styles"
 ICONS_PATH = ROOT_PATH / "icons"
 DEVICES_PATH = ROOT_PATH / "devices"

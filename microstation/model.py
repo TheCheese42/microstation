@@ -4,7 +4,6 @@ import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import cache
-from importlib import import_module
 from threading import Thread
 from typing import Any, Literal
 
@@ -82,15 +81,13 @@ KEY_LOOKUP = {
 @cache
 def fetch_devices() -> list[type["Device"]]:
     devices: list[type["Device"]] = []
-    for file in DEVICES_PATH.iterdir():
-        if file.suffix == ".py":
-            try:
-                module = import_module(f".devices.{file.stem}", "microstation")
-            except (ImportError, TypeError):
-                module = import_module(f"devices.{file.stem}")
-            for device_type in module.__all__:
-                device = getattr(module, device_type)
-                devices.append(device)
+    try:
+        from . import devices as devices_module
+    except ImportError:
+        import devices as devices_module  # type: ignore[no-redef]
+    for device_type in devices_module.__all__:
+        device = getattr(devices_module, device_type)
+        devices.append(device)
     return devices
 
 
