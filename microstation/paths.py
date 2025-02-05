@@ -13,6 +13,7 @@ if "__compiled__" in globals():
     ROOT_PATH = Path(__file__).parent.parent
 STYLES_PATH = ROOT_PATH / "external_styles"
 ICONS_PATH = ROOT_PATH / "icons"
+LANGS_PATH = ROOT_PATH / "langs"
 DEVICES_PATH = ROOT_PATH / "devices"
 ARDUINO_SKETCH_PATH = ROOT_PATH / "arduino"
 LICENSES_PATH = ROOT_PATH / "licenses"

@@ -32,7 +32,7 @@ try:
     from .model import (MODS, Component, Profile, find_device, gen_profile_id,
                         validate_components)
     from .paths import (ARDUINO_SKETCH_FORMATTED_PATH, ARDUINO_SKETCH_PATH,
-                        ICONS_PATH, LOGGER_PATH, MC_DEBUG_LOG_PATH,
+                        ICONS_PATH, LANGS_PATH, LOGGER_PATH, MC_DEBUG_LOG_PATH,
                         SER_HISTORY_PATH, STYLES_PATH)
     from .ui.about_ui import Ui_About
     from .ui.component_editor_ui import Ui_ComponentEditor
@@ -108,6 +108,7 @@ except ImportError:
     from paths import LOGGER_PATH  # type: ignore[no-redef]
     from paths import MC_DEBUG_LOG_PATH  # type: ignore[no-redef]
     from paths import SER_HISTORY_PATH  # type: ignore[no-redef]
+    from paths import LANGS_PATH  # type: ignore[no-redef]
     from paths import STYLES_PATH  # type: ignore[no-redef]
     from utils import get_device_info  # type: ignore[no-redef]
     from version import __version__, version_string  # type: ignore[no-redef]
@@ -272,7 +273,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
         # Language menu
         self.menuLanguage.clear()
-        for locale_ in self.locales:
+        for locale_ in sorted(self.locales, key=lambda x: x.language().name):
             action = self.menuLanguage.addAction(locale_.language().name)
             action.triggered.connect(partial(self.change_language, locale_))
 
@@ -2105,10 +2106,9 @@ def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:
     font = app.font()
     font.setFamily("Liberation Sans")
     app.setFont(font)
-    langs_dir = Path(__file__).resolve().parent / "langs"
     locales: list[QLocale] = []
     translators: dict[str, QTranslator] = {}
-    for file in langs_dir.iterdir():
+    for file in sorted(LANGS_PATH.iterdir()):
         if file.suffix == ".qm":
             locale_name = file.stem.split("_", 1)[1]
             locale_ = QLocale(locale_name)
