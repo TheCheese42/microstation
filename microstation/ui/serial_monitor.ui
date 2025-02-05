@@ -36,7 +36,7 @@
       <string>Everything that is received by a connected Microcontroller at the selected Port will be displayed here.</string>
      </property>
      <property name="placeholderText">
-      <string>Serial input will be displayed here...</string>
+      <string>Serial output will be displayed here...</string>
      </property>
     </widget>
    </item>
