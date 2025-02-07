@@ -209,11 +209,11 @@ class Daemon:
                     await asyncio.sleep(0.01)
                     if self.paused:
                         continue
-                    if self.restart_queued:
-                        should_restart = True
-                        break
                     if self.stop_queued:
                         should_stop = True
+                        break
+                    if self.restart_queued:
+                        should_restart = True
                         break
                     if self.should_discard_incoming_data:
                         self.should_discard_incoming_data = False
