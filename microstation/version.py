@@ -13,7 +13,7 @@ try:
 except ImportError:
     from paths import ROOT_PATH
 
-version_path = ROOT_PATH / "version.txt"
-version_string = version_path.read_text(encoding="utf-8").strip()
+VERSION_PATH = ROOT_PATH / "version.txt"
+version_string = VERSION_PATH.read_text(encoding="utf-8").strip()
 __version__: tuple[int, int, int] = tuple(version_string.split("."))
 
