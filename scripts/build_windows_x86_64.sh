@@ -10,6 +10,8 @@ nuitka \
     --windows-console-mode="attach" \
     --windows-icon-from-ico="microstation/icons/aperture.png" \
     --product-name="Microstation" \
+    --product-version="$(cat version.txt)" \
+    --file-version="$(cat version.txt)" \
     --include-data-dir="microstation/arduino/=arduino/" \
     --include-data-dir="microstation/external_styles/=external_styles/" \
     --include-data-dir="microstation/icons/=icons/" \
