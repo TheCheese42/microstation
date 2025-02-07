@@ -11,17 +11,21 @@ try:
     from . import config
     from .daemon import Daemon
     from .gui import launch_gui
+    from .model import CONTROLLER, start_controller_listeners
     from .paths import ICONS_PATH
 except ImportError:
     import config  # type: ignore[no-redef]
     from daemon import Daemon  # type: ignore[no-redef]
     from gui import launch_gui  # type: ignore[no-redef]
+    from model import (CONTROLLER,  # type: ignore[no-redef]
+                       start_controller_listeners)
     from paths import ICONS_PATH  # type: ignore[no-redef]
 
 
 def main() -> None:
     config.init_config()
     config.log_basic()
+    start_controller_listeners(CONTROLLER)
     daemon = Daemon(
         config.get_config_value("default_port"),
         config.get_config_value("baudrate"),

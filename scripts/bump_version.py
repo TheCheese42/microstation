@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
-from pathlib import Path
+import re
 import sys
+from pathlib import Path
 
-from microstation.version import version_string, __version__, VERSION_PATH
+sys.path.append(str(Path("microstation")))
 
+from version import (VERSION_PATH, __version__,  # noqa  # type: ignore
+                     version_string)
 
 PYPROJECT_PATH = Path() / "pyproject.toml"
 
@@ -15,7 +18,7 @@ def main():
         prog="version-bumper",
         description="Bump the version number. Sets the version for all files "
                     "containing a version number, including version.txt, "
-                    "pyproject.toml, and the windows installer script.",
+                    "pyproject.toml and the Windows installer script.",
     )
 
     parser.add_argument(
@@ -51,7 +54,7 @@ def main():
         help="Increase the patch version.",
     )
 
-    args = parser.parse_args(argv)
+    args = parser.parse_args()
     to_modify: tuple[bool, bool, bool] = (args.major, args.minor, args.patch)
     if sum(to_modify) > 1:
         print("You mustn't specify more than 1 version option.")
@@ -67,13 +70,24 @@ def main():
     elif to_modify[2]:
         new_version[2] += 1
     new_tuple: tuple[int, int, int] = tuple(new_version)
-    if new_tuple == new_version:
-        return
-    new_string = ".".join(new_tuple)
+    if new_tuple == __version__:
+        parser.print_help()
+        sys.exit(0)
+    new_string = ".".join(map(str, new_tuple))
 
     VERSION_PATH.write_text(new_string, encoding="utf-8")
+    pyproject_text = PYPROJECT_PATH.read_text(encoding="utf-8")
+    if match := re.search(r"version = \"([\d\.]*)\"", pyproject_text):
+        match: re.Match
+        start = match.start(1)
+        pyproject_list = list(pyproject_text)
+        del pyproject_list[start:match.end(1)]
+        for i, char in enumerate(new_string):
+            pyproject_list.insert(start + i, char)
+        PYPROJECT_PATH.write_text("".join(pyproject_list), encoding="utf-8")
+    else:
+        print("pyproject.toml doesn't contain a version string.")
 
 
 if __name__ == "__main__":
     main()
-

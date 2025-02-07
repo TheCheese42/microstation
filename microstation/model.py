@@ -17,12 +17,10 @@ from pynput.mouse import Listener as MListener
 try:
     from .actions.signals_slots import find_signal_slot, get_ss_instance
     from .enums import Issue, Tag
-    from .paths import DEVICES_PATH
 except ImportError:
     from actions.signals_slots import (  # type: ignore  # noqa
         find_signal_slot, get_ss_instance)
     from enums import Issue, Tag  # type: ignore[no-redef]
-    from paths import DEVICES_PATH  # type: ignore[no-redef]
 
 
 type COMPONENT = dict[str, Any]
@@ -835,8 +833,7 @@ class Controller:
                     self.release(key)
 
 
-def start_controller() -> Controller:
-    controller = Controller()
+def start_controller_listeners(controller: Controller) -> None:
     kl = KListener(
         on_press=controller.on_key_pressed,
         on_release=controller.on_key_released,
@@ -846,7 +843,6 @@ def start_controller() -> Controller:
     )
     kl.start()
     ml.start()
-    return controller
 
 
-CONTROLLER = start_controller()
+CONTROLLER = Controller()

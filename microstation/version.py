@@ -15,5 +15,4 @@ except ImportError:
 
 VERSION_PATH = ROOT_PATH / "version.txt"
 version_string = VERSION_PATH.read_text(encoding="utf-8").strip()
-__version__: tuple[int, int, int] = tuple(version_string.split("."))
-
+__version__: tuple[int, int, int] = tuple(map(int, version_string.split(".")))
