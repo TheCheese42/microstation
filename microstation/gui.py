@@ -27,8 +27,6 @@ try:
                                         query_by_device, query_signals_slots)
     from .daemon import Daemon
     from .enums import Issue, Tag
-    from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
-    from .icons import resource as _  # noqa: F811
     from .model import (MODS, Component, Profile, find_device, gen_profile_id,
                         validate_components)
     from .paths import (ARDUINO_SKETCH_FORMATTED_PATH, ARDUINO_SKETCH_PATH,
@@ -51,23 +49,10 @@ try:
     from .utils import get_device_info
     from .version import __version__, version_string
 except ImportError:
-    import config  # type: ignore[no-redef]
     try:
-        from icons import resource as _
+        from . import config
     except ImportError:
-        config.log(
-            "Failed to load icons. Did you forget to run the compile-icons "
-            "script?"
-            "ERROR",
-        )
-    try:
-        from external_styles.breeze import breeze_pyqt6 as _  # noqa
-    except ImportError:
-        config.log(
-            "Failed to load styles. Did you forget to run the compile-styles "
-            "script?"
-            "ERROR",
-        )
+        import config  # type: ignore[no-redef]
     try:
         from ui.about_ui import Ui_About
         from ui.component_editor_ui import Ui_ComponentEditor
@@ -85,9 +70,10 @@ except ImportError:
         from ui.window_ui import Ui_Microstation
     except ImportError:
         config.log(
-            "Failed to load UI. Did you forget to run the compile-ui script?"
+            "Failed to load UI. Did you forget to run the compile-ui script?",
             "ERROR",
         )
+        sys.exit(1)
     import utils  # type: ignore[no-redef]
     from actions import auto_activaters  # type: ignore[no-redef]
     from actions.signals_slots import SignalOrSlot  # type: ignore[no-redef]
@@ -105,13 +91,37 @@ except ImportError:
     from paths import ARDUINO_SKETCH_FORMATTED_PATH  # type: ignore[no-redef]
     from paths import ARDUINO_SKETCH_PATH  # type: ignore[no-redef]
     from paths import ICONS_PATH  # type: ignore[no-redef]
+    from paths import LANGS_PATH  # type: ignore[no-redef]
     from paths import LOGGER_PATH  # type: ignore[no-redef]
     from paths import MC_DEBUG_LOG_PATH  # type: ignore[no-redef]
     from paths import SER_HISTORY_PATH  # type: ignore[no-redef]
-    from paths import LANGS_PATH  # type: ignore[no-redef]
     from paths import STYLES_PATH  # type: ignore[no-redef]
     from utils import get_device_info  # type: ignore[no-redef]
     from version import __version__, version_string  # type: ignore[no-redef]
+
+try:
+    from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
+except ImportError:
+    try:
+        from external_styles.breeze import breeze_pyqt6 as _  # noqa
+    except ImportError:
+        config.log(
+            "Failed to load breeze styles. Did you forget to run the "
+            "compile-styles script?"
+            "WARNING",
+        )
+
+try:
+    from .icons import resource as _  # noqa: F811
+except ImportError:
+    try:
+        from icons import resource as _  # noqa: F401
+    except ImportError:
+        config.log(
+            "Failed to load icons. Did you forget to run the compile-icons "
+            "script?"
+            "WARNING",
+        )
 
 
 tr = QApplication.translate

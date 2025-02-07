@@ -17,8 +17,8 @@ except ImportError:
     import config  # type: ignore[no-redef]
     from daemon import Daemon  # type: ignore[no-redef]
     from gui import launch_gui  # type: ignore[no-redef]
-    from model import (CONTROLLER,  # type: ignore[no-redef]
-                       start_controller_listeners)
+    from model import CONTROLLER  # type: ignore[no-redef]
+    from model import start_controller_listeners
     from paths import ICONS_PATH  # type: ignore[no-redef]
 
 
