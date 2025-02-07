@@ -17,4 +17,5 @@ nuitka \
     --include-data-dir="microstation/icons/=icons/" \
     --include-data-dir="microstation/langs/=langs/" \
     --include-data-dir="microstation/ui/=ui/" \
+    --include-data-file="microstation/version.txt" \
     --enable-plugin=pyqt6 \
