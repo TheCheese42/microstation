@@ -8,5 +8,12 @@ compatibility, always increase Minor.
 This will make the GUI ask the User to re-upload the code.
 """
 
-__version__ = (0, 3, 1)
-version_string = ".".join(map(str, __version__))
+try:
+    from .paths import ROOT_PATH
+except ImportError:
+    from paths import ROOT_PATH
+
+version_path = ROOT_PATH / "version.txt"
+version_string = version_path.read_text(encoding="utf-8").strip()
+__version__: tuple[int, int, int] = tuple(version_string.split("."))
+
