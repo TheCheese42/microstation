@@ -10,8 +10,8 @@ nuitka \
     --macos-app-icon="microstation/icons/aperture.png" \
     --macos-app-name="Microstation" \
     --product-name="Microstation" \
-    --product-version="$(cat version.txt)" \
-    --file-version="$(cat version.txt)" \
+    --product-version="$(cat microstation/version.txt)" \
+    --file-version="$(cat microstation/version.txt)" \
     --include-data-dir="microstation/arduino/=arduino/" \
     --include-data-dir="microstation/external_styles/=external_styles/" \
     --include-data-dir="microstation/icons/=icons/" \
