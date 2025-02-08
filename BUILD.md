@@ -27,7 +27,7 @@ sudo apt install libxcb-cursor0 libcairo-dev libgirepository1.0-dev  # Runtime d
 ```
 
 > Note:
-> The libcairo-dev and libgirepository1.0-dev dependencies are debian only, according to <https://pystray.readthedocs.io/en/latest/faq.html>.
+> The libcairo-dev and libgirepository1.0-dev dependencies are Debian only, according to <https://pystray.readthedocs.io/en/latest/faq.html>.
 
 #### RedHat
 
@@ -95,6 +95,11 @@ The resulting executable can be found at `build/microstation.bin`.
 
 ## Windows
 
+### Prerequisites
+
+- Install a Python version of at least 3.12 from <https://www.python.org/downloads/>
+- Install git from <https://git-scm.com/downloads/win>
+
 ### Downloading the source files
 
 ```pwsh
@@ -109,6 +114,7 @@ python -m venv .venv  # At least Python 3.12
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt -r dev-requirements.txt
 .\scripts\compile-ui.sh  # Required
+Set-Alias -Name rcc -Value .\.venv\Lib\site-packages\qt6_applications\Qt\bin\rcc.exe  # Make the rcc.exe tool available
 .\scripts\compile-icons.sh  # Optional, otherwise no icons will be shown
 .\scripts\compile-langs.sh  # Optional, otherwise only english will be available
 .\scripts\compile-styles.sh  # Optional, otherwise only the default style will be available
