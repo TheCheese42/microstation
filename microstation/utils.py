@@ -9,10 +9,7 @@ from zipfile import ZipFile
 import serial.tools.list_ports_common
 from serial.tools.list_ports import comports
 
-try:
-    from .paths import LIB_DIR
-except ImportError:
-    from paths import LIB_DIR  # type: ignore[no-redef]
+from .paths import LIB_DIR
 
 
 class MissingArduinoCLIError(FileNotFoundError):

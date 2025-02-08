@@ -5,10 +5,7 @@ from typing import TYPE_CHECKING, Any
 import psutil
 from PyQt6.QtGui import QKeySequence
 
-try:
-    from ..enums import Tag
-except ImportError:
-    from enums import Tag  # type: ignore[no-redef]
+from ..enums import Tag
 
 if TYPE_CHECKING:
     from ..model import Controller

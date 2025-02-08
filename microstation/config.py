@@ -5,17 +5,10 @@ from collections.abc import Callable
 from datetime import datetime
 from typing import Any
 
-try:
-    from .model import Profile
-    from .paths import (CONFIG_DIR, CONFIG_PATH, LIB_DIR, LOGGER_PATH,
-                        MACROS_PATH, MC_DEBUG_LOG_PATH, PROFILES_PATH)
-    from .version import version_string
-except ImportError:
-    from model import Profile  # type: ignore[no-redef]
-    from paths import (CONFIG_DIR, CONFIG_PATH,  # type: ignore[no-redef]
-                       LIB_DIR, LOGGER_PATH, MACROS_PATH, MC_DEBUG_LOG_PATH,
-                       PROFILES_PATH)
-    from version import version_string  # type: ignore[no-redef]
+from .model import Profile
+from .paths import (CONFIG_DIR, CONFIG_PATH, LIB_DIR, LOGGER_PATH,
+                    MACROS_PATH, MC_DEBUG_LOG_PATH, PROFILES_PATH)
+from .version import version_string
 
 
 DEFAULT_CONFIG = {

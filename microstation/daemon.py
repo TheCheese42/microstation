@@ -5,22 +5,12 @@ from typing import Any, Self
 
 import serial
 
-try:
-    from . import config
-    from .actions import auto_activaters
-    from .actions.signals_slots import find_signal_slot, get_ss_instance
-    from .config import get_config_value, log, log_mc
-    from .model import Profile
-    from .utils import get_port_info
-except ImportError:
-    import config  # type: ignore[no-redef]  # noqa
-    from actions import auto_activaters  # type: ignore[no-redef]
-    from actions.signals_slots import (  # type: ignore[no-redef]
-        find_signal_slot, get_ss_instance)
-    from config import get_config_value  # type: ignore[no-redef]
-    from config import log, log_mc  # type: ignore[no-redef]
-    from model import Profile  # type: ignore[no-redef]
-    from utils import get_port_info  # type: ignore[no-redef]
+from . import config
+from .actions import auto_activaters
+from .actions.signals_slots import find_signal_slot, get_ss_instance
+from .config import get_config_value, log, log_mc
+from .model import Profile
+from .utils import get_port_info
 
 
 class SerialDevice:

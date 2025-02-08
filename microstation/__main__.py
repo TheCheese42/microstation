@@ -7,20 +7,11 @@ from threading import Thread
 import pystray
 from PIL import Image
 
-try:
-    from . import config
-    from .daemon import Daemon
-    from .gui import Microstation, launch_gui
-    from .model import CONTROLLER, start_controller_listeners
-    from .paths import ICONS_PATH
-except ImportError:
-    import config  # type: ignore[no-redef]
-    from daemon import Daemon  # type: ignore[no-redef]
-    from gui import Microstation  # type: ignore[no-redef]
-    from gui import launch_gui  # type: ignore[no-redef]
-    from model import CONTROLLER  # type: ignore[no-redef]
-    from model import start_controller_listeners  # type: ignore[no-redef]
-    from paths import ICONS_PATH  # type: ignore[no-redef]
+from . import config
+from .daemon import Daemon
+from .gui import Microstation, launch_gui
+from .model import CONTROLLER, start_controller_listeners
+from .paths import ICONS_PATH
 
 
 def main() -> None:

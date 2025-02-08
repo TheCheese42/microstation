@@ -14,13 +14,8 @@ from pynput.mouse import Button
 from pynput.mouse import Controller as MController
 from pynput.mouse import Listener as MListener
 
-try:
-    from .actions.signals_slots import find_signal_slot, get_ss_instance
-    from .enums import Issue, Tag
-except ImportError:
-    from actions.signals_slots import (  # type: ignore  # noqa
-        find_signal_slot, get_ss_instance)
-    from enums import Issue, Tag  # type: ignore[no-redef]
+from .actions.signals_slots import find_signal_slot, get_ss_instance
+from .enums import Issue, Tag
 
 
 type COMPONENT = dict[str, Any]

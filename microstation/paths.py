@@ -11,6 +11,7 @@ if "__compiled__" in globals():
     # Actual: microstation.dist/paths.py
     # That's why we go back another folder using .parent twice.
     ROOT_PATH = Path(__file__).parent.parent
+VERSION_PATH = ROOT_PATH / "version.txt"
 STYLES_PATH = ROOT_PATH / "external_styles"
 ICONS_PATH = ROOT_PATH / "icons"
 LANGS_PATH = ROOT_PATH / "langs"

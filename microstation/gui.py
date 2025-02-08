@@ -20,18 +20,21 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
                              QVBoxLayout, QWidget)
 from serial.tools.list_ports import comports
 
+from . import config, utils
+from .actions import auto_activaters
+from .actions.signals_slots import (SignalOrSlot, find_signal_slot,
+                                    query_by_device, query_signals_slots)
+from .daemon import Daemon
+from .enums import Issue, Tag
+from .model import (MODS, Component, Profile, find_device, gen_profile_id,
+                    validate_components)
+from .paths import (ARDUINO_SKETCH_FORMATTED_PATH, ARDUINO_SKETCH_PATH,
+                    ICONS_PATH, LANGS_PATH, LOGGER_PATH, MC_DEBUG_LOG_PATH,
+                    SER_HISTORY_PATH, STYLES_PATH)
+from .utils import get_device_info
+from .version import __version__, version_string
+
 try:
-    from . import config, utils
-    from .actions import auto_activaters
-    from .actions.signals_slots import (SignalOrSlot, find_signal_slot,
-                                        query_by_device, query_signals_slots)
-    from .daemon import Daemon
-    from .enums import Issue, Tag
-    from .model import (MODS, Component, Profile, find_device, gen_profile_id,
-                        validate_components)
-    from .paths import (ARDUINO_SKETCH_FORMATTED_PATH, ARDUINO_SKETCH_PATH,
-                        ICONS_PATH, LANGS_PATH, LOGGER_PATH, MC_DEBUG_LOG_PATH,
-                        SER_HISTORY_PATH, STYLES_PATH)
     from .ui.about_ui import Ui_About
     from .ui.component_editor_ui import Ui_ComponentEditor
     from .ui.create_component_ui import Ui_CreateComponent
@@ -46,82 +49,30 @@ try:
     from .ui.settings_ui import Ui_Settings
     from .ui.welcome_ui import Ui_Welcome
     from .ui.window_ui import Ui_Microstation
-    from .utils import get_device_info
-    from .version import __version__, version_string
 except ImportError:
-    try:
-        from . import config
-    except ImportError:
-        import config  # type: ignore[no-redef]
-    try:
-        from ui.about_ui import Ui_About
-        from ui.component_editor_ui import Ui_ComponentEditor
-        from ui.create_component_ui import Ui_CreateComponent
-        from ui.install_boards_ui import Ui_InstallBoards
-        from ui.licenses_ui import Ui_Licenses
-        from ui.macro_action_editor_ui import Ui_MacroActionEditor
-        from ui.macro_editor_ui import Ui_MacroEditor
-        from ui.microcontroller_settings_ui import Ui_MicrocontrollerSettings
-        from ui.profile_editor_ui import Ui_ProfileEditor
-        from ui.profiles_ui import Ui_Profiles
-        from ui.serial_monitor_ui import Ui_SerialMonitor
-        from ui.settings_ui import Ui_Settings
-        from ui.welcome_ui import Ui_Welcome
-        from ui.window_ui import Ui_Microstation
-    except ImportError:
-        config.log(
-            "Failed to load UI. Did you forget to run the compile-ui script?",
-            "ERROR",
-        )
-        sys.exit(1)
-    import utils  # type: ignore[no-redef]
-    from actions import auto_activaters  # type: ignore[no-redef]
-    from actions.signals_slots import SignalOrSlot  # type: ignore[no-redef]
-    from actions.signals_slots import find_signal_slot  # type: ignore
-    from actions.signals_slots import query_by_device  # type: ignore
-    from actions.signals_slots import query_signals_slots  # type: ignore
-    from daemon import Daemon  # type: ignore[no-redef]
-    from enums import Issue, Tag  # type: ignore[no-redef]
-    from model import MODS  # type: ignore[no-redef]
-    from model import Component  # type: ignore[no-redef]
-    from model import Profile  # type: ignore[no-redef]
-    from model import find_device  # type: ignore[no-redef]
-    from model import gen_profile_id  # type: ignore[no-redef]
-    from model import validate_components  # type: ignore[no-redef]
-    from paths import ARDUINO_SKETCH_FORMATTED_PATH  # type: ignore[no-redef]
-    from paths import ARDUINO_SKETCH_PATH  # type: ignore[no-redef]
-    from paths import ICONS_PATH  # type: ignore[no-redef]
-    from paths import LANGS_PATH  # type: ignore[no-redef]
-    from paths import LOGGER_PATH  # type: ignore[no-redef]
-    from paths import MC_DEBUG_LOG_PATH  # type: ignore[no-redef]
-    from paths import SER_HISTORY_PATH  # type: ignore[no-redef]
-    from paths import STYLES_PATH  # type: ignore[no-redef]
-    from utils import get_device_info  # type: ignore[no-redef]
-    from version import __version__, version_string  # type: ignore[no-redef]
+    config.log(
+        "Failed to load UI. Did you forget to run the compile-ui script?",
+        "ERROR",
+    )
+    sys.exit(1)
 
 try:
-    from .external_styles.breeze import breeze_pyqt6 as _  # noqa: F811
+    from .external_styles.breeze import breeze_pyqt6 as _
 except ImportError:
-    try:
-        from external_styles.breeze import breeze_pyqt6 as _  # noqa
-    except ImportError:
-        config.log(
-            "Failed to load breeze styles. Did you forget to run the "
-            "compile-styles script?"
-            "WARNING",
-        )
+    config.log(
+        "Failed to load breeze styles. Did you forget to run the "
+        "compile-styles script?"
+        "WARNING",
+    )
 
 try:
-    from .icons import resource as _  # noqa: F811
+    from .icons import resource as _  # noqa: 401
 except ImportError:
-    try:
-        from icons import resource as _  # noqa: F401
-    except ImportError:
-        config.log(
-            "Failed to load icons. Did you forget to run the compile-icons "
-            "script?"
-            "WARNING",
-        )
+    config.log(
+        "Failed to load icons. Did you forget to run the compile-icons "
+        "script?"
+        "WARNING",
+    )
 
 
 tr = QApplication.translate

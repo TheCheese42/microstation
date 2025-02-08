@@ -7,8 +7,9 @@ from pathlib import Path
 
 sys.path.append(str(Path("microstation")))
 
-from version import (VERSION_PATH, __version__,  # noqa  # type: ignore
-                     version_string)
+from paths import VERSION_PATH  # noqa  # type: ignore
+from version import __version__  # noqa  # type: ignore
+from version import version_string  # noqa  # type: ignore
 
 PYPROJECT_PATH = Path() / "pyproject.toml"
 
