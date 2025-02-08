@@ -173,17 +173,20 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         daemon: Daemon,
         locales: list[QLocale],
         translators: dict[str, QTranslator],
+        quit_callback: Callable[[], None],
     ) -> None:
         super().__init__(None)
         self.daemon = daemon
         self.locales = locales
         self.translators = translators
         self.current_translator: QTranslator | None = None
+        self.quit_callback = quit_callback
 
         self.selected_port: str = config.get_config_value("default_port")
         self._previous_comports: list[str] = []
         self._previous_profiles: list[str] = []
         self.selected_profile: Profile | None = None
+        self.quit_requested = False
 
         self.serial_monitor_from_index = 0
         self.ignore_version_mismatch = False
@@ -197,6 +200,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh)
         self.timer.start(500)
+
+        self.quit_timer = QTimer(self)
+        self.quit_timer.timeout.connect(self.check_quit_requested)
+        self.quit_timer.start(100)
 
     def refresh(self) -> None:
         self.update_ports()
@@ -587,9 +594,15 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def full_close(self) -> None:
         config.log("User requested QUIT through GUI", "INFO")
         super().close()
-        if instance := QApplication.instance():
-            instance.quit()
-        sys.exit(0)
+        self.quit_callback()
+
+    def request_quit(self) -> None:
+        self.quit_requested = True
+
+    def check_quit_requested(self) -> None:
+        if self.quit_requested:
+            super().close()
+            self.quit_callback()
 
 
 class Settings(QDialog, Ui_Settings):  # type: ignore[misc]
@@ -2105,7 +2118,9 @@ class Welcome(QDialog, Ui_Welcome):  # type: ignore[misc]
         self.closeBtn.clicked.connect(self.close)
 
 
-def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:
+def launch_gui(
+    daemon: Daemon, quit_callback: Callable[[], None],
+) -> tuple[QApplication, Microstation]:
     app = QApplication(sys.argv)
     app.setApplicationName(
         tr("Microstation", "Microstation")
@@ -2132,5 +2147,5 @@ def launch_gui(daemon: Daemon) -> tuple[QApplication, Microstation]:
         default = "en_US"
         config.set_config_value("locale", default)
 
-    win = Microstation(daemon, locales, translators)
+    win = Microstation(daemon, locales, translators, quit_callback)
     return app, win

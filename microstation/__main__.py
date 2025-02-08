@@ -10,13 +10,14 @@ from PIL import Image
 try:
     from . import config
     from .daemon import Daemon
-    from .gui import launch_gui
+    from .gui import Microstation, QApplication, launch_gui
     from .model import CONTROLLER, start_controller_listeners
     from .paths import ICONS_PATH
 except ImportError:
     import config  # type: ignore[no-redef]
     from daemon import Daemon  # type: ignore[no-redef]
-    from gui import launch_gui  # type: ignore[no-redef]
+    from gui import (Microstation, QApplication,  # type: ignore[no-redef]
+                     launch_gui)
     from model import CONTROLLER  # type: ignore[no-redef]
     from model import start_controller_listeners
     from paths import ICONS_PATH  # type: ignore[no-redef]
@@ -39,24 +40,17 @@ def main() -> None:
         daemon=True,
     )
     daemon_thread.start()
-    app, win = launch_gui(daemon)
-    if not config.get_config_value("hide_to_tray_startup"):
-        win.show()
 
-    def show_gui(_) -> None:  # type: ignore[no-untyped-def]
+    def show_gui(win: Microstation, _) -> None:  # type: ignore[no-untyped-def]
         config.log("Received SHOW signal from tray icon", "DEBUG")
         win.show()
         win.showNormal()
 
-    def quit_app(icon) -> None:  # type: ignore[no-untyped-def]
+    def quit_app(
+        win: Microstation, icon
+    ) -> None:  # type: ignore[no-untyped-def]
         config.log("Received QUIT signal from tray icon", "INFO")
-        win.close()
-        app.quit()
-        icon.stop()
-        daemon.queue_stop()
-        time.sleep(0.1)
-        config.log("Exiting", "INFO")
-        sys.exit(0)
+        win.request_quit()
 
     tray_icon = Image.open(ICONS_PATH / "aperture.png")
     icon = pystray.Icon(
@@ -64,15 +58,29 @@ def main() -> None:
         menu=pystray.Menu(
             pystray.MenuItem(
                 "Show Graphical Interface",
-                show_gui,
+                lambda icon: show_gui(win, icon),
                 default=True,
             ),
             pystray.MenuItem(
                 "Restart Daemon", lambda _: daemon.queue_restart()
             ),
-            pystray.MenuItem("Quit", quit_app),
+            pystray.MenuItem("Quit", lambda icon: quit_app(win, icon)),
         )
     )
+
+    def quit_app_full() -> None:  # type: ignore[no-untyped-def]
+        app.quit()
+        icon.stop()
+        daemon.queue_stop()
+        time.sleep(0.2)
+        config.log("Exiting", "INFO")
+        sys.exit(0)
+
+    app, win = launch_gui(daemon, quit_app_full)
+    app: QApplication
+    win: Microstation
+    if not config.get_config_value("hide_to_tray_startup"):
+        win.show()
 
     icon.run_detached()
     config.log("Started system tray icon", "INFO")
