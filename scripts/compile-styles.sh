@@ -1,4 +1,4 @@
-deactivate
+deactivate || true
 mkdir style_clones
 cd style_clones
 git clone https://github.com/Alexhuszagh/BreezeStyleSheets
