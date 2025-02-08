@@ -49,9 +49,9 @@ jobs:
           script-name: microstation
           mode: onefile
           python-flag: |
-            "no_asserts"
-            "no_docstrings"
-            "-m"
+            no_asserts
+            no_docstrings
+            -m
           prefer-source-code: true
           linux-icon: microstation/icons/aperture.png
           product-name: Microstation

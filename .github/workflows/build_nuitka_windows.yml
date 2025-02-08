@@ -46,9 +46,9 @@ jobs:
           script-name: microstation
           mode: onefile
           python-flag: |
-            "no_asserts"
-            "no_docstrings"
-            "-m"
+            no_asserts
+            no_docstrings
+            -m
           prefer-source-code: true
           windows-console-mode: attach
           windows-icon-from-ico: microstation/icons/aperture.ico
