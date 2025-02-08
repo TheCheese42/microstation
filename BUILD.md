@@ -113,11 +113,12 @@ Set-Location microstation  # cd into the cloned folder
 python -m venv .venv  # At least Python 3.12
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt -r dev-requirements.txt
-.\scripts\compile-ui.sh  # Required
+.\scripts\compile-ui.ps1  # Required
 Set-Alias -Name rcc -Value .\.venv\Lib\site-packages\qt6_applications\Qt\bin\rcc.exe  # Make the rcc.exe tool available
-.\scripts\compile-icons.sh  # Optional, otherwise no icons will be shown
-.\scripts\compile-langs.sh  # Optional, otherwise only english will be available
-.\scripts\compile-styles.sh  # Optional, otherwise only the default style will be available
+.\scripts\compile-icons.ps1  # Optional, otherwise no icons will be shown
+Set-Alias -Name lrelease -Value .\.venv\Lib\site-packages\qt6_applications\Qt\bin\lrelease.exe  # Make the lrelease.exe tool available
+.\scripts\compile-langs.ps1  # Optional, otherwise only english will be available
+.\scripts\compile-styles.ps1  # Optional, otherwise only the default style will be available
 ```
 
 ### Run Microstation
