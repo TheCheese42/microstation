@@ -65,7 +65,7 @@ cd microstation  # cd into the cloned folder
 python -m venv .venv  # At least Python 3.12
 source .venv/bin/activate
 pip install -r requirements.txt -r dev-requirements.txt
-pip install PyGObject  # To allow using the AppIndicator systray backend on Linux
+pip install PyGObject pyudev  # Linux only dependencies
 source scripts/compile-ui.sh  # Required
 source scripts/compile-icons.sh  # Optional, otherwise no icons will be shown
 source scripts/compile-langs.sh  # Optional, otherwise only english will be available
