@@ -53,8 +53,6 @@ jobs:
           windows-console-mode: attach
           windows-icon-from-ico: microstation/icons/aperture.ico
           product-name: Microstation
-          product-version: "$(Get-Content microstation\version.txt)"
-          file-version: "$(Get-Content microstation\version.txt)"
           include-data-dir: |
             "microstation/arduino/=arduino/"
             "microstation/external_styles/=external_styles/"

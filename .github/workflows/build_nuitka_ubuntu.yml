@@ -55,8 +55,6 @@ jobs:
           prefer-source-code: true
           linux-icon: microstation/icons/aperture.png
           product-name: Microstation
-          product-version: "$(cat microstation/version.txt)"
-          file-version: "$(cat microstation/version.txt)"
           include-data-dir: |
             "microstation/arduino/=arduino/"
             "microstation/external_styles/=external_styles/"
