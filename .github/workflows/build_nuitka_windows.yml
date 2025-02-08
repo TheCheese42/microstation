@@ -32,12 +32,12 @@ jobs:
       
       - name: Compile Resources
         run: |
-          source scripts/compile-ui.sh
+          scripts/compile-ui.sh
           Set-Alias -Name rcc -Value .\.venv\Lib\site-packages\qt6_applications\Qt\bin\rcc.exe
-          source scripts/compile-icons.sh
+          scripts/compile-icons.sh
           Set-Alias -Name lrelease -Value .\.venv\Lib\site-packages\qt6_applications\Qt\bin\lrelease.exe
-          source scripts/compile-langs.sh
-          source scripts/compile-styles.sh
+          scripts/compile-langs.sh
+          scripts/compile-styles.sh
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main

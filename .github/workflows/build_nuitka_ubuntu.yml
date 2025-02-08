@@ -29,8 +29,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt upgrade -y
-          sudo apt install sudo apt install -y pyqt5-dev-tools qtchooser qttools5-dev-tools
+          sudo apt install -y pyqt5-dev-tools qtchooser qttools5-dev-tools
           sudo apt install -y patchelf ccache
           sudo apt install -y libxcb-cursor0 libcairo-dev libgirepository1.0-dev
           pip install -r requirements.txt -r dev-requirements.txt
