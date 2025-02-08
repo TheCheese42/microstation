@@ -1,4 +1,4 @@
-name: Build Microstation using Nuitka
+name: Build Microstation using Nuitka (Windows)
 
 on:
   push:
@@ -20,8 +20,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13' # Version range or exact version of a Python version to use, using SemVer's version range syntax
-          architecture: 'x64' # optional x64 or x86. Defaults to x64 if not specified
+          python-version: '3.13.1'
+          architecture: 'x64'
           cache: 'pip'
           cache-dependency-path: |
             **/*requirements.txt
@@ -32,11 +32,10 @@ jobs:
       
       - name: Compile Resources
         run: |
-          python -c "print(__import__('sys').path)"
           scripts/compile-ui.ps1
-          Set-Alias -Name rcc -Value .\.venv\Lib\site-packages\qt6_applications\Qt\bin\rcc.exe
+          Set-Alias -Name rcc -Value C:\hostedtoolcache\windows\Python\3.13.1\x64\Lib\site-packages\qt6_applications\Qt\bin\rcc.exe
           scripts/compile-icons.ps1
-          Set-Alias -Name lrelease -Value .\.venv\Lib\site-packages\qt6_applications\Qt\bin\lrelease.exe
+          Set-Alias -Name lrelease -Value C:\hostedtoolcache\windows\Python\3.13.1\x64\Lib\site-packages\qt6_applications\Qt\bin\lrelease.exe
           scripts/compile-langs.ps1
           scripts/compile-styles.ps1
 
