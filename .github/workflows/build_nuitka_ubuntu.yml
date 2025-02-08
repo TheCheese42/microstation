@@ -11,12 +11,7 @@ permissions:
 
 jobs:
   build:
-    strategy:
-      matrix:
-        # Compile on older Linux to support newer versions
-        os: [ubuntu-22.04, windows-latest]
-
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Check-out repository
@@ -59,12 +54,10 @@ jobs:
             "no_docstrings"
             "-m"
           prefer-source-code: true
-          windows-console-mode: "attach"
-          windows-icon-from-ico: "microstation/icons/aperture.png"
           linux-icon: microstation/icons/aperture.png
-          product-name: "Microstation"
-          product-version: $(cat microstation/version.txt)
-          file-version: $(cat microstation/version.txt)
+          product-name: Microstation
+          product-version: "$(cat microstation/version.txt)"
+          file-version: "$(cat microstation/version.txt)"
           include-data-dir: |
             "microstation/arduino/=arduino/"
             "microstation/external_styles/=external_styles/"
@@ -73,13 +66,12 @@ jobs:
             "microstation/ui/=ui/"
           include-data-files: |
             "microstation/version.txt=version.txt"
-          enable-plugins: "pyqt6"
+          enable-plugins: pyqt6
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ runner.os }} Build
           path: |
-            build/*.exe
             build/*.bin
           include-hidden-files: true
