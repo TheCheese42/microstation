@@ -34,6 +34,18 @@ jobs:
       - name: Install Dependencies
         run: |
           pip install -r requirements.txt -r dev-requirements.txt
+          pip install PyGObject pyudev
+          sudo apt update
+          sudo apt upgrade -y
+          sudo apt install sudo apt install -y pyqt5-dev-tools qtchooser qttools5-dev-tools
+          sudo apt install -y patchelf ccache
+      
+      - name: Compile Resources
+        run: |
+          source scripts/compile-ui.sh
+          source scripts/compile-icons.sh
+          source scripts/compile-langs.sh
+          source scripts/compile-styles.sh
 
       - name: Build Executable
         uses: Nuitka/Nuitka-Action@main
