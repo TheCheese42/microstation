@@ -17,6 +17,6 @@ Remove-Item -Recurse -Force ../../microstation/external_styles/breeze/*-alt
 deactivate
 Set-Location ../../
 Remove-Item -Recurse -Force style_clones
-if (Test-Path $path -PathType Leaf) {
+if (Test-Path .venv/Scripts/Activate.ps1 -PathType Leaf) {
     . .venv/Scripts/Activate.ps1
 }
