@@ -54,13 +54,13 @@ jobs:
           windows-icon-from-ico: microstation/icons/aperture.ico
           product-name: Microstation
           include-data-dir: |
-            "microstation/arduino/=arduino/"
-            "microstation/external_styles/=external_styles/"
-            "microstation/icons/=icons/"
-            "microstation/langs/=langs/"
-            "microstation/ui/=ui/"
+            microstation/arduino/=arduino/
+            microstation/external_styles/=external_styles/
+            microstation/icons/=icons/
+            microstation/langs/=langs/
+            microstation/ui/=ui/
           include-data-files: |
-            "microstation/version.txt=version.txt"
+            microstation/version.txt=version.txt
           enable-plugins: pyqt6
 
       - name: Upload Artifacts

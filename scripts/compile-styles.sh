@@ -15,4 +15,6 @@ rm -rf ../../microstation/external_styles/breeze/*-alt
 deactivate
 cd ../../
 rm -rf style_clones
-source .venv/bin/activate
+if [ ! -f .venv/bin/activate ]; then
+  source .venv/bin/activate
+fi
