@@ -26,7 +26,6 @@ jobs:
         pip install -r requirements.txt -r dev-requirements.txt
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
         flake8 --exit-zero
     - name: Typecheck with mypy
       run: |
