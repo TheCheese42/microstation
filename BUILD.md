@@ -20,10 +20,13 @@ The following packages need to be installed to compile and run Microstation, per
 #### Debian
 
 ```sh
+sudo apt update
+sudo apt upgrade
 sudo apt install git  # General
 sudo apt install pyqt5-dev-tools qtchooser qttools5-dev-tools  # Compile resources
 sudo apt install patchelf ccache  # Compile with nuitka
 sudo apt install libxcb-cursor0 libcairo-dev libgirepository1.0-dev  # Runtime dependencies
+sudo apt install gir1.2-appindicator3-0.1  # GNOME runtime dependency
 ```
 
 > Note:
@@ -32,6 +35,7 @@ sudo apt install libxcb-cursor0 libcairo-dev libgirepository1.0-dev  # Runtime d
 #### RedHat
 
 ```sh
+sudo dnf upgrade --refresh
 sudo dnf install git  # General
 sudo dnf install python3-qt5 mingw64-qt-qmake  # Compile resources
 sudo dnf install patchelf ccache  # Compile with nuitka
@@ -41,6 +45,7 @@ sudo dnf install xcb-util-cursor  # Runtime dependencies
 #### Arch
 
 ```sh
+sudo pacman -Syu
 sudo pacman -S git  # General
 sudo pacman -S python-pyqt5 qt5-tools  # Compile resources
 sudo pacman -S patchelf ccache  # Compile with nuitka
@@ -109,7 +114,7 @@ git clone https://github.com/TheCheese42/microstation
 ### Compiling Data
 
 ```pwsh
-Set-Location microstation  # cd into the cloned folder
+Set-Location .\microstation  # cd into the cloned folder
 python -m venv .venv  # At least Python 3.12
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt -r dev-requirements.txt
