@@ -10,16 +10,16 @@ from PIL import Image
 try:
     from . import config
     from .daemon import Daemon
-    from .gui import Microstation, QApplication, launch_gui
+    from .gui import Microstation, launch_gui
     from .model import CONTROLLER, start_controller_listeners
     from .paths import ICONS_PATH
 except ImportError:
     import config  # type: ignore[no-redef]
     from daemon import Daemon  # type: ignore[no-redef]
-    from gui import (Microstation, QApplication,  # type: ignore[no-redef]
-                     launch_gui)
+    from gui import Microstation  # type: ignore[no-redef]
+    from gui import launch_gui  # type: ignore[no-redef]
     from model import CONTROLLER  # type: ignore[no-redef]
-    from model import start_controller_listeners
+    from model import start_controller_listeners  # type: ignore[no-redef]
     from paths import ICONS_PATH  # type: ignore[no-redef]
 
 
@@ -46,9 +46,9 @@ def main() -> None:
         win.show()
         win.showNormal()
 
-    def quit_app(
+    def quit_app(  # type: ignore[no-untyped-def]
         win: Microstation, icon
-    ) -> None:  # type: ignore[no-untyped-def]
+    ) -> None:
         config.log("Received QUIT signal from tray icon", "INFO")
         win.request_quit()
 
@@ -68,7 +68,7 @@ def main() -> None:
         )
     )
 
-    def quit_app_full() -> None:  # type: ignore[no-untyped-def]
+    def quit_app_full() -> None:
         app.quit()
         icon.stop()
         daemon.queue_stop()
@@ -77,8 +77,6 @@ def main() -> None:
         sys.exit(0)
 
     app, win = launch_gui(daemon, quit_app_full)
-    app: QApplication
-    win: Microstation
     if not config.get_config_value("hide_to_tray_startup"):
         win.show()
 

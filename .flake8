@@ -1,2 +1,2 @@
 [flake8]
-exclude = .venv/ microstation/icons/ microstation/ui/ microstation/styles/
+exclude = .venv/ microstation/icons/ microstation/ui/ microstation/external_styles/ build/
