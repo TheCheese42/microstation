@@ -52,7 +52,6 @@ jobs:
           prefer-source-code: true
           windows-console-mode: attach
           windows-icon-from-ico: microstation/icons/aperture.ico
-          product-name: Microstation
           include-data-dir: |
             microstation/arduino/=arduino/
             microstation/external_styles/=external_styles/
