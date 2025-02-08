@@ -12,6 +12,7 @@ from version import __version__  # noqa  # type: ignore
 from version import version_string  # noqa  # type: ignore
 
 PYPROJECT_PATH = Path() / "pyproject.toml"
+PRODUCT_WXS_PATH = Path() / "Product.wxs"
 
 
 def main():
@@ -77,6 +78,7 @@ def main():
     new_string = ".".join(map(str, new_tuple))
 
     VERSION_PATH.write_text(new_string, encoding="utf-8")
+
     pyproject_text = PYPROJECT_PATH.read_text(encoding="utf-8")
     if match := re.search(r"version = \"([\d\.]*)\"", pyproject_text):
         match: re.Match
@@ -88,6 +90,20 @@ def main():
         PYPROJECT_PATH.write_text("".join(pyproject_list), encoding="utf-8")
     else:
         print("pyproject.toml doesn't contain a version string.")
+
+    product_wxs_text = PRODUCT_WXS_PATH.read_text(encoding="utf-8")
+    if match := re.search(r"Version=\"([\d\.]*)\"", product_wxs_text):
+        match: re.Match
+        start = match.start(1)
+        product_wxs_list = list(product_wxs_text)
+        del product_wxs_list[start:match.end(1)]
+        for i, char in enumerate(new_string):
+            product_wxs_list.insert(start + i, char)
+        PRODUCT_WXS_PATH.write_text(
+            "".join(product_wxs_list), encoding="utf-8"
+        )
+    else:
+        print("Product.wxs doesn't contain a version string.")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,74 @@
+name: Build Microstation using Nuitka (Linux)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          architecture: 'x64'
+          cache: 'pip'
+          cache-dependency-path: |
+            **/*requirements.txt
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y pyqt5-dev-tools qtchooser qttools5-dev-tools
+          sudo apt install -y patchelf ccache
+          sudo apt install -y libxcb-cursor0 libcairo-dev libgirepository1.0-dev
+          pip install -r requirements.txt -r dev-requirements.txt
+          pip install PyGObject pyudev
+      
+      - name: Compile Resources
+        run: |
+          source scripts/compile-ui.sh
+          source scripts/compile-icons.sh
+          source scripts/compile-langs.sh
+          source scripts/compile-styles.sh
+
+      - name: Build Executable
+        uses: Nuitka/Nuitka-Action@main
+        with:
+          nuitka-version: main
+          script-name: microstation
+          mode: onefile
+          python-flag: |
+            no_asserts
+            no_docstrings
+            -m
+          prefer-source-code: true
+          linux-icon: microstation/icons/aperture.png
+          product-name: Microstation
+          include-data-dir: |
+            microstation/arduino/=arduino/
+            microstation/external_styles/=external_styles/
+            microstation/icons/=icons/
+            microstation/langs/=langs/
+            microstation/ui/=ui/
+          include-data-files: |
+            microstation/version.txt=version.txt
+          enable-plugins: pyqt6
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ runner.os }} Build
+          path: |
+            build/*.bin
+          include-hidden-files: true

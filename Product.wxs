@@ -1,0 +1,58 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Microstation" Manufacturer="TheCheese" Version="0.4.5" UpgradeCode="23937f00-3d4b-4899-b8cd-6ce6e7d13bb0">
+    <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
+    <Feature Id="FilesFeature">
+      <ComponentGroupRef Id="Main" />
+    </Feature>
+    <Feature Id="ShortcutFeature" Title="Shortcuts" Level="1">
+      <ComponentGroupRef Id="ShortcutGroup" />
+    </Feature>
+    <Media Id="1" Cabinet="microstation.cab" EmbedCab="yes" />
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="ProgramFiles6432Folder">
+      <Directory Id="INSTALLFOLDER" Name="!(bind.Property.ProductName)" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
+    <StandardDirectory Id="DesktopFolder" />
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="Main" Directory="INSTALLFOLDER">
+      <Component>
+        <File Source="build\microstation.exe" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="ShortcutGroup">
+      <Component Id="ApplicationShortcutDesktop" Guid="588f6197-dc3a-43bf-a444-d1811f978651" Directory="DesktopFolder">
+        <Shortcut Id="ApplicationDesktopShortcut"
+          Name="!(bind.Property.ProductName)"
+          Target="[INSTALLFOLDER]microstation.exe"
+          WorkingDirectory="INSTALLFOLDER"/>
+        <RemoveFolder Id="DesktopFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU"
+          Key="Software\Microstation"
+          Name="installed"
+          Type="integer"
+          Value="1"
+          KeyPath="yes"/>
+      </Component>
+
+      <Component Id="ApplicationShortcutMenu" Guid="d4ce1ff9-99da-4aff-8878-f484c35f2357" Directory="ProgramMenuFolder">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+          Name="!(bind.Property.ProductName)"
+          Target="[INSTALLFOLDER]microstation.exe"
+          WorkingDirectory="INSTALLFOLDER"/>
+        <RemoveFolder Id="CleanUpShortCut" Directory="ProgramMenuFolder" On="uninstall"/>
+        <RegistryValue Root="HKCU"
+          Key="Software\Microstation"
+          Name="installed"
+          Type="integer"
+          Value="1"
+          KeyPath="yes"/>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

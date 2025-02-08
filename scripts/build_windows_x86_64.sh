@@ -8,7 +8,7 @@ nuitka \
     --prefer-source-code \
     --output-dir="build/" \
     --windows-console-mode="attach" \
-    --windows-icon-from-ico="microstation/icons/aperture.png" \
+    --windows-icon-from-ico="microstation/icons/aperture.ico" \
     --product-name="Microstation" \
     --product-version="$(cat microstation/version.txt)" \
     --file-version="$(cat microstation/version.txt)" \

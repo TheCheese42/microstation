@@ -1,4 +1,4 @@
-deactivate
+deactivate || true
 mkdir style_clones
 cd style_clones
 git clone https://github.com/Alexhuszagh/BreezeStyleSheets
@@ -15,4 +15,6 @@ rm -rf ../../microstation/external_styles/breeze/*-alt
 deactivate
 cd ../../
 rm -rf style_clones
-source .venv/bin/activate
+if [ -f .venv/bin/activate ]; then
+  source .venv/bin/activate
+fi
