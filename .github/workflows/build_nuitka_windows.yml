@@ -32,6 +32,7 @@ jobs:
       
       - name: Compile Resources
         run: |
+          python -c "print(__import__('sys').path)"
           scripts/compile-ui.ps1
           Set-Alias -Name rcc -Value .\.venv\Lib\site-packages\qt6_applications\Qt\bin\rcc.exe
           scripts/compile-icons.ps1
