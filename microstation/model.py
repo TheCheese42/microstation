@@ -176,11 +176,6 @@ class Component:
             raise ValueError(
                 f"Component pins must be a dict, got {type(self.pins)}"
             )
-        elif self.pins.keys() != {pin.name for pin in self.device.PINS}:
-            raise ValueError(
-                "Component pins must match device pins, got "
-                f"{self.pins.keys()}"
-            )
         elif not all([isinstance(value, int) for value in self.pins.values()]):
             raise ValueError(
                 "Component pin values must be integers, got "

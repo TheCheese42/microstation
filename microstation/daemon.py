@@ -329,7 +329,10 @@ class Task:
                             self.write_method(
                                 f"PINMODE {type_} {io_type} {pin_num:0>3}"
                             )
-                            if "debounce_time" in component.device.CONFIG:
+                            if (
+                                "debounce_time" in component.device.CONFIG
+                                and "debounce" in device_pin.properties
+                            ):
                                 if not (dt := component.properties.get(
                                     "debounce_time"
                                 )):
@@ -340,7 +343,10 @@ class Task:
                                     f"DIGITAL_DEBOUNCE {pin_num:0>3} "
                                     f"{dt:0>4}"
                                 )
-                            if "jitter_tolerance" in component.device.CONFIG:
+                            if (
+                                "jitter_tolerance" in component.device.CONFIG
+                                and "jitter" in device_pin.properties
+                            ):
                                 if not (jt := component.properties.get(
                                     "jitter_tolerance"
                                 )):

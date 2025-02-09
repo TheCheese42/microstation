@@ -863,7 +863,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                     self,
                     tr("ProfileEditor", "Invalid Components"),
                     tr("ProfileEditor", "Your Profile contains an invalid "
-                       f"Component: {0} has invalid Pins that do not match "
+                       "Component: {0} has invalid Pins that do not match "
                        "those of its device. Please delete and recreate that "
                        "component.").format(info['component_name']),
                 )
