@@ -361,10 +361,16 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         config.set_config_value("auto_detect_profiles", state)
 
     def upload_code(self) -> None:
+        config.log("User requested sketch upload through GUI", "DEBUG")
         port = self.daemon.port
+        config.log(f"Sketch will be uploaded to port {port}", "DEBUG")
         code = (ARDUINO_SKETCH_PATH / "arduino.ino").read_text("utf-8")
+        config.log(f"Sketch loaded successfully ({code.__sizeof__()} bytes)",
+                   "DEBUG")
         try:
             cli_information = utils.lookup_arduino_cli_information()
+            config.log("Looked up arduino-cli information (version "
+                       f"{cli_information.version})", "DEBUG")
             code = utils.format_string(
                 code,
                 core=utils.core_from_fqbn(fqbn := utils.lookup_fqbn(port)),
@@ -375,6 +381,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 arduino_cli_date=cli_information.date,
                 baudrate=f"{config.get_config_value("baudrate")}",
             )
+            config.log(f"Formatted sketch ({code.__sizeof__()} bytes)",
+                       "DEBUG")
             ARDUINO_SKETCH_FORMATTED_PATH.mkdir(exist_ok=True)
             with open(
                 ARDUINO_SKETCH_FORMATTED_PATH / "arduino.ino",
