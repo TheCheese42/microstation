@@ -1351,6 +1351,9 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             font = widget.font()
             font.setPointSize(14)
             widget.setFont(font)
+            if (tt := param.info.get("tooltip")):
+                if isinstance(tt, str):
+                    widget.setToolTip(tt)
             hbox.addWidget(widget)
 
     def param_changed(
