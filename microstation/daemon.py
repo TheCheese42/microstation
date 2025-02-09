@@ -4,12 +4,13 @@ from collections.abc import Callable
 from typing import Any, Self
 
 import serial
+import time
 
 from . import config
 from .actions import auto_activaters
 from .actions.signals_slots import find_signal_slot, get_ss_instance
 from .config import get_config_value, log, log_mc
-from .model import Profile
+from .model import Pin, Profile
 from .utils import get_port_info
 
 
@@ -81,6 +82,11 @@ class SerialDevice:
             in_waiting = self.ser.in_waiting
         except Exception:
             log(f"Failed to get waiting bytes from device {self}", "ERROR")
+            self.close()
+            try:
+                self.ser.open()
+            except Exception:
+                log(f"Failed to open device {self}", "DEBUG")
         return in_waiting
 
     def is_open(self) -> bool:
@@ -126,6 +132,7 @@ class Daemon:
         self.slot_runner_running = False
         self.profile_changed = False
         self.mc_version: None | str = None
+        self.disable_tasks_until = 0.0
 
         self.in_history: list[str] = []
         self.out_history: list[str] = []
@@ -322,12 +329,12 @@ class Task:
                                 "INP" if device_pin.io_type == "input"
                                 else "OUT"
                             )
-                            type_ = (
+                            mode = (
                                 "DIG" if device_pin.type == "digital"
                                 else "ANA"
                             )
                             self.write_method(
-                                f"PINMODE {type_} {io_type} {pin_num:0>3}"
+                                f"PINMODE {mode} {io_type} {pin_num:0>3}"
                             )
                             if (
                                 "debounce_time" in component.device.CONFIG
@@ -357,16 +364,50 @@ class Task:
                                     f"ANALOG_TOLERANCE {pin_num:0>3} "
                                     f"{jt:0>6}"
                                 )
+            # Immediate after resetting pins, some parts like rotary encoders
+            # trigger because their default is HIGH. We want to avoid this.
+            self.daemon.disable_tasks_until = time.time() + 1
+        elif self.daemon.disable_tasks_until > time.time():
+            config.log(f"Task {self.data} ignore because tasks were disabled",
+                       "DEBUG")
+            return
         elif self.data.startswith("EVENT"):
             if not self.profile:
                 return
-            _, type_, pin_string, state_string = self.data.split()
+            _, mode, pin_string, state_string = self.data.split()
             pin = int(pin_string)
-            state = int(state_string)
+            state: int | float = int(state_string)
+            if mode == "ANALOG":
+                # Normalize state to 100
+                state = state / config.get_config_value("max_adc_value") * 100
             for component in self.profile.components:
                 if pin in component.pins.values():
-                    if type_ == "DIGITAL":
+                    if component.device.CUSTOM_SIGNAL_HANDLER:
+                        handler_device_pin: Pin | None = None
+                        for pin_name, pin_value in component.pins.items():
+                            if pin == pin_value:
+                                for d_pin in component.device.PINS:
+                                    if d_pin.name == pin_name:
+                                        handler_device_pin = d_pin
+                        if not handler_device_pin:
+                            config.log(
+                                "Component with device "
+                                f"{component.device.NAME} "
+                                "has not matching pins", "ERROR"
+                            )
+                            return
+                        component.device.custom_signal_handler(
+                            component=component,
+                            pin=handler_device_pin,
+                            mode="digital" if mode == "DIGITAL" else "analog",
+                            state=state,
+                        )
+                        return
+                    if mode == "DIGITAL":
                         component.emit_signal("digital_changed", state)
-                        component.emit_signal("digital_high", state)
-                    elif type_ == "ANALOG":
+                        if state:
+                            component.emit_signal("digital_high", state)
+                        else:
+                            component.emit_signal("digital_low", state)
+                    elif mode == "ANALOG":
                         component.emit_signal("analog_changed", state)

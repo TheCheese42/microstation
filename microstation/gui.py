@@ -110,6 +110,12 @@ def translation_for_ss(ss: str) -> str:
             return tr("SignalsSlots", "encoder_rotated_left")
         case "encoder_rotated_right":
             return tr("SignalsSlots", "encoder_rotated_right")
+        case "sw_changed":
+            return tr("SignalsSlots", "sw_changed")
+        case "sw_high":
+            return tr("SignalsSlots", "sw_high")
+        case "sw_low":
+            return tr("SignalsSlots", "sw_low")
         case _:
             return ss
 
@@ -1060,7 +1066,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             lb.addLayout(pin_hbox)
 
         for property, info in self.component.device.CONFIG.items():
-            label = QLabel(info.get("translation", property))
+            label = QLabel(str(info.get("translation", property)))
             font = label.font()
             font.setPointSize(14)
             label.setFont(font)
@@ -1104,6 +1110,10 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             font = widget.font()
             font.setPointSize(14)
             widget.setFont(font)
+            if tt := info.get("tooltip"):
+                if isinstance(tt, str):
+                    label.setToolTip(tt)
+                    widget.setToolTip(tt)
             property_hbox = QHBoxLayout()
             property_hbox.addWidget(label)
             property_hbox.addWidget(widget)

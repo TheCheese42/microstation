@@ -17,7 +17,6 @@ from pynput.mouse import Listener as MListener
 from .actions.signals_slots import find_signal_slot, get_ss_instance
 from .enums import Issue, Tag
 
-
 type COMPONENT = dict[str, Any]
 type PROFILE = dict[str, Any]
 type MACRO_ACTION = dict[str, str | int | None]
@@ -246,6 +245,8 @@ class Component:
                     f"{type(val)}"
                 )
 
+        self.device_data_storage: dict[str, Any] = {}
+
     def __str__(self) -> str:
         return f"Component with Device {self.device.NAME} on Pins {self.pins}"
 
@@ -315,6 +316,12 @@ class Pin:
         self.name = name
         if properties is None:
             self.properties: list[str] = []
+        else:
+            self.properties = properties
+
+    def __repr__(self) -> str:
+        return f"Pin(type=\"{self.type}\", io_type=\"{self.io_type}\", " \
+               f"name=\"{self.name}\", properties={self.properties})"
 
 
 def validate_components(
@@ -346,6 +353,23 @@ class Device:  # (ABCMeta):
     PINS: list[Pin] = []
     # Ex.: {"sensitivity": {"type": int, "default": 1, "min": 1, "max": 9999}}
     CONFIG: dict[str, dict[str, CONFIG_VALUE | CONFIG_TYPE]] = {}
+    # False means that the digital_changed, digital_high, digital_low and
+    # analog_changed signals will be emitted respectively.
+    # True means that the custom_signal_handler() classmethod of the device
+    # is called with the type (digital or analog) and the state.
+    CUSTOM_SIGNAL_HANDLER = False
+
+    @classmethod
+    def custom_signal_handler(
+        cls,
+        component: Component,
+        pin: Pin,
+        mode: Literal["digital", "analog"],
+        state: int | float,
+    ) -> None:
+        raise NotImplementedError(
+            f"Device {cls.__name__} doesn't support custom signal handling."
+        )
 
     @classmethod
     def available_signals_digital(
