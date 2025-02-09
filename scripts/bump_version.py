@@ -15,7 +15,7 @@ PYPROJECT_PATH = Path() / "pyproject.toml"
 PRODUCT_WXS_PATH = Path() / "Product.wxs"
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         prog="version-bumper",
         description="Bump the version number. Sets the version for all files "
@@ -71,7 +71,7 @@ def main():
         new_version[2] = 0
     elif to_modify[2]:
         new_version[2] += 1
-    new_tuple: tuple[int, int, int] = tuple(new_version)
+    new_tuple: tuple[int, ...] = tuple(new_version)
     if new_tuple == __version__:
         parser.print_help()
         sys.exit(0)
@@ -81,7 +81,6 @@ def main():
 
     pyproject_text = PYPROJECT_PATH.read_text(encoding="utf-8")
     if match := re.search(r"version = \"([\d\.]*)\"", pyproject_text):
-        match: re.Match
         start = match.start(1)
         pyproject_list = list(pyproject_text)
         del pyproject_list[start:match.end(1)]
@@ -93,7 +92,6 @@ def main():
 
     product_wxs_text = PRODUCT_WXS_PATH.read_text(encoding="utf-8")
     if match := re.search(r"Version=\"([\d\.]*)\"", product_wxs_text):
-        match: re.Match
         start = match.start(1)
         product_wxs_list = list(product_wxs_text)
         del product_wxs_list[start:match.end(1)]

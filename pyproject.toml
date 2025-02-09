@@ -37,7 +37,7 @@ dev = [
 microstation = "microstation.__main__:main"
 
 [tool.mypy]
-files = ["microstation/"]
+files = ["microstation/", "scripts/"]
 exclude = [
     "microstation/icons/",
     "microstation/ui/",
