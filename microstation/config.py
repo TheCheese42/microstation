@@ -6,10 +6,9 @@ from datetime import datetime
 from typing import Any
 
 from .model import Profile
-from .paths import (CONFIG_DIR, CONFIG_PATH, LIB_DIR, LOGGER_PATH,
-                    MACROS_PATH, MC_DEBUG_LOG_PATH, PROFILES_PATH)
+from .paths import (CONFIG_DIR, CONFIG_PATH, LIB_DIR, LOGGER_PATH, MACROS_PATH,
+                    MC_DEBUG_LOG_PATH, PROFILES_PATH)
 from .version import version_string
-
 
 DEFAULT_CONFIG = {
     "show_welcome_popup": True,
@@ -143,8 +142,9 @@ def save_macros(macros: list[MACRO]) -> None:
 
 
 def log(msg: str, level: str = "INFO") -> None:
+    time = datetime.now().isoformat()
     with open(LOGGER_PATH, "a", encoding="utf-8") as fp:
-        fp.write(f"[{level}] [{datetime.now().isoformat()}] {msg}\n")
+        fp.write(f"[{time}] [{level}] {msg}\n")
 
 
 def log_mc(msg: str) -> None:
