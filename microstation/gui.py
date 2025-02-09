@@ -78,6 +78,42 @@ except ImportError:
 tr = QApplication.translate
 
 
+def translation_for_ss(ss: str) -> str:
+    """
+    Retrieve the translation for a signal or slot.
+
+    :param ss: The name of the signal or slot
+    :type ss: str
+    :return: The translated string, if available. Else the original name.
+    :rtype: str
+    """
+    match ss:
+        case "digital_changed":
+            return tr("SignalsSlots", "digital_changed")
+        case "digital_high":
+            return tr("SignalsSlots", "digital_high")
+        case "digital_low":
+            return tr("SignalsSlots", "digital_low")
+        case "trigger_digital_high":
+            return tr("SignalsSlots", "trigger_digital_high")
+        case "trigger_digital_low":
+            return tr("SignalsSlots", "trigger_digital_low")
+        case "value_digital":
+            return tr("SignalsSlots", "value_digital")
+        case "analog_changed":
+            return tr("SignalsSlots", "analog_changed")
+        case "value_analog":
+            return tr("SignalsSlots", "value_analog")
+        case "encoder_rotated":
+            return tr("SignalsSlots", "encoder_rotated")
+        case "encoder_rotated_left":
+            return tr("SignalsSlots", "encoder_rotated_left")
+        case "encoder_rotated_right":
+            return tr("SignalsSlots", "encoder_rotated_right")
+        case _:
+            return ss
+
+
 def show_error(parent: QWidget, title: str, desc: str) -> int:
     messagebox = QMessageBox(parent)
     messagebox.setIcon(QMessageBox.Icon.Critical)
@@ -1024,7 +1060,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             lb.addLayout(pin_hbox)
 
         for property, info in self.component.device.CONFIG.items():
-            label = QLabel(property)
+            label = QLabel(info.get("translation", property))
             font = label.font()
             font.setPointSize(14)
             label.setFont(font)
@@ -1094,7 +1130,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             # NOTE Example ButtonRow:
             # The available_signals() method may return the same signal
             # multiple times.
-            label = QLabel(entry)
+            label = QLabel(translation_for_ss(entry))
             font = label.font()
             font.setPointSize(14)
             label.setFont(font)
