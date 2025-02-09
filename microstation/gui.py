@@ -315,9 +315,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             self.export_serial_history
         )
 
-        self.actionThemeDefault.triggered.connect(
-            lambda: self.setStyleSheet("")
-        )
+        self.actionThemeDefault.triggered.connect(self.set_default_style)
 
         self.actionOpenWiki.triggered.connect(self.open_wiki)
 
@@ -548,6 +546,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         config.set_config_value("theme", full_name)
         stylesheet = path.read_text("utf-8")
         self.setStyleSheet(stylesheet)
+
+    def set_default_style(self) -> None:
+        config.set_config_value("theme", "")
+        self.setStyleSheet("")
 
     def change_language(self, locale: QLocale) -> None:
         config.set_config_value("locale", locale.name())
