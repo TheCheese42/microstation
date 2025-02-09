@@ -90,6 +90,7 @@ def main() -> None:
 
 
 def start_daemon(daemon: Daemon) -> None:
+    time.sleep(1)
     config.log("Starting daemon", "INFO")
     asyncio.new_event_loop().run_until_complete(daemon.run())
 

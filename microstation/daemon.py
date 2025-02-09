@@ -23,7 +23,7 @@ class SerialDevice:
         try:
             self.ser = serial.Serial(port, baudrate, timeout=1)
         except Exception:
-            log(f"Failed to create device {self}", "ERROR")
+            log(f"Failed to create device {self}", "DEBUG")
 
     @property
     def name(self) -> str | None:
@@ -100,7 +100,7 @@ class SerialDevice:
         try:
             self.ser.open()
         except Exception:
-            log(f"Failed to open device {self}", "INFO")
+            log(f"Failed to open device {self}", "DEBUG")
         return self
 
     def __exit__(

@@ -100,6 +100,16 @@ def show_question(parent: QWidget, title: str, desc: str) -> int:
     return messagebox.exec()
 
 
+def show_info(parent: QWidget, title: str, desc: str) -> None:
+    messagebox = QMessageBox(parent)
+    messagebox.setIcon(QMessageBox.Icon.Information)
+    messagebox.setWindowTitle(title)
+    messagebox.setText(desc)
+    messagebox.setStandardButtons(QMessageBox.StandardButton.Ok)
+    messagebox.setDefaultButton(QMessageBox.StandardButton.Ok)
+    messagebox.exec()
+
+
 def ask_install_arduino_cli(parent: QWidget) -> None:
     if show_question(
         parent, tr("Microstation", "Install arduino-cli"),
@@ -111,11 +121,16 @@ def ask_install_arduino_cli(parent: QWidget) -> None:
             config.log("Installing arduino-cli")
             utils.install_arduino_cli()
         except RuntimeError as e:
+            config.log(f"Installing Microstation failed: {e}", "ERROR")
             show_error(
                 parent, tr("Microstation", "Install failed"),
                 tr("Microstation", f"An error occurred while installing: {e}")
             )
             return
+        config.log("Success installing arduino-cli")
+        show_info(parent, tr("Microstation", "Success"),
+                  tr("Microstation",
+                     "arduino-cli was installed successfully."))
 
 
 class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
@@ -368,12 +383,14 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 "w", encoding="utf-8"
             ) as fp:
                 fp.write(code)
-            config.log(f"Uploading sketch to port {port}")
+            config.log(f"Uploading sketch to port {port} with device "
+                       f"{self.daemon.device}")
             utils.upload_code(port, str(ARDUINO_SKETCH_FORMATTED_PATH))
         except utils.MissingArduinoCLIError:
             ask_install_arduino_cli(self)
             return
         except RuntimeError as e:
+            config.log(f"Uploading sketch failed: {e}", "ERROR")
             show_error(
                 self, tr("Microstation", "Error uploading"),
                 tr("Microstation", "Uploading failed: {0}"
@@ -381,6 +398,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                    " is selected.").format(str(e))
             )
             return
+        config.log(f"Success uploading sketch to port {port} with device "
+                   f"{self.daemon.device}")
+        show_info(self, tr("Microstation", "Success"),
+                  tr("Microstation", "The code was uploaded successfully."))
 
     def install_boards(self) -> None:
         dialog = InstallBoards(self)
@@ -433,6 +454,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
     def open_url(self, url: str) -> None:
         thread = Thread(target=self._open_url_threaded, args=(url,))
+        config.log(f"Opening url {url} in thread {thread.name}", "DEBUG")
         thread.start()
 
     def _open_url_threaded(self, url: str) -> None:
@@ -451,6 +473,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
     def open_file(self, path: str | Path) -> None:
         thread = Thread(target=self._open_file_threaded, args=(path,))
+        config.log(f"Opening file at path {path} in thread {thread.name}",
+                   "DEBUG")
         thread.start()
 
     def _open_file_threaded(self, path: str | Path) -> None:
@@ -508,10 +532,15 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             config.save_macros(config.MACROS)
 
     def set_paused(self) -> None:
-        self.daemon.set_paused(self.actionPause.isChecked())
+        paused = self.actionPause.isChecked()
+        if paused:
+            config.log("Pausing the daemon", "DEBUG")
+        else:
+            config.log("Unpausing the daemon", "DEBUG")
+        self.daemon.set_paused(paused)
         self.actionPause.setText(
             tr("Microstation", "Resume")
-            if self.actionPause.isChecked()
+            if paused
             else tr("Microstation", "Pause")
         )
 
@@ -619,6 +648,10 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
     def accept_received(self) -> None:
         names = [p.name for p in self.profiles]
         if len(names) != len(set(names)):
+            config.log(
+                "Cancelled Profiles Dialog accept signal because of duplicated"
+                " Profile names.", "INFO"
+            )
             show_error(self, tr("Profiles", "Duplicated Profile Names"),
                        tr("Profiles", "Some Profiles have the same name. "
                           "All Profiles deserve their own names, don't they?"))
@@ -806,6 +839,10 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
             case Issue.NONE:
                 self.accept()
             case Issue.DUPLICATED_PIN:
+                config.log(
+                    "Cancelled ProfileEditor Dialog accept signal because of "
+                    "duplicated pins.", "INFO"
+                )
                 show_error(
                     self,
                     tr("ProfileEditor", "Invalid Components"),
@@ -815,6 +852,11 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                 )
                 return
             case Issue.COMPONENT_PINS_NOT_MATCHING_DEVICE:
+                config.log(
+                    "Cancelled ProfileEditor Dialog accept signal because "
+                    f"component {info['component_name']} has an invalid "
+                    "pinout", "INFO"
+                )
                 show_error(
                     self,
                     tr("ProfileEditor", "Invalid Components"),
@@ -837,6 +879,8 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
             try:
                 device = find_device(name)
             except ValueError:
+                config.log(f"User selected unimplemented Component {name}",
+                           "INFO")
                 show_error(
                     self,
                     tr("ProfileEditor", "Unimplemented Component"),
@@ -1363,6 +1407,8 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
     def accept_requested(self) -> None:
         macro_names = [macro["name"] for macro in self.macros]
         if len(macro_names) != len(set(macro_names)):
+            config.log("Cancelling MacroEditor Accept Signal because of "
+                       "duplicated names", "INFO")
             show_error(self, tr("MacroEditor", "Duplicated Macro Names"),
                        tr("MacroEditor", "Some Macros have the same name. "
                           "All Macros deserve their own names, don't they?"))
@@ -1613,7 +1659,7 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
                 try:
                     value.encode("utf-8")
                 except UnicodeEncodeError:
-                    config.log("Invalid shortcut configured", "ERROR")
+                    config.log("Invalid shortcut configured", "INFO")
                     show_error(
                         self, tr("MacroEditor", "Invalid Character"),
                         tr("MacroEditor", "You entered an invalid character "
@@ -1802,6 +1848,7 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
             QTimer.singleShot(0, self.close)
             return
         except RuntimeError as e:
+            config.log(f"Error fetching list of Arduino Cores: {e}", "ERROR")
             show_error(
                 self, tr("InstallBoards", "Error fetching Boards"), str(e)
             )
@@ -1840,6 +1887,8 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
                     QTimer.singleShot(0, self.close)
                     return
                 except RuntimeError as e:
+                    config.log(f"Error installing Arduino Core {core}: {e}",
+                               "ERROR")
                     self.install_job_error_args = (
                         tr("InstallBoards", "Error installing"), str(e)
                     )
@@ -1856,6 +1905,8 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
                     QTimer.singleShot(0, self.close)
                     return
                 except RuntimeError as e:
+                    config.log(f"Error removing Arduino Core {core}: {e}",
+                               "ERROR")
                     self.install_job_error_args = (
                         tr("InstallBoards", "Error removing"), str(e)
                     )
@@ -1865,6 +1916,8 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
         self, job: Callable[[QListWidgetItem], None]
     ) -> None:
         if self.install_job_thread:
+            config.log("User tried to start an install job, but one is running"
+                       " already!", "INFO")
             show_error(
                 self, tr("InstallBoards", "Already installing"),
                 tr("InstallBoards", "An install or remove job is already "
@@ -1879,7 +1932,7 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
         self.install_job_thread.start()
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_progress_bar)
-        self.timer.start(10)
+        self.timer.start(5)
         self.install_job_time = time.time()
 
     def update_progress_bar(self) -> None:
@@ -1891,6 +1944,8 @@ class InstallBoards(QDialog, Ui_InstallBoards):  # type: ignore[misc]
             self.install_job_time = 0
             if self.install_job_error_args:
                 show_error(self, *self.install_job_error_args)
+            else:
+                config.log("Core install job succeeded", "INFO")
             self.install_job_error_args = None
             if self.timer:
                 self.timer.stop()
