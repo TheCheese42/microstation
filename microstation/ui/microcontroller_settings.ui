@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>417</width>
-    <height>196</height>
+    <width>416</width>
+    <height>254</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -44,7 +44,7 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer_2">
+    <spacer name="verticalSpacer_3">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
@@ -52,6 +52,29 @@
       <size>
        <width>20</width>
        <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>Tip: Hover over anything in this Window to get more information!</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer_2">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Fixed</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>6</height>
       </size>
      </property>
     </spacer>
@@ -83,6 +106,70 @@
        </property>
        <property name="value">
         <number>1024</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum amout of digital input Pins.&lt;/p&gt;&lt;p&gt;Lower numbers will reduce memory usage on the Microcontroller. Don't lower the value if you don't have memory issues to avoid having to reupload when you add more components.&lt;/p&gt;&lt;p&gt;Usually, 50 is a good starting point.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Max Digital Input Pins:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="max_dig_inp_pins">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum amout of digital input Pins.&lt;/p&gt;&lt;p&gt;Lower numbers will reduce memory usage on the Microcontroller. Don't lower the value if you don't have memory issues to avoid having to reupload when you add more components.&lt;/p&gt;&lt;p&gt;Usually, 50 is a good starting point.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="maximum">
+        <number>255</number>
+       </property>
+       <property name="value">
+        <number>50</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum amout of analog input Pins.&lt;/p&gt;&lt;p&gt;Lower numbers will reduce memory usage on the Microcontroller. Don't lower the value if you don't have memory issues to avoid having to reupload when you add more components.&lt;/p&gt;&lt;p&gt;Usually, 50 is a good starting point.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="text">
+        <string>Max Analog Input Pins:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="max_ana_inp_pins">
+       <property name="toolTip">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum amout of analog input Pins.&lt;/p&gt;&lt;p&gt;Lower numbers will reduce memory usage on the Microcontroller. Don't lower the value if you don't have memory issues to avoid having to reupload when you add more components.&lt;/p&gt;&lt;p&gt;Usually, 50 is a good starting point.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="maximum">
+        <number>255</number>
+       </property>
+       <property name="value">
+        <number>50</number>
        </property>
       </widget>
      </item>

@@ -23,6 +23,8 @@ DEFAULT_CONFIG = {
     "hide_to_tray_startup": False,
     "autoscroll_serial_monitor": True,
     "max_adc_value": 1024,
+    "max_dig_inp_pins": 50,
+    "max_ana_inp_pins": 50,
 }
 
 type MACRO_ACTION = dict[str, str | int | None]
@@ -86,7 +88,7 @@ def _get_config() -> dict[str, Any]:
         log(f"Failed to decode configuration file: {e}", "ERROR")
         log("Creating new config")
         conf = DEFAULT_CONFIG
-    for key in conf:
+    for key in conf.copy():
         if key not in DEFAULT_CONFIG:
             del conf[key]
     for key in DEFAULT_CONFIG:

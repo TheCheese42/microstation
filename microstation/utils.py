@@ -195,7 +195,8 @@ def upload_code(port: str, path: str) -> tuple[str, str]:
         raise MissingArduinoCLIError("arduino-cli is not installed")
     fqbn = lookup_fqbn(port)
     status, c_output = getstatusoutput(
-        f"{arduino_cli_path()} compile --fqbn {fqbn} {path} --no-color"
+        f"{arduino_cli_path()} compile --fqbn {fqbn} {path} --no-color "
+        "--warnings all"
     )
     if status:
         raise RuntimeError(
