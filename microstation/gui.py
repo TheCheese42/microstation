@@ -437,13 +437,19 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         return libs
 
     def upload_code(self) -> None:
+        config.log("User requested sketch upload through GUI", "DEBUG")
         port = self.daemon.port
+        config.log(f"Sketch will be uploaded to port {port}", "DEBUG")
         code = (ARDUINO_SKETCH_PATH / "arduino.ino").read_text("utf-8")
+        config.log(f"Sketch loaded successfully ({code.__sizeof__()} bytes)",
+                   "DEBUG")
         includes_string = ""
         for lib in self.libs_to_include():
             includes_string += f"#include \"{lib}\""
         try:
             cli_information = utils.lookup_arduino_cli_information()
+            config.log("Looked up arduino-cli information (version "
+                       f"{cli_information.version})", "DEBUG")
             code = utils.format_string(
                 code,
                 includes=includes_string,
@@ -457,6 +463,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 max_digital_input_pins=f"{config.get_config_value("max_dig_inp_pins")}",  # noqa
                 max_analog_input_pins=f"{config.get_config_value("max_ana_inp_pins")}",  # noqa
             )
+            config.log(f"Formatted sketch ({code.__sizeof__()} bytes)",
+                       "DEBUG")
             ARDUINO_SKETCH_FORMATTED_PATH.mkdir(exist_ok=True)
             with open(
                 ARDUINO_SKETCH_FORMATTED_PATH / "arduino.ino",

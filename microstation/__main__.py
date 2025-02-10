@@ -7,7 +7,7 @@ from threading import Thread
 import pystray
 from PIL import Image
 
-from . import config
+from . import config, utils
 from .daemon import Daemon
 from .gui import Microstation, launch_gui
 from .model import CONTROLLER, start_controller_listeners
@@ -17,6 +17,10 @@ from .paths import ICONS_PATH
 def main() -> None:
     config.init_config()
     config.log_basic()
+    if path := utils.arduino_cli_path():
+        config.log(f"arduino-cli found at path {path}", "DEBUG")
+    else:
+        config.log("arduino-cli not found", "DEBUG")
     start_controller_listeners(CONTROLLER)
     daemon = Daemon(
         config.get_config_value("default_port"),
