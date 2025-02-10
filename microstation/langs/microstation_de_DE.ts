@@ -32,7 +32,7 @@
 <context>
     <name>ComponentCreator</name>
     <message>
-        <location filename="../gui.py" line="1129"/>
+        <location filename="../gui.py" line="1170"/>
         <source>Tags: {0}</source>
         <translation>Tags: {0}</translation>
     </message>
@@ -65,17 +65,17 @@
         <translation>Wiki</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1048"/>
+        <location filename="../gui.py" line="1089"/>
         <source>Pin ({0}):</source>
         <translation>Pin ({0}):</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1052"/>
+        <location filename="../gui.py" line="1093"/>
         <source>Pin:</source>
         <translation>Pin:</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1224"/>
+        <location filename="../gui.py" line="1265"/>
         <source>Manager:</source>
         <translation>Manager:</translation>
     </message>
@@ -345,8 +345,8 @@
     </message>
     <message>
         <location filename="../ui/install_boards.ui" line="69"/>
-        <source>By default, only a few Arduino boards are supported. If you need to install a different board, select it in the list below and click &quot;Install Selected&quot;.</source>
-        <translation>Standardmäßig werden nur ein paar Boards von Arduino unterstützt. Wenn du weitere benötigst, wähle diese in der Liste unten aus und drücke auf &quot;Installieren&quot;.</translation>
+        <source>By default, only a few Arduino boards are supported. If you need to install a different board, select it in the list below and click &quot;Install Selected&quot;. You can also supply your own board manager URLs in the settings.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../ui/install_boards.ui" line="95"/>
@@ -364,42 +364,42 @@
         <translation>Installieren</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1904"/>
+        <location filename="../gui.py" line="1945"/>
         <source>Error fetching Boards</source>
         <translation>Fehler beim Laden der Boards</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1911"/>
+        <location filename="../gui.py" line="1952"/>
         <source>{name} ({core})</source>
         <translation>{name} ({core})</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1915"/>
+        <location filename="../gui.py" line="1956"/>
         <source> [{0}]</source>
         <translation> [{0}]</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1917"/>
+        <location filename="../gui.py" line="1958"/>
         <source>Installed</source>
         <translation>Installiert</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1944"/>
+        <location filename="../gui.py" line="1985"/>
         <source>Error installing</source>
         <translation>Fehler beim Installieren</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1962"/>
+        <location filename="../gui.py" line="2003"/>
         <source>Error removing</source>
         <translation>Fehler beim Entfernen</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1973"/>
+        <location filename="../gui.py" line="2014"/>
         <source>Already installing</source>
         <translation>Installation läuft</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1976"/>
+        <location filename="../gui.py" line="2017"/>
         <source>An install or remove job is already running.</source>
         <translation>Es wird bereits etwas installiert oder entfernt.</translation>
     </message>
@@ -418,7 +418,7 @@
         <translation>Schließen</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="2132"/>
+        <location filename="../gui.py" line="2176"/>
         <source>{url} (double tap to open)</source>
         <translation>{url} (Doppelklick zum Öffnen)</translation>
     </message>
@@ -436,32 +436,32 @@
         <translation>Aktion Bearbeiten</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1798"/>
+        <location filename="../gui.py" line="1839"/>
         <source>Set a delay in Milliseconds</source>
         <translation>Stelle eine Verzögerung in Millisekunden ein</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1810"/>
+        <location filename="../gui.py" line="1851"/>
         <source>Select a modifier key or define a custom shortcut</source>
         <translation>Wähle eine Modifier Taste aus oder definiere ein Shortcut</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1811"/>
+        <location filename="../gui.py" line="1852"/>
         <source>Shortcut</source>
         <translation>Shortcut</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1823"/>
+        <location filename="../gui.py" line="1864"/>
         <source>Select a Key Sequence to execute</source>
         <translation>Wähle eine Tastensequenz zum ausführen aus</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1831"/>
+        <location filename="../gui.py" line="1872"/>
         <source>Set the number of scrolls to perform</source>
         <translation>Lege die Anzahl Scrolls fest</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1842"/>
+        <location filename="../gui.py" line="1883"/>
         <source>Set a text to type</source>
         <translation>Lege einen Text fest, der getippt werden soll</translation>
     </message>
@@ -587,108 +587,108 @@
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="344"/>
-        <location filename="../gui.py" line="1540"/>
+        <location filename="../gui.py" line="1581"/>
         <source>Press Key</source>
         <translation>Taste drücken</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="349"/>
-        <location filename="../gui.py" line="1542"/>
+        <location filename="../gui.py" line="1583"/>
         <source>Release Key</source>
         <translation>Taste loslassen</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="354"/>
-        <location filename="../gui.py" line="1544"/>
+        <location filename="../gui.py" line="1585"/>
         <source>Delay</source>
         <translation>Verzögern</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="359"/>
-        <location filename="../gui.py" line="1546"/>
+        <location filename="../gui.py" line="1587"/>
         <source>Left Mouse Button Down</source>
         <translation>Linken Mousknopf drücken</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="364"/>
-        <location filename="../gui.py" line="1548"/>
+        <location filename="../gui.py" line="1589"/>
         <source>Left Mouse Button Up</source>
         <translation>Linken Mausknopf loslassen</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="369"/>
-        <location filename="../gui.py" line="1550"/>
+        <location filename="../gui.py" line="1591"/>
         <source>Middle Mouse Button Down</source>
         <translation>Mittleren Mausknopf drücken</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="374"/>
-        <location filename="../gui.py" line="1552"/>
+        <location filename="../gui.py" line="1593"/>
         <source>Middle Mouse Button Up</source>
         <translation>Mittleren Mausknopf loslassen</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="379"/>
-        <location filename="../gui.py" line="1554"/>
+        <location filename="../gui.py" line="1595"/>
         <source>Right Mouse Button Down</source>
         <translation>Rechten Mausknopf drücken</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="384"/>
-        <location filename="../gui.py" line="1556"/>
+        <location filename="../gui.py" line="1597"/>
         <source>Right Mouse Button Up</source>
         <translation>Rechten Mausknopf loslassen</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="389"/>
-        <location filename="../gui.py" line="1558"/>
+        <location filename="../gui.py" line="1599"/>
         <source>Scroll Up</source>
         <translation>Hochscrollen</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="394"/>
-        <location filename="../gui.py" line="1560"/>
+        <location filename="../gui.py" line="1601"/>
         <source>Scroll Down</source>
         <translation>Runterscrollen</translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="399"/>
-        <location filename="../gui.py" line="1562"/>
+        <location filename="../gui.py" line="1603"/>
         <source>Type Text</source>
         <translation>Text schreiben</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1463"/>
+        <location filename="../gui.py" line="1504"/>
         <source>Duplicated Macro Names</source>
         <translation>Doppelter Makroname</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1465"/>
+        <location filename="../gui.py" line="1506"/>
         <source>Some Macros have the same name. All Macros deserve their own names, don&apos;t they?</source>
         <translation>Manche Makros haben den gleichen Namen. Alle Makros verdienen einen eigenen Namen, nicht wahr?</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1572"/>
+        <location filename="../gui.py" line="1613"/>
         <source>{0}: {1}</source>
         <translation>{0}: {1}</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1576"/>
+        <location filename="../gui.py" line="1617"/>
         <source>{0}: {1} times</source>
         <translation>{0}: {1} times</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1578"/>
+        <location filename="../gui.py" line="1619"/>
         <source>{0}ms</source>
         <translation>{0}ms</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1715"/>
+        <location filename="../gui.py" line="1756"/>
         <source>Invalid Character</source>
         <translation>Ungültiges Zeichen</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1720"/>
+        <location filename="../gui.py" line="1761"/>
         <source>You entered an invalid character in the shortcuts menu. This commonly happens when using alternate graphics (AltGr). Please do not use these characters.</source>
         <translation>Du hast ein ungültiges Zeichen im Shortcuts Menu eingegeben. Das passiert häufig wenn &quot;Alternate Graphics&quot; (AltGr) verwendet wird. Bitte verwende diese Zeichen nicht.</translation>
     </message>
@@ -702,27 +702,64 @@
         <translation>Mikrocontroller Einstellungen</translation>
     </message>
     <message>
-        <location filename="../ui/microcontroller_settings.ui" line="69"/>
+        <location filename="../ui/microcontroller_settings.ui" line="62"/>
+        <source>Tip: Hover over anything in this Window to get more information!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/microcontroller_settings.ui" line="92"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum Value the ADC (Analog-Digital Converter) of your Board.&lt;/p&gt;&lt;p&gt;Usually 1024 for Arduino Boards or 4096 for esp32 Boards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Der Maximalwert des ADC (Analog-Digital Converter) deines Boards.&lt;/p&gt;&lt;p&gt;Normalerweise 1024 für Arduinos oder 4096 für esp32 Boards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/microcontroller_settings.ui" line="72"/>
+        <location filename="../ui/microcontroller_settings.ui" line="95"/>
         <source>Max ADC Value:</source>
         <translation>Max ADC Wert:</translation>
     </message>
     <message>
-        <location filename="../ui/microcontroller_settings.ui" line="79"/>
+        <location filename="../ui/microcontroller_settings.ui" line="102"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Value must be a power of 2 (e.g. 1024)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Der Wert muss eine Zweierpotenz sein (z.B. 1024)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="2037"/>
+        <location filename="../ui/microcontroller_settings.ui" line="124"/>
+        <location filename="../ui/microcontroller_settings.ui" line="134"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum amout of digital input Pins.&lt;/p&gt;&lt;p&gt;Lower numbers will reduce memory usage on the Microcontroller. Don&apos;t lower the value if you don&apos;t have memory issues to avoid having to reupload when you add more components.&lt;/p&gt;&lt;p&gt;Usually, 50 is a good starting point.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/microcontroller_settings.ui" line="127"/>
+        <source>Max Digital Input Pins:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/microcontroller_settings.ui" line="156"/>
+        <location filename="../ui/microcontroller_settings.ui" line="166"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The maximum amout of analog input Pins.&lt;/p&gt;&lt;p&gt;Lower numbers will reduce memory usage on the Microcontroller. Don&apos;t lower the value if you don&apos;t have memory issues to avoid having to reupload when you add more components.&lt;/p&gt;&lt;p&gt;Usually, 50 is a good starting point.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/microcontroller_settings.ui" line="159"/>
+        <source>Max Analog Input Pins:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/microcontroller_settings.ui" line="186"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Wether to include the BluetoothSerial.h library to enable Bluetooth support for the esp32 board.&lt;/p&gt;&lt;p&gt;Do not enable if you don&apos;t use an esp32 board.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/microcontroller_settings.ui" line="189"/>
+        <source>Enable Bluetooth for esp32</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../gui.py" line="2078"/>
         <source>Invalid ADC Value</source>
         <translation>Ungültiger ADC Wert</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="2044"/>
+        <location filename="../gui.py" line="2085"/>
         <source>You maximum ADC value is invalid. Only powers of 2 are allowed, else the input values of analog components will be wrong. Microcontrollers always use powers of 2 for their maximum ADC value.
 
 Common example values:
@@ -739,9 +776,9 @@ Häufige Beispielwerte:
     <name>Microstation</name>
     <message>
         <location filename="../ui/window.ui" line="14"/>
-        <location filename="../gui.py" line="292"/>
-        <location filename="../gui.py" line="2184"/>
-        <location filename="../gui.py" line="2187"/>
+        <location filename="../gui.py" line="295"/>
+        <location filename="../gui.py" line="2228"/>
+        <location filename="../gui.py" line="2231"/>
         <source>Microstation</source>
         <translation></translation>
     </message>
@@ -863,7 +900,7 @@ Häufige Beispielwerte:
     </message>
     <message>
         <location filename="../ui/window.ui" line="305"/>
-        <location filename="../gui.py" line="585"/>
+        <location filename="../gui.py" line="622"/>
         <source>Pause</source>
         <translation>Pause</translation>
     </message>
@@ -1146,7 +1183,7 @@ Häufige Beispielwerte:
     </message>
     <message>
         <location filename="../gui.py" line="173"/>
-        <location filename="../gui.py" line="443"/>
+        <location filename="../gui.py" line="461"/>
         <source>Success</source>
         <translation>Erfolg</translation>
     </message>
@@ -1156,12 +1193,12 @@ Häufige Beispielwerte:
         <translation>arduino-cli wurde erfolgreich installiert.</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="244"/>
+        <location filename="../gui.py" line="247"/>
         <source>Version Mismatch</source>
         <translation>Version inkompatibel</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="250"/>
+        <location filename="../gui.py" line="253"/>
         <source>The Microcontroller runs a Sketch compiled by a previous version of Microstation. It is recommended to upload the newest code to ensure full functionality.
 
 Do you wish to upload the newest code?</source>
@@ -1170,17 +1207,17 @@ Do you wish to upload the newest code?</source>
 Möchtest du den neuen Code hochladen?</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="259"/>
+        <location filename="../gui.py" line="262"/>
         <source>No Profile</source>
         <translation>Kein Profil</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="435"/>
+        <location filename="../gui.py" line="452"/>
         <source>Error uploading</source>
         <translation>Fehler beim Hochladen</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="438"/>
+        <location filename="../gui.py" line="455"/>
         <source>Uploading failed: {0}
 
 Make sure your board is connected and the correct port is selected.</source>
@@ -1189,17 +1226,20 @@ Make sure your board is connected and the correct port is selected.</source>
 Stelle sicher, dass dein Board angeschlossen ist und der richtige Port ausgewählt wurde.</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="444"/>
-        <source>The code was uploaded successfully.</source>
-        <translation>Der Code wurde erfolgreich hochgeladen.</translation>
+        <location filename="../gui.py" line="464"/>
+        <source>The code was uploaded successfully. Compilation output:
+
+{c_output}
+{u_output}</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="462"/>
+        <location filename="../gui.py" line="494"/>
         <source>Upload updated code</source>
         <translation>Lade den neuen Code hoch</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="468"/>
+        <location filename="../gui.py" line="500"/>
         <source>Your settings were updated successfully. To apply them to your Microcontroller, you need to upload the newly generated code. You can do this here or under &quot;Microcontroller&quot; -&gt; &quot;Upload Code&quot;.
 
 Upload the new code?</source>
@@ -1208,7 +1248,7 @@ Upload the new code?</source>
 Soll der neue Code hochgeladen werden?</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="583"/>
+        <location filename="../gui.py" line="620"/>
         <source>Resume</source>
         <translation>Weiter</translation>
     </message>
@@ -1271,63 +1311,63 @@ Soll der neue Code hochgeladen werden?</translation>
         <translation>Komponenten</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="775"/>
-        <location filename="../gui.py" line="787"/>
-        <location filename="../gui.py" line="965"/>
+        <location filename="../gui.py" line="816"/>
+        <location filename="../gui.py" line="828"/>
+        <location filename="../gui.py" line="1006"/>
         <source>Off</source>
         <translation>Aus</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="776"/>
-        <location filename="../gui.py" line="785"/>
-        <location filename="../gui.py" line="965"/>
-        <location filename="../gui.py" line="968"/>
+        <location filename="../gui.py" line="817"/>
+        <location filename="../gui.py" line="826"/>
+        <location filename="../gui.py" line="1006"/>
+        <location filename="../gui.py" line="1009"/>
         <source>Default</source>
         <translation>Standard</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="813"/>
+        <location filename="../gui.py" line="854"/>
         <source>Pins:</source>
         <translation>Pins:</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="830"/>
+        <location filename="../gui.py" line="871"/>
         <source>Edit</source>
         <translation>Bearbeiten</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="833"/>
+        <location filename="../gui.py" line="874"/>
         <source>Edit this Component</source>
         <translation>Bearbeite diese Komponente</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="839"/>
+        <location filename="../gui.py" line="880"/>
         <source>Delete</source>
         <translation>Löschen</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="842"/>
+        <location filename="../gui.py" line="883"/>
         <source>Delete this Component</source>
         <translation>Lösche diese Komponente</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="892"/>
-        <location filename="../gui.py" line="906"/>
+        <location filename="../gui.py" line="933"/>
+        <location filename="../gui.py" line="947"/>
         <source>Invalid Components</source>
         <translation>Ungültige Komponenten</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="910"/>
+        <location filename="../gui.py" line="951"/>
         <source>Your Profile contains an invalid Component: {0} has invalid Pins that do not match those of its device. Please delete and recreate that component.</source>
         <translation>Dein Profil enthält eine ungültige Komponente: {0} hat ungültige Pins, die nicht mit denen des zugehörigen Hardware Geräts übereinstimmen. Bitte Lösche diese Komponente und erstelle sie neu.</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="930"/>
+        <location filename="../gui.py" line="971"/>
         <source>Unimplemented Component</source>
         <translation>Unimplementierte Komponente</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="934"/>
+        <location filename="../gui.py" line="975"/>
         <source>The selected Component is currently not implemented. Visit our GitHub to open an issue or watch the state of development.</source>
         <translation>Die ausgewähle Komponente ist aktuell nicht implementiert. Besuche unsere GitHub Seite um einen Issue zu öffnen oder den Entwicklungsfortschritt zu betrachten.</translation>
     </message>
@@ -1406,17 +1446,17 @@ Soll der neue Code hochgeladen werden?</translation>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="699"/>
+        <location filename="../gui.py" line="740"/>
         <source>Duplicated Profile Names</source>
         <translation>Doppelte Profilnamen</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="701"/>
+        <location filename="../gui.py" line="742"/>
         <source>Some Profiles have the same name. All Profiles deserve their own names, don&apos;t they?</source>
         <translation>Manche Profile haben den gleichen Namen. Alle Profile verdienen ihren eigenen Namen, nicht wahr?</translation>
     </message>
     <message>
-        <location filename="../gui.py" line="745"/>
+        <location filename="../gui.py" line="786"/>
         <source>Delete Profile</source>
         <translation>Profil löschen</translation>
     </message>
@@ -1535,22 +1575,37 @@ Soll der neue Code hochgeladen werden?</translation>
         <translation>Baudrate:</translation>
     </message>
     <message>
-        <location filename="../ui/settings.ui" line="157"/>
+        <location filename="../ui/settings.ui" line="159"/>
+        <source>Supply a list of custom Board Manager URLs to install non-Arduino Boards</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/settings.ui" line="162"/>
+        <source>Board Manager URLs:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/settings.ui" line="169"/>
+        <source>Should be a comma-separated list of URLs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../ui/settings.ui" line="184"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Allow Profiles to activate themselves when configured to do so.&lt;/p&gt;&lt;p&gt;You can also change this value in the Main Window.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Erlaube Profilen sich selbst zu aktivieren, wenn sie dazu konfiguriert wurden.&lt;/p&gt;&lt;p&gt;Du kannst dies auch im Hauptfenster einstellen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/settings.ui" line="160"/>
+        <location filename="../ui/settings.ui" line="187"/>
         <source>Auto detect Profiles</source>
         <translation>Profile automatisch erkennen</translation>
     </message>
     <message>
-        <location filename="../ui/settings.ui" line="173"/>
+        <location filename="../ui/settings.ui" line="200"/>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Microstation will hide in the System Tray after Startup.&lt;/p&gt;&lt;p&gt;You can click the Tray Icon to bring it back.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Microstation wird in das System Tray starten.&lt;/p&gt;&lt;p&gt;Du kannst das Tray Icon anklicken um es zurückzubringen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../ui/settings.ui" line="176"/>
+        <location filename="../ui/settings.ui" line="203"/>
         <source>Hide to System Tray on Startup</source>
         <translation>Beim Starten zum Tray verkleinern</translation>
     </message>

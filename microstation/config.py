@@ -10,10 +10,10 @@ from .paths import (CONFIG_DIR, CONFIG_PATH, LIB_DIR, LOGGER_PATH, MACROS_PATH,
                     MC_DEBUG_LOG_PATH, PROFILES_PATH)
 from .version import version_string
 
-DEFAULT_CONFIG = {
+DEFAULT_CONFIG: dict[str, str | int | float | bool | list[str]] = {
     "show_welcome_popup": True,
     "theme": "",
-    "locale": locale.getdefaultlocale()[0],
+    "locale": locale.getdefaultlocale()[0] or "en_US",
     "default_port": (
         "COM0" if platform.system() == "Windows"
         else "/dev/ttyACM0"
@@ -21,10 +21,12 @@ DEFAULT_CONFIG = {
     "baudrate": 9600,
     "auto_detect_profiles": True,
     "hide_to_tray_startup": False,
+    "board_manager_urls": [],
     "autoscroll_serial_monitor": True,
     "max_adc_value": 1024,
     "max_dig_inp_pins": 50,
     "max_ana_inp_pins": 50,
+    "esp32_bluetooth_support": False,
 }
 
 type MACRO_ACTION = dict[str, str | int | None]
@@ -115,7 +117,9 @@ def get_config_value(key: str) -> Any:
     return val
 
 
-def set_config_value(key: str, value: str | int | float | bool) -> None:
+def set_config_value(
+    key: str, value: str | int | float | bool | list[str]
+) -> None:
     config = _get_config()
     config[key] = value
     _overwrite_config(config)

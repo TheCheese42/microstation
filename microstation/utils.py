@@ -10,6 +10,7 @@ import serial.tools.list_ports_common
 from serial.tools.list_ports import comports
 
 from .paths import LIB_DIR
+from . import config
 
 
 class MissingArduinoCLIError(FileNotFoundError):
@@ -222,7 +223,10 @@ def update_core_index() -> None:
     """
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
-    status, output = getstatusoutput(f"{arduino_cli_path()} core update-index")
+    command = f"{arduino_cli_path()} core update-index"
+    if v := config.get_config_value("board_manager_urls"):
+        command += f" --additional-urls {",".join(v)}"
+    status, output = getstatusoutput(command)
     if status:
         raise RuntimeError(
             f"Error updating core index: {output} (status code {status})"
@@ -241,9 +245,10 @@ def install_core(core: str) -> None:
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
     update_core_index()
-    status, output = getstatusoutput(
-        f"{arduino_cli_path()} core install {core}"
-    )
+    command = f"{arduino_cli_path()} core install {core}"
+    if v := config.get_config_value("board_manager_urls"):
+        command += f" --additional-urls {",".join(v)}"
+    status, output = getstatusoutput(command)
     if status:
         raise RuntimeError(
             f"Error installing core: {output} (status code {status})"

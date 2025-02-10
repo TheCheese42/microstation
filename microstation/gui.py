@@ -253,6 +253,31 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 ) == QMessageBox.StandardButton.Yes:
                     self.upload_code()
 
+        if self.daemon.critical_messages:
+            msg = self.daemon.critical_messages.pop()
+            tip = ""
+            match msg.split(" ")[1]:
+                case "[TMDIP]":
+                    tip = tr("Microstation", "Maybe you should increase your "
+                             "digital input pins limit in the microcontroller "
+                             "settings.")
+                case "[TMAIP]":
+                    tip = tr("Microstation", "Maybe you should increase your "
+                             "analog input pins limit in the microcontroller "
+                             "settings.")
+            if tip:
+                tip_msg = tr("Microstation", "Tip: {tip}").format(tip=tip)
+            else:
+                tip_msg = ""
+            show_error(
+                self, tr("Microstation", "Received critical error from MC"),
+                tr("Microstation", "The microcontroller reported a critical "
+                   "error.\n\n{error}\n\n{tip_msg}").strip().format(
+                       error=msg,
+                       tip_msg=tip_msg,
+                   )
+            )
+
     def update_profile_combo(self) -> None:
         profiles = [profile.name for profile in config.PROFILES]
         if profiles == self._previous_profiles:
@@ -405,6 +430,12 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.daemon.set_auto_activation_enabled(state)
         config.set_config_value("auto_detect_profiles", state)
 
+    def libs_to_include(self) -> list[str]:
+        libs: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            libs.append("BluetoothSerial.h")
+        return libs
+
     def upload_code(self) -> None:
         config.log("User requested sketch upload through GUI", "DEBUG")
         port = self.daemon.port
@@ -412,12 +443,16 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         code = (ARDUINO_SKETCH_PATH / "arduino.ino").read_text("utf-8")
         config.log(f"Sketch loaded successfully ({code.__sizeof__()} bytes)",
                    "DEBUG")
+        includes_string = ""
+        for lib in self.libs_to_include():
+            includes_string += f"#include \"{lib}\""
         try:
             cli_information = utils.lookup_arduino_cli_information()
             config.log("Looked up arduino-cli information (version "
                        f"{cli_information.version})", "DEBUG")
             code = utils.format_string(
                 code,
+                includes=includes_string,
                 core=utils.core_from_fqbn(fqbn := utils.lookup_fqbn(port)),
                 board=fqbn,
                 microstation_version=version_string,
@@ -425,10 +460,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 arduino_cli_commit=cli_information.commit,
                 arduino_cli_date=cli_information.date,
                 baudrate=f"{config.get_config_value("baudrate")}",
-                max_digital_input_pins=f"{config.get_config_value(
-                    "max_dig_inp_pins")}",
-                max_analog_input_pins=f"{config.get_config_value(
-                    "max_ana_inp_pins")}",
+                max_digital_input_pins=f"{config.get_config_value("max_dig_inp_pins")}",  # noqa
+                max_analog_input_pins=f"{config.get_config_value("max_ana_inp_pins")}",  # noqa
             )
             config.log(f"Formatted sketch ({code.__sizeof__()} bytes)",
                        "DEBUG")
@@ -488,6 +521,12 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             if max_ana_inp_pins != prev_max_ana_inp_pins:
                 something_changed = True
             config.set_config_value("max_ana_inp_pins", max_ana_inp_pins)
+            esp32_bluetooth = dialog.esp32_bluetooth.isChecked()
+            prev_esp32_bluetooth = config.get_config_value(
+                "esp32_bluetooth_support")
+            if esp32_bluetooth != prev_esp32_bluetooth:
+                something_changed = True
+            config.set_config_value("esp32_bluetooth_support", esp32_bluetooth)
 
             if something_changed:
                 if show_question(
@@ -582,6 +621,11 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             hide_to_tray_startup = dialog.hideToTrayCheck.isChecked()
             config.set_config_value(
                 "hide_to_tray_startup", hide_to_tray_startup
+            )
+            board_manager_urls = dialog.boardManagerURLs.text().split(",")
+            board_manager_urls = [i.strip() for i in board_manager_urls]
+            config.set_config_value(
+                "board_manager_urls", board_manager_urls
             )
 
     def open_profiles(self) -> None:
@@ -686,6 +730,10 @@ class Settings(QDialog, Ui_Settings):  # type: ignore[misc]
         self.hideToTrayCheck.setChecked(
             config.get_config_value("hide_to_tray_startup")
         )
+
+        self.boardManagerURLs.setText(", ".join(config.get_config_value(
+            "board_manager_urls"
+        )))
 
 
 class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
@@ -2054,6 +2102,15 @@ class MicrocontrollerSettings(QDialog, Ui_MicrocontrollerSettings):  # type: ign
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
         self.adcSpin.setValue(config.get_config_value("max_adc_value"))
+        self.max_dig_inp_pins.setValue(
+            config.get_config_value("max_dig_inp_pins")
+        )
+        self.max_ana_inp_pins.setValue(
+            config.get_config_value("max_ana_inp_pins")
+        )
+        self.esp32_bluetooth.setChecked(
+            config.get_config_value("esp32_bluetooth_support")
+        )
 
     def connectSignalsSlots(self) -> None:
         self.buttonBox.accepted.connect(self.accept_requested)
