@@ -5,6 +5,9 @@
   Microstation is licensed under GPLv3
 */
 
+// Includes
+{includes}
+
 // Constants are set at compile time by the Microstation client
 const String COMPILE_CORE = "{core}";
 const String COMPILE_BOARD = "{board}";

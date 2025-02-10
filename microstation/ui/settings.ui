@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>417</width>
-    <height>243</height>
+    <height>276</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -140,6 +140,33 @@
        </property>
        <property name="value">
         <number>9600</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="font">
+        <font>
+         <family>Liberation Sans</family>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="toolTip">
+        <string>Supply a list of custom Board Manager URLs to install non-Arduino Boards</string>
+       </property>
+       <property name="text">
+        <string>Board Manager URLs:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="boardManagerURLs">
+       <property name="toolTip">
+        <string>Should be a comma-separated list of URLs</string>
        </property>
       </widget>
      </item>

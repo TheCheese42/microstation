@@ -133,6 +133,7 @@ class Daemon:
         self.profile_changed = False
         self.mc_version: None | str = None
         self.disable_tasks_until = 0.0
+        self.critical_messages: deque[str] = deque()
 
         self.in_history: list[str] = []
         self.out_history: list[str] = []
@@ -311,7 +312,10 @@ class Task:
 
     async def exec_task(self) -> None:
         if self.data.startswith("DEBUG "):
-            log_mc(self.data.split(" ", 1)[1])
+            msg = self.data.split(" ", 1)[1]
+            log_mc(msg)
+            if msg.startswith("[CRITICAL]"):
+                self.daemon.critical_messages.append(msg)
         elif self.data.startswith("VERSION"):
             version = self.data.split(" ", 1)[1]
             self.daemon.mc_version = version
