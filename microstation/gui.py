@@ -274,8 +274,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 tr("Microstation", "The microcontroller reported a critical "
                    "error.\n\n{error}\n\n{tip_msg}").strip().format(
                        error=msg,
-                       tip_msg=tip_msg,
-                   )
+                       tip_msg=tip_msg)
             )
 
     def update_profile_combo(self) -> None:
@@ -436,12 +435,40 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             libs.append("BluetoothSerial.h")
         return libs
 
+    def sketch_constants(self) -> list[str]:
+        consts: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            consts.append("BluetoothSerial SerialBT;")
+        return consts
+
+    def sketch_setup(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            lines.append("SerialBT.begin(\"MicrostationESP32BT\");")
+            lines.append("Serial.println(\"DEBUG Started esp32 Bluetooth as MicrostationESP32BT\");")  # noqa
+        return lines
+
+    def sketch_loop(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            lines.append("if (SerialBT.available() > 0) {")
+            lines.append("String receivedData = Serial.readStringUntil('\n');")  # noqa
+            lines.append("exec_task(receivedData);")
+            lines.append("}")
+        return lines
+
     def upload_code(self) -> None:
         port = self.daemon.port
         code = (ARDUINO_SKETCH_PATH / "arduino.ino").read_text("utf-8")
         includes_string = ""
+        constants_string = ""
+        setup_string = ""
         for lib in self.libs_to_include():
-            includes_string += f"#include \"{lib}\""
+            includes_string += f"#include \"{lib}\"\n"
+        for line in self.sketch_constants():
+            constants_string += line + "\n"
+        for line in self.sketch_setup():
+            setup_string += line + "\n"
         try:
             cli_information = utils.lookup_arduino_cli_information()
             code = utils.format_string(
@@ -456,6 +483,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 baudrate=f"{config.get_config_value("baudrate")}",
                 max_digital_input_pins=f"{config.get_config_value("max_dig_inp_pins")}",  # noqa
                 max_analog_input_pins=f"{config.get_config_value("max_ana_inp_pins")}",  # noqa
+                constants=constants_string,
+                setup=setup_string,
             )
             ARDUINO_SKETCH_FORMATTED_PATH.mkdir(exist_ok=True)
             with open(

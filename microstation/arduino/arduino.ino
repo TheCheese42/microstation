@@ -30,6 +30,9 @@ uint8_t analog_input_states[{max_analog_input_pins}] = {};
 uint8_t analog_input_tolerances[{max_analog_input_pins}] = {};
 uint8_t analog_input_count = 0;
 
+// Other constants
+{constants}
+
 
 void exec_task(String task);
 void poll_digital_input();
@@ -72,12 +75,19 @@ void setup() {
   Serial.begin(BAUDRATE);
   delay(1000);  // Prevent first bytes to be lost
   print_debug();
+
+  // Additional setup code
+  {setup}
+
   Serial.println("PINS_REQUESTED");
   report_version();
 }
 
 
 void loop() {
+  // Additional loop code
+  {loop}
+
   if (Serial.available() > 0) {
     String receivedData = Serial.readStringUntil('\n');
     exec_task(receivedData);
