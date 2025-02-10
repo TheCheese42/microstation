@@ -25,12 +25,6 @@ int analog_input_states[200] = {};
 int analog_input_tolerances[200] = {};
 int analog_input_count = 0;
 
-int digital_output_pins[200] = {};
-int digital_output_count = 0;
-
-int analog_output_pins[200] = {};
-int analog_output_count = 0;
-
 
 void exec_task(String task);
 void poll_digital_input();
@@ -54,8 +48,6 @@ void print_debug() {
 void reset_data() {
   digital_input_count = 0;
   analog_input_count = 0;
-  digital_output_count = 0;
-  digital_input_count = 0;
   for (int i = 0; i < 200; i++) {
     digital_input_debounce_times[i] = 0;
     analog_input_tolerances[i] = 0;
@@ -113,16 +105,6 @@ void exec_task(String task) {
       }
     } else if (io_mode == "OUT") {
       pinMode(pin, OUTPUT);
-      if (mode == "DIG") {
-        digital_output_pins[digital_output_count] = pin;
-        digital_output_count++;
-      } else if (mode == "ANA") {
-        analog_output_pins[analog_output_count] = pin;
-        analog_output_count++;
-      } else {
-        Serial.print("DEBUG [ERROR] Invalid mode: ");
-        Serial.println(mode);
-      }
     } else {
       Serial.print("DEBUG [ERROR] Invalid IO mode: ");
       Serial.println(io_mode);

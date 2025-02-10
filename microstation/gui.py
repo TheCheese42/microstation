@@ -425,7 +425,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 fp.write(code)
             config.log(f"Uploading sketch to port {port} with device "
                        f"{self.daemon.device}")
-            utils.upload_code(port, str(ARDUINO_SKETCH_FORMATTED_PATH))
+            c_output, u_output = utils.upload_code(
+                port, str(ARDUINO_SKETCH_FORMATTED_PATH)
+            )
         except utils.MissingArduinoCLIError:
             ask_install_arduino_cli(self)
             return
@@ -440,8 +442,13 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             return
         config.log(f"Success uploading sketch to port {port} with device "
                    f"{self.daemon.device}")
-        show_info(self, tr("Microstation", "Success"),
-                  tr("Microstation", "The code was uploaded successfully."))
+        show_info(
+            self, tr("Microstation", "Success"),
+            tr("Microstation",
+               "The code was uploaded successfully. Compilation output:\n\n"
+               "{c_output}\n{u_output}").format(
+                   c_output=c_output, u_output=u_output)
+            )
 
     def install_boards(self) -> None:
         dialog = InstallBoards(self)
