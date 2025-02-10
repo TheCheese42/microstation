@@ -457,18 +457,39 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             lines.append("}")
         return lines
 
+    def print_hooks(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            lines.append("SerialBT.print(data);")
+        return lines
+
+    def println_hooks(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            lines.append("SerialBT.println(data);")
+        return lines
+
     def upload_code(self) -> None:
         port = self.daemon.port
         code = (ARDUINO_SKETCH_PATH / "arduino.ino").read_text("utf-8")
         includes_string = ""
         constants_string = ""
         setup_string = ""
+        loop_string = ""
+        print_string = ""
+        println_string = ""
         for lib in self.libs_to_include():
             includes_string += f"#include \"{lib}\"\n"
         for line in self.sketch_constants():
             constants_string += line + "\n"
         for line in self.sketch_setup():
             setup_string += line + "\n"
+        for line in self.sketch_loop():
+            loop_string += line + "\n"
+        for line in self.print_hooks():
+            print_string += line + "\n"
+        for line in self.println_hooks():
+            println_string += line + "\n"
         try:
             cli_information = utils.lookup_arduino_cli_information()
             code = utils.format_string(
@@ -485,6 +506,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 max_analog_input_pins=f"{config.get_config_value("max_ana_inp_pins")}",  # noqa
                 constants=constants_string,
                 setup=setup_string,
+                loop=loop_string,
+                print_hook=print_string,
+                println_hook=println_string,
             )
             ARDUINO_SKETCH_FORMATTED_PATH.mkdir(exist_ok=True)
             with open(
