@@ -3,12 +3,17 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import psutil
+from pynput.keyboard import Key
 from PyQt6.QtGui import QKeySequence
+from PyQt6.QtWidgets import QApplication
 
 from ..enums import Tag
 
 if TYPE_CHECKING:
     from ..model import Controller
+
+
+tr = QApplication.translate
 
 
 INSTANCES: dict[type["SignalOrSlot"], "SignalOrSlot"] = {}
@@ -224,6 +229,40 @@ class LogToFile(SignalOrSlot):
                 fp.write(str(value) + "\n")
 
 
+class ChangeVolume(SignalOrSlot):
+    NAME = "Change Volume"
+    TAGS = [Tag.INPUT, Tag.DIGITAL]
+    PARAMS = [
+        Param(
+            name="steps",
+            desc="Steps",
+            type_=int,
+            default=0,
+            info={
+                "min": -100, "max": 100,
+                "tooltip": tr("SignalsSlots", "How much the volume should be "
+                              "changed. Negative means to lower the volume. "
+                              "Zero means that the volume will be increased or"
+                              " decreased depending on wether the pin is high "
+                              "or low.")
+            }
+        )
+    ]
+
+    def __init__(self) -> None:
+        self.steps = 0
+
+    def call(self, signal_slot: str, value: int) -> None:
+        if self.steps == 0:
+            self.steps = 1 if value else -1
+        if self.steps > 0:
+            key = Key.media_volume_up
+        else:
+            key = Key.media_volume_down
+        for _ in range(abs(self.steps)):
+            get_controller().tap(key)
+
+
 # ##################### SLOTS ######################
 
 
@@ -263,6 +302,7 @@ SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     ReleaseShortcut,
     Macro,
     LogToFile,
+    ChangeVolume,
     # Slots
     ProgramRunning,
 ]

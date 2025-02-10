@@ -100,7 +100,7 @@ void exec_task(String task) {
     String io_mode = task.substring(12, 15);
     int pin = task.substring(16, 19).toInt();
     if (io_mode == "INP") {
-      pinMode(pin, INPUT);
+      pinMode(pin, INPUT_PULLUP);
       if (mode == "DIG") {
         digital_input_pins[digital_input_count] = pin;
         digital_input_count++;

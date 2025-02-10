@@ -78,6 +78,48 @@ except ImportError:
 tr = QApplication.translate
 
 
+def translation_for_ss(ss: str) -> str:
+    """
+    Retrieve the translation for a signal or slot.
+
+    :param ss: The name of the signal or slot
+    :type ss: str
+    :return: The translated string, if available. Else the original name.
+    :rtype: str
+    """
+    match ss:
+        case "digital_changed":
+            return tr("SignalsSlots", "digital_changed")
+        case "digital_high":
+            return tr("SignalsSlots", "digital_high")
+        case "digital_low":
+            return tr("SignalsSlots", "digital_low")
+        case "trigger_digital_high":
+            return tr("SignalsSlots", "trigger_digital_high")
+        case "trigger_digital_low":
+            return tr("SignalsSlots", "trigger_digital_low")
+        case "value_digital":
+            return tr("SignalsSlots", "value_digital")
+        case "analog_changed":
+            return tr("SignalsSlots", "analog_changed")
+        case "value_analog":
+            return tr("SignalsSlots", "value_analog")
+        case "encoder_rotated":
+            return tr("SignalsSlots", "encoder_rotated")
+        case "encoder_rotated_left":
+            return tr("SignalsSlots", "encoder_rotated_left")
+        case "encoder_rotated_right":
+            return tr("SignalsSlots", "encoder_rotated_right")
+        case "sw_changed":
+            return tr("SignalsSlots", "sw_changed")
+        case "sw_high":
+            return tr("SignalsSlots", "sw_high")
+        case "sw_low":
+            return tr("SignalsSlots", "sw_low")
+        case _:
+            return ss
+
+
 def show_error(parent: QWidget, title: str, desc: str) -> int:
     messagebox = QMessageBox(parent)
     messagebox.setIcon(QMessageBox.Icon.Critical)
@@ -871,7 +913,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                     self,
                     tr("ProfileEditor", "Invalid Components"),
                     tr("ProfileEditor", "Your Profile contains an invalid "
-                       f"Component: {0} has invalid Pins that do not match "
+                       "Component: {0} has invalid Pins that do not match "
                        "those of its device. Please delete and recreate that "
                        "component.").format(info['component_name']),
                 )
@@ -1032,7 +1074,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             lb.addLayout(pin_hbox)
 
         for property, info in self.component.device.CONFIG.items():
-            label = QLabel(property)
+            label = QLabel(str(info.get("translation", property)))
             font = label.font()
             font.setPointSize(14)
             label.setFont(font)
@@ -1076,6 +1118,10 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             font = widget.font()
             font.setPointSize(14)
             widget.setFont(font)
+            if tt := info.get("tooltip"):
+                if isinstance(tt, str):
+                    label.setToolTip(tt)
+                    widget.setToolTip(tt)
             property_hbox = QHBoxLayout()
             property_hbox.addWidget(label)
             property_hbox.addWidget(widget)
@@ -1102,7 +1148,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             # NOTE Example ButtonRow:
             # The available_signals() method may return the same signal
             # multiple times.
-            label = QLabel(entry)
+            label = QLabel(translation_for_ss(entry))
             font = label.font()
             font.setPointSize(14)
             label.setFont(font)
@@ -1313,6 +1359,9 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             font = widget.font()
             font.setPointSize(14)
             widget.setFont(font)
+            if (tt := param.info.get("tooltip")):
+                if isinstance(tt, str):
+                    widget.setToolTip(tt)
             hbox.addWidget(widget)
 
     def param_changed(

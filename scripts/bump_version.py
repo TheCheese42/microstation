@@ -103,6 +103,8 @@ def main() -> None:
     else:
         print("Product.wxs doesn't contain a version string.")
 
+    print(f"Set Version to {new_string}")
+
 
 if __name__ == "__main__":
     main()
