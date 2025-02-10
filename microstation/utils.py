@@ -174,7 +174,7 @@ def core_from_fqbn(fqbn: str) -> str:
     return ":".join(fqbn.split(":")[0:2])
 
 
-def upload_code(port: str, path: str) -> None:
+def upload_code(port: str, path: str) -> tuple[str, str]:
     """
     Upload a sketch to a Microcontroller.
 
@@ -187,24 +187,30 @@ def upload_code(port: str, path: str) -> None:
     compiling
     :raises RuntimeError: arduino-cli returned non-zero exit code when
     compiling
+    :returns: The arduino-cli compilation and upload output as two strings
+    within a tuple
+    :rtype: tuple[str, str]
     """
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
     fqbn = lookup_fqbn(port)
-    status, output = getstatusoutput(
-        f"{arduino_cli_path()} compile --fqbn {fqbn} {path}"
+    status, c_output = getstatusoutput(
+        f"{arduino_cli_path()} compile --fqbn {fqbn} {path} --no-color "
+        "--warnings all"
     )
     if status:
         raise RuntimeError(
-            f"Error compiling sketch: {output} (status code {status})"
+            f"Error compiling sketch: {c_output} (status code {status})"
         )
-    status, output = getstatusoutput(
-        f"{arduino_cli_path()} upload --port {port} --fqbn {fqbn} {path}"
+    status, u_output = getstatusoutput(
+        f"{arduino_cli_path()} upload --port {port} --fqbn {fqbn} {path} "
+        "--no-color"
     )
     if status:
         raise RuntimeError(
-            f"Error uploading sketch: {output} (status code {status})"
+            f"Error uploading sketch: {u_output} (status code {status})"
         )
+    return (c_output, u_output)
 
 
 def update_core_index() -> None:

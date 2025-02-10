@@ -232,9 +232,12 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.autoActivateCheck.setChecked(is_autodetection_enabled)
 
         if self.daemon.mc_version and not self.ignore_version_mismatch:
-            mc_version_tuple = tuple(
-                map(int, self.daemon.mc_version.split("."))
-            )
+            try:
+                mc_version_tuple = tuple(
+                    map(int, self.daemon.mc_version.split("."))
+                )
+            except ValueError:
+                mc_version_tuple = (0, 0, 0)
             if (
                 __version__[0] != mc_version_tuple[0]
                 or __version__[1] != mc_version_tuple[1]
@@ -422,6 +425,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 arduino_cli_commit=cli_information.commit,
                 arduino_cli_date=cli_information.date,
                 baudrate=f"{config.get_config_value("baudrate")}",
+                max_digital_input_pins=f"{config.get_config_value(
+                    "max_dig_inp_pins")}",
+                max_analog_input_pins=f"{config.get_config_value(
+                    "max_ana_inp_pins")}",
             )
             config.log(f"Formatted sketch ({code.__sizeof__()} bytes)",
                        "DEBUG")
@@ -433,7 +440,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 fp.write(code)
             config.log(f"Uploading sketch to port {port} with device "
                        f"{self.daemon.device}")
-            utils.upload_code(port, str(ARDUINO_SKETCH_FORMATTED_PATH))
+            c_output, u_output = utils.upload_code(
+                port, str(ARDUINO_SKETCH_FORMATTED_PATH)
+            )
         except utils.MissingArduinoCLIError:
             ask_install_arduino_cli(self)
             return
@@ -448,8 +457,13 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             return
         config.log(f"Success uploading sketch to port {port} with device "
                    f"{self.daemon.device}")
-        show_info(self, tr("Microstation", "Success"),
-                  tr("Microstation", "The code was uploaded successfully."))
+        show_info(
+            self, tr("Microstation", "Success"),
+            tr("Microstation",
+               "The code was uploaded successfully. Compilation output:\n\n"
+               "{c_output}\n{u_output}").format(
+                   c_output=c_output, u_output=u_output)
+            )
 
     def install_boards(self) -> None:
         dialog = InstallBoards(self)
@@ -464,6 +478,16 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             if max_adc_value != prev_max_adc_value:
                 something_changed = True
             config.set_config_value("max_adc_value", max_adc_value)
+            max_dig_inp_pins = dialog.max_dig_inp_pins.value()
+            prev_max_dig_inp_pins = config.get_config_value("max_dig_inp_pins")
+            if max_dig_inp_pins != prev_max_dig_inp_pins:
+                something_changed = True
+            config.set_config_value("max_dig_inp_pins", max_dig_inp_pins)
+            max_ana_inp_pins = dialog.max_ana_inp_pins.value()
+            prev_max_ana_inp_pins = config.get_config_value("max_ana_inp_pins")
+            if max_ana_inp_pins != prev_max_ana_inp_pins:
+                something_changed = True
+            config.set_config_value("max_ana_inp_pins", max_ana_inp_pins)
 
             if something_changed:
                 if show_question(
@@ -2061,6 +2085,9 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
         self.from_index = from_index
         self.setupUi(self)
         self.connectSignalsSlots()
+        self.autoscrollCheck.setChecked(config.get_config_value(
+            "autoscroll_serial_monitor"
+        ))
         self.daemon.received_task_callbacks.append(self.queue_new_task)
 
     def setupUi(self, *args: Any, **kwargs: Any) -> None:

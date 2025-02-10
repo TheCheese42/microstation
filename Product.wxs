@@ -1,5 +1,5 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-  <Package Name="Microstation" Manufacturer="TheCheese" Version="0.5.0" UpgradeCode="23937f00-3d4b-4899-b8cd-6ce6e7d13bb0">
+  <Package Name="Microstation" Manufacturer="TheCheese" Version="0.6.1" UpgradeCode="23937f00-3d4b-4899-b8cd-6ce6e7d13bb0">
     <MajorUpgrade DowngradeErrorMessage="A newer version is already installed." />
     <Feature Id="FilesFeature">
       <ComponentGroupRef Id="Main" />

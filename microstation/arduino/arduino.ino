@@ -14,22 +14,18 @@ const String COMPILE_ARDUINO_CLI_COMMIT = "{arduino_cli_commit}";
 const String COMPILE_ARDUINO_CLI_DATE = "{arduino_cli_date}";
 const int BAUDRATE = {baudrate};
 
-int digital_input_pins[200] = {};
-int digital_input_states[200] = {};
-int digital_input_start_times[200] = {};  // Digital input devices may jitter and need a small delay
-int digital_input_debounce_times[200] = {};
-int digital_input_count = 0;
+uint8_t MAX_DIGITAL_INPUT_PINS = {max_digital_input_pins};
+uint8_t digital_input_pins[{max_digital_input_pins}] = {};
+uint8_t digital_input_states[{max_digital_input_pins}] = {};
+uint8_t digital_input_start_times[{max_digital_input_pins}] = {};  // Digital input devices may jitter and need a small delay
+uint8_t digital_input_debounce_times[{max_digital_input_pins}] = {};
+uint8_t digital_input_count = 0;
 
-int analog_input_pins[200] = {};
-int analog_input_states[200] = {};
-int analog_input_tolerances[200] = {};
-int analog_input_count = 0;
-
-int digital_output_pins[200] = {};
-int digital_output_count = 0;
-
-int analog_output_pins[200] = {};
-int analog_output_count = 0;
+uint8_t MAX_ANALOG_INPUT_PINS = {max_analog_input_pins};
+uint8_t analog_input_pins[{max_analog_input_pins}] = {};
+uint8_t analog_input_states[{max_analog_input_pins}] = {};
+uint8_t analog_input_tolerances[{max_analog_input_pins}] = {};
+uint8_t analog_input_count = 0;
 
 
 void exec_task(String task);
@@ -54,10 +50,10 @@ void print_debug() {
 void reset_data() {
   digital_input_count = 0;
   analog_input_count = 0;
-  digital_output_count = 0;
-  digital_input_count = 0;
-  for (int i = 0; i < 200; i++) {
+  for (int i = 0; i < MAX_DIGITAL_INPUT_PINS; i++) {
     digital_input_debounce_times[i] = 0;
+  }
+  for (int i = 0; i < MAX_ANALOG_INPUT_PINS; i++) {
     analog_input_tolerances[i] = 0;
   }
 }
@@ -102,9 +98,15 @@ void exec_task(String task) {
     if (io_mode == "INP") {
       pinMode(pin, INPUT_PULLUP);
       if (mode == "DIG") {
+        if (digital_input_count >= MAX_DIGITAL_INPUT_PINS) {
+          Serial.println("DEBUG [CRITICAL] [TMDIP] Too many digital input pins");
+        }
         digital_input_pins[digital_input_count] = pin;
         digital_input_count++;
       } else if (mode == "ANA") {
+        if (analog_input_count >= MAX_ANALOG_INPUT_PINS) {
+          Serial.println("DEBUG [CRITICAL] [TMAIP] Too many analog input pins");
+        }
         analog_input_pins[analog_input_count] = pin;
         analog_input_count++;
       } else {
@@ -113,16 +115,6 @@ void exec_task(String task) {
       }
     } else if (io_mode == "OUT") {
       pinMode(pin, OUTPUT);
-      if (mode == "DIG") {
-        digital_output_pins[digital_output_count] = pin;
-        digital_output_count++;
-      } else if (mode == "ANA") {
-        analog_output_pins[analog_output_count] = pin;
-        analog_output_count++;
-      } else {
-        Serial.print("DEBUG [ERROR] Invalid mode: ");
-        Serial.println(mode);
-      }
     } else {
       Serial.print("DEBUG [ERROR] Invalid IO mode: ");
       Serial.println(io_mode);
