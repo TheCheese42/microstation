@@ -126,14 +126,6 @@
       </item>
       <item>
        <property name="text">
-        <string>RGB</string>
-       </property>
-       <property name="toolTip">
-        <string notr="true">RGB</string>
-       </property>
-      </item>
-      <item>
-       <property name="text">
         <string>7 Segment Digit</string>
        </property>
        <property name="toolTip">

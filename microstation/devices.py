@@ -37,16 +37,6 @@ class Potentiometer(Device):
     }
 
 
-class RGB(Device):
-    NAME = "RGB"
-    TAGS = [Tag.OUTPUT, Tag.DIGITAL, Tag.ANALOG]
-    PINS = [
-        Pin(type="both", io_type="output", name="red"),
-        Pin(type="both", io_type="output", name="green"),
-        Pin(type="both", io_type="output", name="blue"),
-    ]
-
-
 class RotaryEncoder(Device):
     NAME = "Rotary Encoder"
     TAGS = [Tag.INPUT, Tag.DIGITAL]
@@ -179,6 +169,5 @@ __all__ = [
     "Button",
     "LED",
     "Potentiometer",
-    "RGB",
     "RotaryEncoder",
 ]
