@@ -32,7 +32,7 @@
 <context>
     <name>ComponentCreator</name>
     <message>
-        <location filename="../gui.py" line="1119"/>
+        <location filename="../gui.py" line="1129"/>
         <source>Tags: {0}</source>
         <translation></translation>
     </message>
@@ -65,17 +65,17 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1042"/>
+        <location filename="../gui.py" line="1048"/>
         <source>Pin ({0}):</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1046"/>
+        <location filename="../gui.py" line="1052"/>
         <source>Pin:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1214"/>
+        <location filename="../gui.py" line="1224"/>
         <source>Manager:</source>
         <translation></translation>
     </message>
@@ -301,24 +301,33 @@
 <context>
     <name>Devices</name>
     <message>
-        <location filename="../devices.py" line="13"/>
-        <location filename="../devices.py" line="62"/>
+        <location filename="../devices.py" line="17"/>
         <source>Debounce Time</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../devices.py" line="31"/>
+        <location filename="../devices.py" line="35"/>
         <source>Jitter Tolerance</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../devices.py" line="58"/>
+        <location filename="../devices.py" line="62"/>
         <source>Sensitivity</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../devices.py" line="66"/>
+        <location filename="../devices.py" line="67"/>
+        <source>How often the Rotary Encoder must be rotated within one second in order to count the rotations as one. If you don&apos;t know what this means, refer to our Wiki or leave it at 1.</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../devices.py" line="70"/>
         <source>Debounce Time (SW)</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../devices.py" line="74"/>
+        <source>Encoder Debounce Time</source>
         <translation></translation>
     </message>
 </context>
@@ -355,42 +364,42 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1891"/>
+        <location filename="../gui.py" line="1904"/>
         <source>Error fetching Boards</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1898"/>
+        <location filename="../gui.py" line="1911"/>
         <source>{name} ({core})</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1902"/>
+        <location filename="../gui.py" line="1915"/>
         <source> [{0}]</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1904"/>
+        <location filename="../gui.py" line="1917"/>
         <source>Installed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1931"/>
+        <location filename="../gui.py" line="1944"/>
         <source>Error installing</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1949"/>
+        <location filename="../gui.py" line="1962"/>
         <source>Error removing</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1960"/>
+        <location filename="../gui.py" line="1973"/>
         <source>Already installing</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1963"/>
+        <location filename="../gui.py" line="1976"/>
         <source>An install or remove job is already running.</source>
         <translation></translation>
     </message>
@@ -409,7 +418,7 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="2119"/>
+        <location filename="../gui.py" line="2132"/>
         <source>{url} (double tap to open)</source>
         <translation></translation>
     </message>
@@ -427,32 +436,32 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1785"/>
+        <location filename="../gui.py" line="1798"/>
         <source>Set a delay in Milliseconds</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1797"/>
+        <location filename="../gui.py" line="1810"/>
         <source>Select a modifier key or define a custom shortcut</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1798"/>
+        <location filename="../gui.py" line="1811"/>
         <source>Shortcut</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1810"/>
+        <location filename="../gui.py" line="1823"/>
         <source>Select a Key Sequence to execute</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1818"/>
+        <location filename="../gui.py" line="1831"/>
         <source>Set the number of scrolls to perform</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1829"/>
+        <location filename="../gui.py" line="1842"/>
         <source>Set a text to type</source>
         <translation></translation>
     </message>
@@ -578,108 +587,108 @@
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="344"/>
-        <location filename="../gui.py" line="1527"/>
+        <location filename="../gui.py" line="1540"/>
         <source>Press Key</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="349"/>
-        <location filename="../gui.py" line="1529"/>
+        <location filename="../gui.py" line="1542"/>
         <source>Release Key</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="354"/>
-        <location filename="../gui.py" line="1531"/>
+        <location filename="../gui.py" line="1544"/>
         <source>Delay</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="359"/>
-        <location filename="../gui.py" line="1533"/>
+        <location filename="../gui.py" line="1546"/>
         <source>Left Mouse Button Down</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="364"/>
-        <location filename="../gui.py" line="1535"/>
+        <location filename="../gui.py" line="1548"/>
         <source>Left Mouse Button Up</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="369"/>
-        <location filename="../gui.py" line="1537"/>
+        <location filename="../gui.py" line="1550"/>
         <source>Middle Mouse Button Down</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="374"/>
-        <location filename="../gui.py" line="1539"/>
+        <location filename="../gui.py" line="1552"/>
         <source>Middle Mouse Button Up</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="379"/>
-        <location filename="../gui.py" line="1541"/>
+        <location filename="../gui.py" line="1554"/>
         <source>Right Mouse Button Down</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="384"/>
-        <location filename="../gui.py" line="1543"/>
+        <location filename="../gui.py" line="1556"/>
         <source>Right Mouse Button Up</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="389"/>
-        <location filename="../gui.py" line="1545"/>
+        <location filename="../gui.py" line="1558"/>
         <source>Scroll Up</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="394"/>
-        <location filename="../gui.py" line="1547"/>
+        <location filename="../gui.py" line="1560"/>
         <source>Scroll Down</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../ui/macro_editor.ui" line="399"/>
-        <location filename="../gui.py" line="1549"/>
+        <location filename="../gui.py" line="1562"/>
         <source>Type Text</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1450"/>
+        <location filename="../gui.py" line="1463"/>
         <source>Duplicated Macro Names</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1452"/>
+        <location filename="../gui.py" line="1465"/>
         <source>Some Macros have the same name. All Macros deserve their own names, don&apos;t they?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1559"/>
+        <location filename="../gui.py" line="1572"/>
         <source>{0}: {1}</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1563"/>
+        <location filename="../gui.py" line="1576"/>
         <source>{0}: {1} times</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1565"/>
+        <location filename="../gui.py" line="1578"/>
         <source>{0}ms</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1702"/>
+        <location filename="../gui.py" line="1715"/>
         <source>Invalid Character</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="1707"/>
+        <location filename="../gui.py" line="1720"/>
         <source>You entered an invalid character in the shortcuts menu. This commonly happens when using alternate graphics (AltGr). Please do not use these characters.</source>
         <translation></translation>
     </message>
@@ -708,12 +717,12 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="2024"/>
+        <location filename="../gui.py" line="2037"/>
         <source>Invalid ADC Value</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="2031"/>
+        <location filename="../gui.py" line="2044"/>
         <source>You maximum ADC value is invalid. Only powers of 2 are allowed, else the input values of analog components will be wrong. Microcontrollers always use powers of 2 for their maximum ADC value.
 
 Common example values:
@@ -726,9 +735,9 @@ Common example values:
     <name>Microstation</name>
     <message>
         <location filename="../ui/window.ui" line="14"/>
-        <location filename="../gui.py" line="286"/>
-        <location filename="../gui.py" line="2171"/>
-        <location filename="../gui.py" line="2174"/>
+        <location filename="../gui.py" line="292"/>
+        <location filename="../gui.py" line="2184"/>
+        <location filename="../gui.py" line="2187"/>
         <source>Microstation</source>
         <translation></translation>
     </message>
@@ -744,7 +753,7 @@ Common example values:
     </message>
     <message>
         <location filename="../ui/window.ui" line="50"/>
-        <location filename="../gui.py" line="214"/>
+        <location filename="../gui.py" line="220"/>
         <source>Not connected</source>
         <translation></translation>
     </message>
@@ -850,7 +859,7 @@ Common example values:
     </message>
     <message>
         <location filename="../ui/window.ui" line="305"/>
-        <location filename="../gui.py" line="579"/>
+        <location filename="../gui.py" line="585"/>
         <source>Pause</source>
         <translation></translation>
     </message>
@@ -1117,79 +1126,79 @@ Common example values:
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="151"/>
+        <location filename="../gui.py" line="157"/>
         <source>Install arduino-cli</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="154"/>
+        <location filename="../gui.py" line="160"/>
         <source>Microstation depends on arduino-cli to interact with Microcontrollers. Should we install arduino-cli for you?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="162"/>
+        <location filename="../gui.py" line="168"/>
         <source>Install failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="167"/>
-        <location filename="../gui.py" line="437"/>
+        <location filename="../gui.py" line="173"/>
+        <location filename="../gui.py" line="443"/>
         <source>Success</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="169"/>
+        <location filename="../gui.py" line="175"/>
         <source>arduino-cli was installed successfully.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="238"/>
+        <location filename="../gui.py" line="244"/>
         <source>Version Mismatch</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="244"/>
+        <location filename="../gui.py" line="250"/>
         <source>The Microcontroller runs a Sketch compiled by a previous version of Microstation. It is recommended to upload the newest code to ensure full functionality.
 
 Do you wish to upload the newest code?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="253"/>
+        <location filename="../gui.py" line="259"/>
         <source>No Profile</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="429"/>
+        <location filename="../gui.py" line="435"/>
         <source>Error uploading</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="432"/>
+        <location filename="../gui.py" line="438"/>
         <source>Uploading failed: {0}
 
 Make sure your board is connected and the correct port is selected.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="438"/>
+        <location filename="../gui.py" line="444"/>
         <source>The code was uploaded successfully.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="456"/>
+        <location filename="../gui.py" line="462"/>
         <source>Upload updated code</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="462"/>
+        <location filename="../gui.py" line="468"/>
         <source>Your settings were updated successfully. To apply them to your Microcontroller, you need to upload the newly generated code. You can do this here or under &quot;Microcontroller&quot; -&gt; &quot;Upload Code&quot;.
 
 Upload the new code?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="577"/>
+        <location filename="../gui.py" line="583"/>
         <source>Resume</source>
         <translation></translation>
     </message>
@@ -1252,63 +1261,63 @@ Upload the new code?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="769"/>
-        <location filename="../gui.py" line="781"/>
-        <location filename="../gui.py" line="959"/>
+        <location filename="../gui.py" line="775"/>
+        <location filename="../gui.py" line="787"/>
+        <location filename="../gui.py" line="965"/>
         <source>Off</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="770"/>
-        <location filename="../gui.py" line="779"/>
-        <location filename="../gui.py" line="959"/>
-        <location filename="../gui.py" line="962"/>
+        <location filename="../gui.py" line="776"/>
+        <location filename="../gui.py" line="785"/>
+        <location filename="../gui.py" line="965"/>
+        <location filename="../gui.py" line="968"/>
         <source>Default</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="807"/>
+        <location filename="../gui.py" line="813"/>
         <source>Pins:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="824"/>
+        <location filename="../gui.py" line="830"/>
         <source>Edit</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="827"/>
+        <location filename="../gui.py" line="833"/>
         <source>Edit this Component</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="833"/>
+        <location filename="../gui.py" line="839"/>
         <source>Delete</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="836"/>
+        <location filename="../gui.py" line="842"/>
         <source>Delete this Component</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="886"/>
-        <location filename="../gui.py" line="900"/>
+        <location filename="../gui.py" line="892"/>
+        <location filename="../gui.py" line="906"/>
         <source>Invalid Components</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="904"/>
+        <location filename="../gui.py" line="910"/>
         <source>Your Profile contains an invalid Component: {0} has invalid Pins that do not match those of its device. Please delete and recreate that component.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="924"/>
+        <location filename="../gui.py" line="930"/>
         <source>Unimplemented Component</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="928"/>
+        <location filename="../gui.py" line="934"/>
         <source>The selected Component is currently not implemented. Visit our GitHub to open an issue or watch the state of development.</source>
         <translation></translation>
     </message>
@@ -1387,17 +1396,17 @@ Upload the new code?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="693"/>
+        <location filename="../gui.py" line="699"/>
         <source>Duplicated Profile Names</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="695"/>
+        <location filename="../gui.py" line="701"/>
         <source>Some Profiles have the same name. All Profiles deserve their own names, don&apos;t they?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../gui.py" line="739"/>
+        <location filename="../gui.py" line="745"/>
         <source>Delete Profile</source>
         <translation></translation>
     </message>
@@ -1592,6 +1601,26 @@ Upload the new code?</source>
         <location filename="../gui.py" line="113"/>
         <source>encoder_rotated_right</source>
         <translation>Encoder Rotated Right</translation>
+    </message>
+    <message>
+        <location filename="../gui.py" line="115"/>
+        <source>sw_changed</source>
+        <translation>SW Changed</translation>
+    </message>
+    <message>
+        <location filename="../gui.py" line="117"/>
+        <source>sw_high</source>
+        <translation>SW High</translation>
+    </message>
+    <message>
+        <location filename="../gui.py" line="119"/>
+        <source>sw_low</source>
+        <translation>SW Low</translation>
+    </message>
+    <message>
+        <location filename="../actions/signals_slots.py" line="249"/>
+        <source>How much the volume should be changed. Negative means to lower the volume. Zero means that the volume will be increased or decreased depending on wether the pin is high or low.</source>
+        <translation></translation>
     </message>
 </context>
 <context>

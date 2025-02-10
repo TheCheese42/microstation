@@ -254,12 +254,12 @@ class ChangeVolume(SignalOrSlot):
 
     def call(self, signal_slot: str, value: int) -> None:
         if self.steps == 0:
-            self.steps = value
+            self.steps = 1 if value else -1
         if self.steps > 0:
             key = Key.media_volume_up
         else:
             key = Key.media_volume_down
-        for _ in range(self.steps):
+        for _ in range(abs(self.steps)):
             get_controller().tap(key)
 
 

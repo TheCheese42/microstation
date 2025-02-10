@@ -291,10 +291,13 @@ class Component:
                     f"{type(name)}"
                 )
             instance = get_ss_instance(find_signal_slot(name))
-            if isinstance(action["params"], dict):
-                params = action["params"].items()
-                for attr, value in params:
-                    setattr(instance, attr, value)
+            try:
+                if isinstance(action["params"], dict):
+                    params = action["params"].items()
+                    for attr, value in params:
+                        setattr(instance, attr, value)
+            except KeyError:
+                pass
             instance.call(signal, *args)
 
     def call_slot(self, slot: str, *args: Any) -> None:
