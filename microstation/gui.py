@@ -667,6 +667,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             config.set_config_value(
                 "hide_to_tray_startup", hide_to_tray_startup
             )
+            bluetooth_enabled = dialog.bluetooth_enabled.isChecked()
+            config.set_config_value(
+                "bluetooth_enabled", bluetooth_enabled
+            )
             board_manager_urls = dialog.boardManagerURLs.text().split(",")
             board_manager_urls = [i.strip() for i in board_manager_urls]
             config.set_config_value(
@@ -774,6 +778,10 @@ class Settings(QDialog, Ui_Settings):  # type: ignore[misc]
 
         self.hideToTrayCheck.setChecked(
             config.get_config_value("hide_to_tray_startup")
+        )
+
+        self.bluetooth_enabled.setChecked(
+            config.get_config_value("bluetooth_enabled")
         )
 
         self.boardManagerURLs.setText(", ".join(config.get_config_value(

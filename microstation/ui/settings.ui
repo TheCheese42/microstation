@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>417</width>
-    <height>276</height>
+    <height>307</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -201,6 +201,22 @@
      </property>
      <property name="text">
       <string>Hide to System Tray on Startup</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="bluetooth_enabled">
+     <property name="font">
+      <font>
+       <family>Liberation Sans</family>
+       <pointsize>12</pointsize>
+      </font>
+     </property>
+     <property name="toolTip">
+      <string>Wether Serial Bluetooth should be enabled.</string>
+     </property>
+     <property name="text">
+      <string>Bluetooth enabled</string>
      </property>
     </widget>
    </item>

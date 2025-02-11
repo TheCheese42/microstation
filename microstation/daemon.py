@@ -1,10 +1,12 @@
 import asyncio
+import time
 from collections import deque
 from collections.abc import Callable
 from typing import Any, Self
 
 import serial
-import time
+from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothServiceInfo,
+                               QBluetoothSocket, QBluetoothDeviceInfo, QBluetoothDeviceDiscoveryAgent)
 
 from . import config
 from .actions import auto_activaters
@@ -107,6 +109,97 @@ class SerialDevice:
             self.ser.open()
         except Exception:
             log(f"Failed to open device {self}", "DEBUG")
+        return self
+
+    def __exit__(
+        self, _: type, exc_value: Exception, traceback: object
+    ) -> None:
+        self.close()
+
+
+class BluetoothDevice:
+    """
+    Represents a Bluetooth Device. Should be used as context manager.
+    """
+    def __init__(self, addr: str) -> None:
+        self.addr = addr
+        self.connected = False
+        self.device: QBluetoothDeviceInfo | None = None
+        try:
+            self.sock = QBluetoothSocket(
+                QBluetoothServiceInfo.Protocol.RfcommProtocol
+            )
+            self.sock.connected.connect(self.connected_to_bluetooth)
+            self.sock.disconnected.connect(self.disconnected_from_bluetooth)
+            self.sock.errorOccurred.connect(self.socket_error)
+            port = 1
+            self.sock.connectToService(QBluetoothAddress(addr), port)
+        except Exception as e:
+            log(f"Failed to create bluetooth socket {self} ({e})", "DEBUG")
+
+    def connected_to_bluetooth(self, device: QBluetoothDeviceInfo) -> None:
+        self.device = device
+        self.connected = True
+        config.log(
+            f"Connected to device {device.name()} at {device.address()}")
+
+    def disconnected_from_bluetooth(self) -> None:
+        self.connected = False
+        config.log("Bluetooth device disconnected")
+
+    def socket_error(self) -> None:
+        self.connected = False
+        config.log(
+            f"Bluetooth socket errored: {self.sock.errorString()}", "ERROR"
+        )
+
+    @property
+    def name(self) -> str | None:
+        return self.sock.peerName()
+
+    def __str__(self) -> str:
+        return f"{self.name} via Bluetooth"
+
+    def _write(self, data: bytes) -> None:
+        written = self.sock.write(data)
+        if written == -1:
+            log(f"Failed to write to bluetooth device {self}", "ERROR")
+
+    def write(self, data: str) -> None:
+        self._write(data.encode("utf-8"))
+
+    def writeline(self, data: str) -> None:
+        self._write(f"{data}\n".encode("utf-8"))
+
+    def _read(self, size: int) -> bytes:
+        return self.sock.read(size)
+
+    def _readline(self) -> bytes:
+        return self.sock.readLine().trimmed()
+
+    def read(self, size: int) -> str:
+        try:
+            return self._read(size).decode("utf-8")
+        except UnicodeDecodeError:
+            return ""
+
+    def readline(self) -> str:
+        try:
+            return self._readline().decode("utf-8")
+        except UnicodeDecodeError:
+            return ""
+
+    def in_waiting(self) -> int:
+        return self.sock.bytesAvailable()
+
+    def is_open(self) -> bool:
+        return self.sock.isOpen()
+
+    def close(self) -> None:
+        self.sock.close()
+
+    def __enter__(self) -> Self:
+        self.sock.open(QBluetoothSocket.OpenModeFlag.ReadWrite)
         return self
 
     def __exit__(

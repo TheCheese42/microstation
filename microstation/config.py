@@ -22,6 +22,7 @@ DEFAULT_CONFIG: dict[str, str | int | float | bool | list[str]] = {
     "auto_detect_profiles": True,
     "hide_to_tray_startup": False,
     "board_manager_urls": [],
+    "bluetooth_enabled": False,
     "autoscroll_serial_monitor": True,
     "max_adc_value": 1024,
     "max_dig_inp_pins": 50,
