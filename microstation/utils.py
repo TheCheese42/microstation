@@ -1,7 +1,7 @@
 import json
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from platform import system
-from subprocess import getstatusoutput
+from subprocess import PIPE, STDOUT, Popen, getstatusoutput
 from typing import NamedTuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
@@ -9,8 +9,8 @@ from zipfile import ZipFile
 import serial.tools.list_ports_common
 from serial.tools.list_ports import comports
 
-from .paths import LIB_DIR
 from . import config
+from .paths import LIB_DIR
 
 
 class MissingArduinoCLIError(FileNotFoundError):
@@ -175,7 +175,7 @@ def core_from_fqbn(fqbn: str) -> str:
     return ":".join(fqbn.split(":")[0:2])
 
 
-def upload_code(port: str, path: str) -> tuple[str, str]:
+def upload_code(port: str, path: str) -> Iterator[str]:
     """
     Upload a sketch to a Microcontroller.
 
@@ -195,23 +195,25 @@ def upload_code(port: str, path: str) -> tuple[str, str]:
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
     fqbn = lookup_fqbn(port)
-    status, c_output = getstatusoutput(
-        f"{arduino_cli_path()} compile --fqbn {fqbn} {path} --no-color "
-        "--warnings all"
+    process = Popen(
+        (f"{arduino_cli_path()} compile --fqbn {fqbn} {path} --no-color "
+         "--warnings all").split(),
+        stdout=PIPE,
+        stderr=STDOUT,
     )
-    if status:
-        raise RuntimeError(
-            f"Error compiling sketch: {c_output} (status code {status})"
-        )
-    status, u_output = getstatusoutput(
-        f"{arduino_cli_path()} upload --port {port} --fqbn {fqbn} {path} "
-        "--no-color"
+    if process.stdout:
+        for line in iter(process.stdout.readline, b''):
+            yield line.decode("utf-8")
+
+    process = Popen(
+        (f"{arduino_cli_path()} upload --port {port} --fqbn {fqbn} {path} "
+         "--no-color").split(),
+        stdout=PIPE,
+        stderr=STDOUT,
     )
-    if status:
-        raise RuntimeError(
-            f"Error uploading sketch: {u_output} (status code {status})"
-        )
-    return (c_output, u_output)
+    if process.stdout:
+        for line in iter(process.stdout.readline, b''):
+            yield line.decode("utf-8")
 
 
 def update_core_index() -> None:

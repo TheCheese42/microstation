@@ -120,7 +120,7 @@
         </font>
        </property>
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Baudrate used for communicating with the Microcontroller.&lt;/p&gt;&lt;p&gt;Commonly 9600&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Baudrate used for communicating with the Microcontroller.&lt;/p&gt;&lt;p&gt;Commonly 9600 for Arduinos or 115200 for esp32 boards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="text">
         <string>Baudrate:</string>
@@ -130,7 +130,7 @@
      <item>
       <widget class="QSpinBox" name="baudrateSpin">
        <property name="toolTip">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Baudrate used for communicating with the Microcontroller.&lt;/p&gt;&lt;p&gt;Commonly 9600&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The Baudrate used for communicating with the Microcontroller.&lt;/p&gt;&lt;p&gt;Commonly 9600 for Arduinos and 115200 for esp32 boards.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
        <property name="minimum">
         <number>300</number>

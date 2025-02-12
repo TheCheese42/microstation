@@ -17,7 +17,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
                              QKeySequenceEdit, QLabel, QLineEdit, QListWidget,
                              QListWidgetItem, QMainWindow, QMessageBox,
                              QPushButton, QSizePolicy, QSpacerItem, QSpinBox,
-                             QVBoxLayout, QWidget)
+                             QTextBrowser, QVBoxLayout, QWidget)
 from serial.tools.list_ports import comports
 
 from . import config, utils
@@ -473,9 +473,35 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 fp.write(code)
             config.log(f"Uploading sketch to port {port} with device "
                        f"{self.daemon.device}")
-            c_output, u_output = utils.upload_code(
-                port, str(ARDUINO_SKETCH_FORMATTED_PATH)
-            )
+
+            dialog = QDialog(self)
+            dialog.setWindowTitle(tr("Microstation", "Upload output"))
+            dialog.setMinimumSize(500, 250)
+            dialog_layout = QVBoxLayout(dialog)
+            text_browser = QTextBrowser(dialog)
+            close_button = QPushButton(dialog)
+            close_button.setText(tr("Microstation", "Close"))
+            close_button.clicked.connect(dialog.close)
+            dialog_layout.addWidget(text_browser)
+            dialog_layout.addWidget(close_button)
+            dialog.show()
+
+            def start_upload_job() -> None:
+                iterator = iter(utils.upload_code(
+                    port, str(ARDUINO_SKETCH_FORMATTED_PATH)
+                ))
+                timer = QTimer(self)
+
+                def update_text_browser() -> None:
+                    try:
+                        text_browser.append(next(iterator))
+                    except StopIteration:
+                        timer.stop()
+
+                timer.timeout.connect(update_text_browser)
+                timer.start(20)
+
+            QTimer.singleShot(0, start_upload_job)
         except utils.MissingArduinoCLIError:
             ask_install_arduino_cli(self)
             return
@@ -490,13 +516,6 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             return
         config.log(f"Success uploading sketch to port {port} with device "
                    f"{self.daemon.device}")
-        show_info(
-            self, tr("Microstation", "Success"),
-            tr("Microstation",
-               "The code was uploaded successfully. Compilation output:\n\n"
-               "{c_output}\n{u_output}").format(
-                   c_output=c_output, u_output=u_output)
-            )
 
     def install_boards(self) -> None:
         dialog = InstallBoards(self)
