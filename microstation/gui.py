@@ -450,10 +450,27 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             cli_information = utils.lookup_arduino_cli_information()
             config.log("Looked up arduino-cli information (version "
                        f"{cli_information.version})", "DEBUG")
+            try:
+                core = utils.core_from_fqbn(fqbn := utils.lookup_fqbn(port))
+            except utils.UnknownBoardError:
+                fqbn = config.get_config_value("custom_fqbn")
+                if not utils.is_valid_fqbn(fqbn):
+                    config.log(
+                        "Code upload failed because the FQBN couldn't be "
+                        "determined and no custom one was provided", "ERROR",
+                    )
+                    show_error(
+                        self, tr("Microstation", "Error uploading"),
+                        tr("Microstation", "Couldn't determine the board FQBN."
+                           " Please select a board in the Microcontroller "
+                           "Settings.")
+                    )
+                    return
+                core = utils.core_from_fqbn(fqbn)
             code = utils.format_string(
                 code,
                 includes=includes_string,
-                core=utils.core_from_fqbn(fqbn := utils.lookup_fqbn(port)),
+                core=core,
                 board=fqbn,
                 microstation_version=version_string,
                 arduino_cli_version=cli_information.version,
@@ -488,7 +505,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
             def start_upload_job() -> None:
                 iterator = iter(utils.upload_code(
-                    port, str(ARDUINO_SKETCH_FORMATTED_PATH)
+                    port, str(ARDUINO_SKETCH_FORMATTED_PATH), fqbn
                 ))
                 timer = QTimer(self)
 
@@ -530,6 +547,11 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             if max_adc_value != prev_max_adc_value:
                 something_changed = True
             config.set_config_value("max_adc_value", max_adc_value)
+            custom_fqbn = dialog.customFqbn.text()
+            prev_custom_fqbn = config.get_config_value("custom_fqbn")
+            if custom_fqbn != prev_custom_fqbn:
+                something_changed = True
+            config.set_config_value("custom_fqbn", custom_fqbn)
             max_dig_inp_pins = dialog.max_dig_inp_pins.value()
             prev_max_dig_inp_pins = config.get_config_value("max_dig_inp_pins")
             if max_dig_inp_pins != prev_max_dig_inp_pins:
@@ -990,7 +1012,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                     self,
                     tr("ProfileEditor", "Invalid Components"),
                     tr("ProfileEditor", "Your Profile contains invalid "
-                       f"Components: Pin {0} was used multiple "
+                       "Components: Pin {0} was used multiple "
                        "times.").format(info['pin']),
                 )
                 return
@@ -2121,6 +2143,7 @@ class MicrocontrollerSettings(QDialog, Ui_MicrocontrollerSettings):  # type: ign
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
         self.adcSpin.setValue(config.get_config_value("max_adc_value"))
+        self.customFqbn.setText(config.get_config_value("custom_fqbn"))
         self.max_dig_inp_pins.setValue(
             config.get_config_value("max_dig_inp_pins")
         )
@@ -2135,12 +2158,13 @@ class MicrocontrollerSettings(QDialog, Ui_MicrocontrollerSettings):  # type: ign
         self.buttonBox.accepted.connect(self.accept_requested)
 
     def accept_requested(self) -> None:
+        can_accept = True
         adc_value = self.adcSpin.value()
         for i in range(21):
             if adc_value == 2 ** i:
-                self.accept()
                 break
         else:
+            can_accept = False
             show_error(
                 self, tr("MicrocontrollerSettings",  "Invalid ADC Value"),
                 tr("MicrocontrollerSettings", "You maximum ADC value is "
@@ -2150,6 +2174,18 @@ class MicrocontrollerSettings(QDialog, Ui_MicrocontrollerSettings):  # type: ign
                    "ADC value.\n\nCommon example values:\n - 1024 (Most "
                    "Arduino Boards)\n - 4096 (esp32 Boards)")
             )
+        if not utils.is_valid_fqbn(self.customFqbn.text()):
+            can_accept = False
+            show_error(
+                self, tr("MicrocontrollerSettings", "Invalid FQBN"),
+                tr("MicrocontrollerSettings", "Your provided FQBN does not "
+                   "follow the FQBN format. It should consist of 3 parts "
+                   "separated by colons.\n\nExample: arduino:avr:uno for "
+                   "the Arduino Uno.")
+            )
+
+        if can_accept:
+            self.accept()
 
 
 class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]

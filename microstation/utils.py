@@ -33,9 +33,12 @@ def format_string(text: str, **kwargs: str) -> str:
 
 
 def get_port_info(port_str: str) -> str | None:
-    for port in comports():
-        if port.name in port_str:
-            return get_device_info(port)
+    try:
+        for port in comports():
+            if port.name in port_str:
+                return get_device_info(port)
+    except Exception:
+        pass
     return None
 
 
@@ -138,6 +141,10 @@ def install_arduino_cli() -> None:
         raise RuntimeError(error)
 
 
+class UnknownBoardError(RuntimeError):
+    pass
+
+
 def lookup_fqbn(port: str) -> str:
     """
     Lookup a board's FQBN using arduino-cli.
@@ -162,12 +169,20 @@ def lookup_fqbn(port: str) -> str:
     for detected_port in json_output["detected_ports"]:
         try:
             port_ = detected_port["port"]["address"]  # type: ignore  # noqa
-            if port == port_:
-                return detected_port["matching_boards"][0]["fqbn"]  # type: ignore  # noqa
         except Exception:
             raise RuntimeError(
                 "Unexpected JSON structure. Outdated arduino-cli?"
             )
+        if port == port_:
+            try:
+                return detected_port["matching_boards"][0]["fqbn"]  # type: ignore  # noqa
+            except KeyError:
+                raise UnknownBoardError("Board type couldn't be determined")
+            except Exception:
+                raise RuntimeError(
+                    "Unexpected JSON structure. Outdated arduino-cli?"
+                )
+
     raise RuntimeError(f"Couldn't find port {port}")
 
 
@@ -175,7 +190,19 @@ def core_from_fqbn(fqbn: str) -> str:
     return ":".join(fqbn.split(":")[0:2])
 
 
-def upload_code(port: str, path: str) -> Iterator[str]:
+def is_valid_fqbn(fqbn: str) -> bool:
+    splits = fqbn.split(":")
+    if len(splits) != 3:
+        return False
+    for split in splits:
+        if not split:
+            return False
+    return True
+
+
+def upload_code(
+    port: str, path: str, fqbn: str | None = None
+) -> Iterator[str]:
     """
     Upload a sketch to a Microcontroller.
 
@@ -183,6 +210,9 @@ def upload_code(port: str, path: str) -> Iterator[str]:
     :type port: str
     :param path: The path to the sketch folder
     :type path: str
+    :param fqbn: The board's FQBN. If None, arduino-cli is used to try finding
+    it automatically
+    :type fqbn: str | None, optional
     :raises MissingArduinoCLIError: arduino-cli is not installed
     :raises RuntimeError: arduino-cli returned non-zero exit code when
     compiling
@@ -194,7 +224,8 @@ def upload_code(port: str, path: str) -> Iterator[str]:
     """
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
-    fqbn = lookup_fqbn(port)
+    if not fqbn:
+        fqbn = lookup_fqbn(port)
     process = Popen(
         (f"{arduino_cli_path()} compile --fqbn {fqbn} {path} --no-color "
          "--warnings all").split(),
