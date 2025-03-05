@@ -290,6 +290,7 @@ class Daemon:
                 log("Restarting Daemon")
                 should_restart = False
                 self.restart_queued = False
+                self.device.close()
                 self.device = SerialDevice(self.port, self.baudrate)
             with self.device as device:
                 if not device.is_open():

@@ -1,7 +1,7 @@
 import json
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
 from platform import system
-from subprocess import getstatusoutput
+from subprocess import PIPE, STDOUT, Popen, getstatusoutput
 from typing import NamedTuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
@@ -9,8 +9,8 @@ from zipfile import ZipFile
 import serial.tools.list_ports_common
 from serial.tools.list_ports import comports
 
-from .paths import LIB_DIR
 from . import config
+from .paths import LIB_DIR
 
 
 class MissingArduinoCLIError(FileNotFoundError):
@@ -33,9 +33,12 @@ def format_string(text: str, **kwargs: str) -> str:
 
 
 def get_port_info(port_str: str) -> str | None:
-    for port in comports():
-        if port.name in port_str:
-            return get_device_info(port)
+    try:
+        for port in comports():
+            if port.name in port_str:
+                return get_device_info(port)
+    except Exception:
+        pass
     return None
 
 
@@ -138,6 +141,10 @@ def install_arduino_cli() -> None:
         raise RuntimeError(error)
 
 
+class UnknownBoardError(RuntimeError):
+    pass
+
+
 def lookup_fqbn(port: str) -> str:
     """
     Lookup a board's FQBN using arduino-cli.
@@ -162,12 +169,20 @@ def lookup_fqbn(port: str) -> str:
     for detected_port in json_output["detected_ports"]:
         try:
             port_ = detected_port["port"]["address"]  # type: ignore  # noqa
-            if port == port_:
-                return detected_port["matching_boards"][0]["fqbn"]  # type: ignore  # noqa
         except Exception:
             raise RuntimeError(
                 "Unexpected JSON structure. Outdated arduino-cli?"
             )
+        if port == port_:
+            try:
+                return detected_port["matching_boards"][0]["fqbn"]  # type: ignore  # noqa
+            except KeyError:
+                raise UnknownBoardError("Board type couldn't be determined")
+            except Exception:
+                raise RuntimeError(
+                    "Unexpected JSON structure. Outdated arduino-cli?"
+                )
+
     raise RuntimeError(f"Couldn't find port {port}")
 
 
@@ -175,7 +190,19 @@ def core_from_fqbn(fqbn: str) -> str:
     return ":".join(fqbn.split(":")[0:2])
 
 
-def upload_code(port: str, path: str) -> tuple[str, str]:
+def is_valid_fqbn(fqbn: str) -> bool:
+    splits = fqbn.split(":")
+    if len(splits) != 3:
+        return False
+    for split in splits:
+        if not split:
+            return False
+    return True
+
+
+def upload_code(
+    port: str, path: str, fqbn: str | None = None
+) -> Iterator[str]:
     """
     Upload a sketch to a Microcontroller.
 
@@ -183,6 +210,9 @@ def upload_code(port: str, path: str) -> tuple[str, str]:
     :type port: str
     :param path: The path to the sketch folder
     :type path: str
+    :param fqbn: The board's FQBN. If None, arduino-cli is used to try finding
+    it automatically
+    :type fqbn: str | None, optional
     :raises MissingArduinoCLIError: arduino-cli is not installed
     :raises RuntimeError: arduino-cli returned non-zero exit code when
     compiling
@@ -194,24 +224,27 @@ def upload_code(port: str, path: str) -> tuple[str, str]:
     """
     if not is_arduino_cli_available():
         raise MissingArduinoCLIError("arduino-cli is not installed")
-    fqbn = lookup_fqbn(port)
-    status, c_output = getstatusoutput(
-        f"{arduino_cli_path()} compile --fqbn {fqbn} {path} --no-color "
-        "--warnings all"
+    if not fqbn:
+        fqbn = lookup_fqbn(port)
+    process = Popen(
+        (f"{arduino_cli_path()} compile --fqbn {fqbn} {path} --no-color "
+         "--warnings all").split(),
+        stdout=PIPE,
+        stderr=STDOUT,
     )
-    if status:
-        raise RuntimeError(
-            f"Error compiling sketch: {c_output} (status code {status})"
-        )
-    status, u_output = getstatusoutput(
-        f"{arduino_cli_path()} upload --port {port} --fqbn {fqbn} {path} "
-        "--no-color"
+    if process.stdout:
+        for line in iter(process.stdout.readline, b''):
+            yield line.decode("utf-8")
+
+    process = Popen(
+        (f"{arduino_cli_path()} upload --port {port} --fqbn {fqbn} {path} "
+         "--no-color").split(),
+        stdout=PIPE,
+        stderr=STDOUT,
     )
-    if status:
-        raise RuntimeError(
-            f"Error uploading sketch: {u_output} (status code {status})"
-        )
-    return (c_output, u_output)
+    if process.stdout:
+        for line in iter(process.stdout.readline, b''):
+            yield line.decode("utf-8")
 
 
 def update_core_index() -> None:

@@ -127,9 +127,12 @@ class Profile:
                 "Profile auto_activate_params must be a dict, got "
                 f"{type(self.auto_activate_params)}"
             )
-        self.components = [
-            Component(i, write_method) for i in data["components"]
-        ]
+        self.components: list[Component] = []
+        for i in data["components"]:
+            try:
+                self.components.append(Component(i, write_method))
+            except DeviceNotFoundError:
+                pass
 
     def export(self) -> PROFILE:
         return {
@@ -165,11 +168,18 @@ def gen_profile_id(profiles: list[Profile]) -> int:
     return max(ids) + 1
 
 
+class DeviceNotFoundError(ValueError):
+    pass
+
+
 class Component:
     def __init__(self, data: COMPONENT, write_method: Callable[[str], None]):
         self.id = random.randint(100000, 999999)
         self.write_method = write_method
-        self.device = find_device(data["device"])
+        try:
+            self.device = find_device(data["device"])
+        except ValueError:
+            raise DeviceNotFoundError(f"Device {data["device"]} not found")
         self.pins: dict[str, int] = data["pins"]  # name: number
         if not isinstance(self.pins, dict):
             raise ValueError(

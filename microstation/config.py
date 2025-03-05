@@ -27,6 +27,7 @@ DEFAULT_CONFIG: dict[str, str | int | float | bool | list[str]] = {
     "max_adc_value": 1024,
     "max_dig_inp_pins": 50,
     "max_ana_inp_pins": 50,
+    "custom_fqbn": "",
     "esp32_bluetooth_support": False,
 }
 
