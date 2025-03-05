@@ -513,16 +513,21 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                     try:
                         text_browser.append(next(iterator))
                     except StopIteration:
+                        self.daemon.set_paused(False)
                         timer.stop()
 
                 timer.timeout.connect(update_text_browser)
                 timer.start(20)
 
+            self.daemon.set_paused(True)
             QTimer.singleShot(0, start_upload_job)
         except utils.MissingArduinoCLIError:
+            self.daemon.set_paused(False)
             ask_install_arduino_cli(self)
+            self.daemon.set_paused(False)
             return
         except RuntimeError as e:
+            self.daemon.set_paused(False)
             config.log(f"Uploading sketch failed: {e}", "ERROR")
             show_error(
                 self, tr("Microstation", "Error uploading"),
