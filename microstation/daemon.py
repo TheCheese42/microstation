@@ -2,11 +2,11 @@ import asyncio
 import time
 from collections import deque
 from collections.abc import Callable
-from typing import Any, Self
+from typing import Any, Self, Literal
 
 import serial
-from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothServiceInfo,
-                               QBluetoothSocket, QBluetoothDeviceInfo, QBluetoothDeviceDiscoveryAgent)
+from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothDeviceInfo,
+                               QBluetoothServiceInfo, QBluetoothSocket)
 
 from . import config
 from .actions import auto_activaters
@@ -209,10 +209,20 @@ class BluetoothDevice:
 
 
 class Daemon:
-    def __init__(self, port: str, baudrate: int) -> None:
+    def __init__(
+        self, port: str,
+        baudrate: int,
+        type: Literal["serial"] | Literal["bluetooth"] = "serial",
+    ) -> None:
         self.port = port
         self.baudrate = baudrate
-        self.device = SerialDevice(port, baudrate)
+        self.type: Literal["serial"] | Literal["bluetooth"] = type
+        if type == "serial":
+            self.device: SerialDevice | BluetoothDevice = SerialDevice(
+                port, baudrate
+            )
+        elif type == "bluetooth":
+            self.device = BluetoothDevice(port)
         self.write_queue: deque[str] = deque()
         self.paused = False
         self.restart_queued = False
@@ -291,7 +301,10 @@ class Daemon:
                 should_restart = False
                 self.restart_queued = False
                 self.device.close()
-                self.device = SerialDevice(self.port, self.baudrate)
+                if self.type == "bluetooth":
+                    self.device = BluetoothDevice(self.port)
+                else:
+                    self.device = SerialDevice(self.port, self.baudrate)
             with self.device as device:
                 if not device.is_open():
                     await asyncio.sleep(1)
