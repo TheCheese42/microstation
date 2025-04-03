@@ -150,4 +150,8 @@ The resulting executable can be found at `build\microstation.exe`.
 
 Lastly, it's possible to create a Windows Install file using WiX.
 
-To be added.
+Install a recent [dotnet](https://dotnet.microsoft.com/en-us/download) version and run:
+
+```pwsh
+dotnet build
+```
