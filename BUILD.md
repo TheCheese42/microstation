@@ -25,12 +25,12 @@ sudo apt upgrade
 sudo apt install git  # General
 sudo apt install pyqt5-dev-tools qtchooser qttools5-dev-tools  # Compile resources
 sudo apt install patchelf ccache  # Compile with nuitka
-sudo apt install libxcb-cursor0 libcairo-dev libgirepository1.0-dev  # Runtime dependencies
+sudo apt install libxcb-cursor0 libcairo-dev libgirepository2.0-dev  # Runtime dependencies
 sudo apt install gir1.2-appindicator3-0.1  # GNOME runtime dependency
 ```
 
 > Note:
-> The libcairo-dev and libgirepository1.0-dev dependencies are Debian only, according to <https://pystray.readthedocs.io/en/latest/faq.html>.
+> The libcairo-dev and libgirepository2.0-dev dependencies are Debian only, according to <https://pystray.readthedocs.io/en/latest/faq.html>.
 
 #### RedHat
 
