@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Check-out repository
@@ -31,7 +31,7 @@ jobs:
           sudo apt update
           sudo apt install -y pyqt5-dev-tools qtchooser qttools5-dev-tools
           sudo apt install -y patchelf ccache
-          sudo apt install -y libxcb-cursor0 libcairo-dev libgirepository2.0-dev
+          sudo apt install -y libxcb-cursor0 libcairo-dev libgirepository-2.0-dev
           pip install -r requirements.txt -r dev-requirements.txt
           pip install PyGObject pyudev
       
