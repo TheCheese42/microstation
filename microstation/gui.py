@@ -8,7 +8,7 @@ from functools import partial
 from pathlib import Path
 from subprocess import getoutput
 from threading import Thread
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
 from PyQt6 import QtBluetooth
 from PyQt6.QtCore import QLocale, QModelIndex, Qt, QTimer, QTranslator
@@ -176,6 +176,11 @@ def ask_install_arduino_cli(parent: QWidget) -> None:
                      "arduino-cli was installed successfully."))
 
 
+class BluetoothDeviceInfo(NamedTuple):
+    name: str
+    address: str
+
+
 class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def __init__(
         self,
@@ -193,12 +198,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.bluetooth_discovery_agent: (
             QtBluetooth.QBluetoothDeviceDiscoveryAgent | None
         ) = None
-        self.bluetooth_devices_found: list[
-            QtBluetooth.QBluetoothDeviceInfo
-        ] = []
-        self.bt_devices_found_previous: list[
-            QtBluetooth.QBluetoothDeviceInfo
-        ] = []
+        self.bluetooth_devices_found: list[BluetoothDeviceInfo] = []
+        self.bt_devices_found_previous: list[BluetoothDeviceInfo] = []
 
         self.selected_port: str = config.get_config_value("default_port")
         self._previous_comports: list[str] = []
@@ -321,21 +322,21 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         if config.get_config_value("enable_bluetooth"):
             for info in self.bluetooth_devices_found:
                 action = self.menuPort.addAction(
-                    f"{info.name()} ({info.address().toString()})"
+                    f"{info.name} ({info.address})"
                 )
                 action.setCheckable(True)
-                if info.address().toString() == self.selected_port:
+                if info.address == self.selected_port:
                     action.setChecked(True)
                 action.triggered.connect(partial(self.set_port, info))
 
-    def set_port(self, port: str | QtBluetooth.QBluetoothDeviceInfo) -> None:
-        if isinstance(port, QtBluetooth.QBluetoothDeviceInfo):
-            self.selected_port = port.address().toString()
+    def set_port(self, port: str | BluetoothDeviceInfo) -> None:
+        if isinstance(port, BluetoothDeviceInfo):
+            self.selected_port = port.address
         else:
             self.selected_port = port
         self.update_ports(force=True)
         if self.daemon.port != port:
-            self.daemon.port = port
+            self.daemon.port = self.selected_port
             self.daemon.queue_restart()
 
     def setupUi(self, window: QMainWindow) -> None:
@@ -357,7 +358,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             action = self.menuLanguage.addAction(locale_.language().name)
             action.triggered.connect(partial(self.change_language, locale_))
 
+        print(self.actionEnableBluetooth.text())
         self.change_language(QLocale(config.get_config_value("locale")))
+        print(self.actionEnableBluetooth.text())
 
         # Theme menu
         for dir in sorted(STYLES_PATH.iterdir()):
@@ -431,11 +434,13 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def bluetooth_device_discovered(
         self, info: QtBluetooth.QBluetoothDeviceInfo,
     ) -> None:
+        name, address = info.name(), info.address().toString()
         config.log(
-            f"Found Bluetooth Device {info.name()} at "
-            f"{info.address().toString()}", "DEBUG",
+            f"Found Bluetooth Device {name} at "
+            f"{address}", "DEBUG",
         )
-        self.bluetooth_devices_found.append(info)
+        bt_info = BluetoothDeviceInfo(name, address)
+        self.bluetooth_devices_found.append(bt_info)
 
     def bluetooth_toggled(self) -> None:
         state = self.actionEnableBluetooth.isChecked()
@@ -478,6 +483,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 self.bluetooth_discovery_agent.stop()
             del self.bluetooth_discovery_agent
             self.bluetooth_discovery_agent = None
+            self.update_ports(True)
 
     def open_welcome(self) -> None:
         dialog = Welcome(self, self.open_wiki, self.open_github)
@@ -536,7 +542,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         lines: list[str] = []
         if config.get_config_value("esp32_bluetooth_support"):
             lines.append("if (SerialBT.available() > 0) {")
-            lines.append("String receivedData = Serial.readStringUntil('\n');")  # noqa
+            lines.append("String receivedData = Serial.readStringUntil('\\n');")  # noqa
             lines.append("exec_task(receivedData);")
             lines.append("}")
         return lines
@@ -867,7 +873,22 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             if (app := QApplication.instance()) is not None:
                 app.installTranslator(translator)
             self.current_translator = translator
+
         self.retranslateUi(self)
+
+        # Manual fixes
+        if self.actionPause.isChecked():
+            self.actionPause.setText(tr("Microstation", "Resume"))
+        else:
+            self.actionPause.setText(tr("Microstation", "Pause"))
+        if self.actionEnableBluetooth.isChecked():
+            self.actionEnableBluetooth.setText(
+                tr("Microstation", "Bluetooth (On)")
+            )
+        else:
+            self.actionEnableBluetooth.setText(
+                tr("Microstation", "Bluetooth (Off)")
+            )
 
     def closeEvent(self, event: QCloseEvent | None) -> None:
         if event:
