@@ -5,6 +5,7 @@ import webbrowser
 from collections.abc import Callable
 from copy import deepcopy
 from functools import partial
+import random
 from pathlib import Path
 from subprocess import getoutput
 from threading import Thread
@@ -202,6 +203,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.bluetooth_devices_found: list[BluetoothDeviceInfo] = []
         self.bt_devices_found_previous: list[BluetoothDeviceInfo] = []
         self.no_bluetooth_discover = False
+        self.queued_main_thread_invokes: dict[
+            float, tuple[Callable[[], Any], Any | object]
+        ] = {}
 
         self.selected_port: str = config.get_config_value("default_port")
         self._previous_comports: list[str] = []
@@ -225,6 +229,18 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.quit_timer = QTimer(self)
         self.quit_timer.timeout.connect(self.check_quit_requested)
         self.quit_timer.start(100)
+
+        self.bluetooth_invoke_timer = QTimer(self)
+        self.bluetooth_invoke_timer.timeout.connect(
+            self.invoke_bluetooth_methods
+        )
+        self.bluetooth_invoke_timer.start(100)
+
+    def invoke_bluetooth_methods(self) -> None:
+        for id, (func, ret) in self.queued_main_thread_invokes.items():
+            if type(ret) is not object:
+                continue
+            self.queued_main_thread_invokes[id] = (func, func())
 
     def refresh(self) -> None:
         self.update_ports()
@@ -357,7 +373,26 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 self.daemon.type = "bluetooth"
                 self.daemon.bluetooth_uuid = port.uuid
                 self.daemon.device.close()
-                self.daemon.device = BluetoothDevice(port.address, port.uuid)
+
+                def queue_invoke(
+                    func: Callable[[Any], Any], args: tuple[Any, ...]
+                ) -> Any:
+                    id = random.random()
+                    self.queued_main_thread_invokes[id] = (
+                        partial(func, *args), object()
+                    )
+                    time.sleep(0.1)
+                    while type(
+                        self.queued_main_thread_invokes[id][1]
+                    ) is object:
+                        time.sleep(0.01)
+                    ret = self.queued_main_thread_invokes[id][1]
+                    del self.queued_main_thread_invokes[id]
+                    return ret
+
+                self.daemon.device = BluetoothDevice(
+                    port.address, port.uuid, queue_invoke
+                )
             else:
                 self.daemon.type = "serial"
             self.refresh()

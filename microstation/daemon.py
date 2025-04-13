@@ -124,11 +124,15 @@ class BluetoothDevice:
     """
     def __init__(
         self, addr: str, uuid: QBluetoothUuid.ServiceClassUuid,
+        main_thread_method_invoker: Callable[
+            [Callable[[Any], Any], tuple[Any, ...]], Any
+        ]
     ) -> None:
         self.addr = addr
         self.uuid = uuid
         self.connected = False
         self.connecting = False
+        self.main_thread_method_invoker = main_thread_method_invoker
         try:
             self.sock = QBluetoothSocket(
                 QBluetoothServiceInfo.Protocol.RfcommProtocol
@@ -138,12 +142,12 @@ class BluetoothDevice:
             self.sock.errorOccurred.connect(self.socket_error)
             self.sock.connectToService(QBluetoothAddress(addr), uuid)
             self.connecting = True
-            print("Waiting for connect")
+            print("Bluetooth: Waiting for connect...")  # XXX
         except Exception as e:
             log(f"Failed to create bluetooth socket {self} ({e})", "DEBUG")
 
     def connected_to_bluetooth(self) -> None:
-        print("Connected!")
+        print("Bluetooth: Connected!")  # XXX
         self.connected = True
         self.connecting = False
         config.log(
@@ -151,13 +155,13 @@ class BluetoothDevice:
         self.sock.moveToThread(DAEMON_THREAD)
 
     def disconnected_from_bluetooth(self) -> None:
-        print("Disconnected")
+        print("Bluetooth: Disconnected")  # XXX
         self.connected = False
         self.connecting = False
         config.log("Bluetooth device disconnected")
 
     def socket_error(self) -> None:
-        print("Error")
+        print("Bluetooth: Error")  # XXX
         self.connected = False
         self.connecting = False
         config.log(
@@ -181,9 +185,12 @@ class BluetoothDevice:
             log(f"Failed to write to bluetooth device {self}", "ERROR")
 
     def write(self, data: str) -> None:
-        self._write(data.encode("utf-8"))
+        self.main_thread_method_invoker(self._write, (data.encode("utf-8"),))
 
     def writeline(self, data: str) -> None:
+        self.main_thread_method_invoker(self._write, (
+            f"{data}\n".encode("utf-8"),
+        ))
         self._write(f"{data}\n".encode("utf-8"))
 
     def _read(self, size: int) -> bytes:
@@ -198,13 +205,23 @@ class BluetoothDevice:
 
     def read(self, size: int) -> str:
         try:
-            return self._read(size).decode("utf-8")
+            ret = self.main_thread_method_invoker(
+                self._read, (size,)
+            )
+            if isinstance(ret, bytes):
+                return ret.decode("utf-8")
+            return ""
         except UnicodeDecodeError:
             return ""
 
     def readline(self) -> str:
         try:
-            return self._readline().decode("utf-8")
+            ret = self.main_thread_method_invoker(
+                lambda _: self._readline(), (None,)
+            )
+            if isinstance(ret, bytes):
+                return ret.decode("utf-8")
+            return ""
         except UnicodeDecodeError:
             return ""
 
