@@ -25,6 +25,7 @@ def main() -> None:
     daemon = Daemon(
         config.get_config_value("default_port"),
         config.get_config_value("baudrate"),
+        "serial",
     )
     config.PROFILES = config.load_profiles(daemon.queue_write)
     config.MACROS = config.load_macros()

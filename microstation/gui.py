@@ -25,7 +25,7 @@ from . import config, utils
 from .actions import auto_activaters
 from .actions.signals_slots import (SignalOrSlot, find_signal_slot,
                                     query_by_device, query_signals_slots)
-from .daemon import Daemon
+from .daemon import BluetoothDevice, Daemon
 from .enums import Issue, Tag
 from .model import (MODS, Component, Profile, find_device, gen_profile_id,
                     validate_components)
@@ -179,6 +179,7 @@ def ask_install_arduino_cli(parent: QWidget) -> None:
 class BluetoothDeviceInfo(NamedTuple):
     name: str
     address: str
+    uuid: QtBluetooth.QBluetoothUuid.ServiceClassUuid
 
 
 class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
@@ -200,6 +201,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         ) = None
         self.bluetooth_devices_found: list[BluetoothDeviceInfo] = []
         self.bt_devices_found_previous: list[BluetoothDeviceInfo] = []
+        self.no_bluetooth_discover = False
 
         self.selected_port: str = config.get_config_value("default_port")
         self._previous_comports: list[str] = []
@@ -229,6 +231,18 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.mcDisplay.setText(
             self.daemon.device.name or tr("Microstation", "Not connected")
         )
+
+        if (
+            self.daemon.type == "bluetooth" and isinstance(
+                self.daemon.device, BluetoothDevice) and (
+                self.daemon.device.connected or self.daemon.device.connecting
+            )
+        ):
+            if self.bluetooth_discovery_agent:
+                self.bluetooth_discovery_agent.stop()
+            self.no_bluetooth_discover = True
+        else:
+            self.no_bluetooth_discover = False
 
         self.selected_profile = self.daemon.profile
 
@@ -337,7 +351,16 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.update_ports(force=True)
         if self.daemon.port != port:
             self.daemon.port = self.selected_port
-            self.daemon.queue_restart()
+            if isinstance(port, BluetoothDeviceInfo):
+                # No restart because everything bluetooth must be done in the
+                # main thread
+                self.daemon.type = "bluetooth"
+                self.daemon.bluetooth_uuid = port.uuid
+                self.daemon.device.close()
+                self.daemon.device = BluetoothDevice(port.address, port.uuid)
+            else:
+                self.daemon.type = "serial"
+            self.refresh()
 
     def setupUi(self, window: QMainWindow) -> None:
         super().setupUi(window)
@@ -358,9 +381,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             action = self.menuLanguage.addAction(locale_.language().name)
             action.triggered.connect(partial(self.change_language, locale_))
 
-        print(self.actionEnableBluetooth.text())
         self.change_language(QLocale(config.get_config_value("locale")))
-        print(self.actionEnableBluetooth.text())
 
         # Theme menu
         for dir in sorted(STYLES_PATH.iterdir()):
@@ -434,12 +455,18 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def bluetooth_device_discovered(
         self, info: QtBluetooth.QBluetoothDeviceInfo,
     ) -> None:
-        name, address = info.name(), info.address().toString()
+        name = info.name()
+        address = info.address().toString()
+        try:
+            uuid = info.serviceUuids()[0]
+        except IndexError:
+            # Apparently not usable, shouldn't show up in the port list
+            return
         config.log(
             f"Found Bluetooth Device {name} at "
             f"{address}", "DEBUG",
         )
-        bt_info = BluetoothDeviceInfo(name, address)
+        bt_info = BluetoothDeviceInfo(name, address, uuid)
         self.bluetooth_devices_found.append(bt_info)
 
     def bluetooth_toggled(self) -> None:
@@ -449,6 +476,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             self.actionEnableBluetooth.setText(
                 tr("Microstation", "Bluetooth (On)"),
             )
+
+            if self.no_bluetooth_discover:
+                return
+
             self.bluetooth_devices_found.clear()
             if self.bluetooth_discovery_agent:
                 self.bluetooth_discovery_agent.stop()

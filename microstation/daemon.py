@@ -2,11 +2,12 @@ import asyncio
 import time
 from collections import deque
 from collections.abc import Callable
-from typing import Any, Self, Literal
+from typing import Any, Literal, Self
 
 import serial
-from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothDeviceInfo,
-                               QBluetoothServiceInfo, QBluetoothSocket)
+from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothServiceInfo,
+                               QBluetoothSocket, QBluetoothUuid)
+from PyQt6.QtCore import QThread
 
 from . import config
 from .actions import auto_activaters
@@ -121,10 +122,13 @@ class BluetoothDevice:
     """
     Represents a Bluetooth Device. Should be used as context manager.
     """
-    def __init__(self, addr: str) -> None:
+    def __init__(
+        self, addr: str, uuid: QBluetoothUuid.ServiceClassUuid,
+    ) -> None:
         self.addr = addr
+        self.uuid = uuid
         self.connected = False
-        self.device: QBluetoothDeviceInfo | None = None
+        self.connecting = False
         try:
             self.sock = QBluetoothSocket(
                 QBluetoothServiceInfo.Protocol.RfcommProtocol
@@ -132,37 +136,48 @@ class BluetoothDevice:
             self.sock.connected.connect(self.connected_to_bluetooth)
             self.sock.disconnected.connect(self.disconnected_from_bluetooth)
             self.sock.errorOccurred.connect(self.socket_error)
-            port = 1
-            self.sock.connectToService(QBluetoothAddress(addr), port)
+            self.sock.connectToService(QBluetoothAddress(addr), uuid)
+            self.connecting = True
+            print("Waiting for connect")
         except Exception as e:
             log(f"Failed to create bluetooth socket {self} ({e})", "DEBUG")
 
-    def connected_to_bluetooth(self, device: QBluetoothDeviceInfo) -> None:
-        self.device = device
+    def connected_to_bluetooth(self) -> None:
+        print("Connected!")
         self.connected = True
+        self.connecting = False
         config.log(
-            f"Connected to device {device.name()} at {device.address()}")
+            f"Connected to bluetooth device at {self.addr}")
+        self.sock.moveToThread(DAEMON_THREAD)
 
     def disconnected_from_bluetooth(self) -> None:
+        print("Disconnected")
         self.connected = False
+        self.connecting = False
         config.log("Bluetooth device disconnected")
 
     def socket_error(self) -> None:
+        print("Error")
         self.connected = False
+        self.connecting = False
         config.log(
             f"Bluetooth socket errored: {self.sock.errorString()}", "ERROR"
         )
 
     @property
-    def name(self) -> str | None:
-        return self.sock.peerName()
+    def name(self) -> str:
+        if self.connected and (peer_name := self.sock.peerName()):
+            return peer_name
+        return self.addr
 
     def __str__(self) -> str:
-        return f"{self.name} via Bluetooth"
+        return f"{self.name} (Bluetooth)"
 
     def _write(self, data: bytes) -> None:
+        if not self.connected:
+            return
         written = self.sock.write(data)
-        if written == -1:
+        if written < 0:
             log(f"Failed to write to bluetooth device {self}", "ERROR")
 
     def write(self, data: str) -> None:
@@ -172,9 +187,13 @@ class BluetoothDevice:
         self._write(f"{data}\n".encode("utf-8"))
 
     def _read(self, size: int) -> bytes:
+        if not self.connected:
+            return b'0'
         return self.sock.read(size)
 
     def _readline(self) -> bytes:
+        if not self.connected:
+            return b'0'
         return self.sock.readLine().trimmed()
 
     def read(self, size: int) -> str:
@@ -190,12 +209,18 @@ class BluetoothDevice:
             return ""
 
     def in_waiting(self) -> int:
+        if not self.connected:
+            return 0
         return self.sock.bytesAvailable()
 
     def is_open(self) -> bool:
+        if not self.connected:
+            return False
         return self.sock.isOpen()
 
     def close(self) -> None:
+        if not self.connected:
+            return
         self.sock.close()
 
     def __enter__(self) -> Self:
@@ -208,21 +233,26 @@ class BluetoothDevice:
         self.close()
 
 
+DAEMON_THREAD: QThread | None = None
+
+
 class Daemon:
     def __init__(
         self, port: str,
         baudrate: int,
-        type: Literal["serial"] | Literal["bluetooth"] = "serial",
+        type: Literal["serial"] | Literal["bluetooth"],
+        bluetooth_uuid: QBluetoothUuid.ServiceClassUuid | None = None
     ) -> None:
         self.port = port
         self.baudrate = baudrate
         self.type: Literal["serial"] | Literal["bluetooth"] = type
+        self.bluetooth_uuid = bluetooth_uuid
         if type == "serial":
             self.device: SerialDevice | BluetoothDevice = SerialDevice(
                 port, baudrate
             )
         elif type == "bluetooth":
-            self.device = BluetoothDevice(port)
+            raise ValueError("Bluetooth Devices must be initialized by GUI")
         self.write_queue: deque[str] = deque()
         self.paused = False
         self.restart_queued = False
@@ -281,6 +311,8 @@ class Daemon:
         self.write_queue.append(data)
 
     async def run(self) -> None:
+        global DAEMON_THREAD
+        DAEMON_THREAD = QThread.currentThread()
         if not self.auto_activate_checker_running:
             asyncio.get_event_loop().create_task(
                 self.check_for_auto_activate_updates_periodically()
@@ -302,13 +334,26 @@ class Daemon:
                 self.restart_queued = False
                 self.device.close()
                 if self.type == "bluetooth":
-                    self.device = BluetoothDevice(self.port)
+                    raise ValueError(
+                        "Bluetooth devices must be initialized from main "
+                        "thread"
+                    )
                 else:
                     self.device = SerialDevice(self.port, self.baudrate)
+            if isinstance(
+                self.device, BluetoothDevice
+            ) and self.device.connecting:
+                config.log("Waiting for Bluetooth connect...", "DEBUG")
+                await asyncio.sleep(1)
+                continue
             with self.device as device:
                 if not device.is_open():
                     await asyncio.sleep(1)
-                    should_restart = True
+                    if not (
+                        isinstance(self.device, BluetoothDevice)
+                        and self.device.connecting
+                    ):
+                        should_restart = True
                     continue
                 while True:
                     await asyncio.sleep(0.01)
