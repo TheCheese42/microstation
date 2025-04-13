@@ -2,12 +2,12 @@ import asyncio
 import time
 from collections import deque
 from collections.abc import Callable
-from typing import Any, Literal, Self
+from typing import Any, Literal
 
 import serial
 from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothServiceInfo,
                                QBluetoothSocket, QBluetoothUuid)
-from PyQt6.QtCore import QThread
+from PyQt6.QtCore import QByteArray
 
 from . import config
 from .actions import auto_activaters
@@ -105,12 +105,11 @@ class SerialDevice:
         except Exception:
             pass
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> None:
         try:
             self.ser.open()
         except Exception:
             log(f"Failed to open device {self}", "DEBUG")
-        return self
 
     def __exit__(
         self, _: type, exc_value: Exception, traceback: object
@@ -152,7 +151,6 @@ class BluetoothDevice:
         self.connecting = False
         config.log(
             f"Connected to bluetooth device at {self.addr}")
-        self.sock.moveToThread(DAEMON_THREAD)
 
     def disconnected_from_bluetooth(self) -> None:
         print("Bluetooth: Disconnected")  # XXX
@@ -191,7 +189,6 @@ class BluetoothDevice:
         self.main_thread_method_invoker(self._write, (
             f"{data}\n".encode("utf-8"),
         ))
-        self._write(f"{data}\n".encode("utf-8"))
 
     def _read(self, size: int) -> bytes:
         if not self.connected:
@@ -201,7 +198,8 @@ class BluetoothDevice:
     def _readline(self) -> bytes:
         if not self.connected:
             return b'0'
-        return self.sock.readLine().trimmed()
+        ret = self.sock.readLine().trimmed().data()
+        return ret
 
     def read(self, size: int) -> str:
         try:
@@ -228,29 +226,37 @@ class BluetoothDevice:
     def in_waiting(self) -> int:
         if not self.connected:
             return 0
-        return self.sock.bytesAvailable()
+        ret = self.main_thread_method_invoker(
+            lambda _: self.sock.bytesAvailable(), (None,)
+        )
+        if isinstance(ret, int):
+            return ret
+        return 0
 
     def is_open(self) -> bool:
         if not self.connected:
             return False
-        return self.sock.isOpen()
+        ret = self.main_thread_method_invoker(
+            lambda _: self.sock.isOpen(), (None,)
+        )
+        if isinstance(ret, bool):
+            return ret
+        return False
 
     def close(self) -> None:
         if not self.connected:
             return
-        self.sock.close()
+        self.main_thread_method_invoker(lambda _: self.sock.close(), (None,))
 
-    def __enter__(self) -> Self:
-        self.sock.open(QBluetoothSocket.OpenModeFlag.ReadWrite)
-        return self
+    def __enter__(self) -> None:
+        self.main_thread_method_invoker(
+            self.sock.open, (QBluetoothSocket.OpenModeFlag.ReadWrite,)
+        )
 
     def __exit__(
         self, _: type, exc_value: Exception, traceback: object
     ) -> None:
         self.close()
-
-
-DAEMON_THREAD: QThread | None = None
 
 
 class Daemon:
@@ -328,8 +334,6 @@ class Daemon:
         self.write_queue.append(data)
 
     async def run(self) -> None:
-        global DAEMON_THREAD
-        DAEMON_THREAD = QThread.currentThread()
         if not self.auto_activate_checker_running:
             asyncio.get_event_loop().create_task(
                 self.check_for_auto_activate_updates_periodically()
@@ -363,15 +367,12 @@ class Daemon:
                 config.log("Waiting for Bluetooth connect...", "DEBUG")
                 await asyncio.sleep(1)
                 continue
-            with self.device as device:
-                if not device.is_open():
+            with self.device:
+                if not self.device.is_open():
                     await asyncio.sleep(1)
-                    if not (
-                        isinstance(self.device, BluetoothDevice)
-                        and self.device.connecting
-                    ):
+                    if not isinstance(self.device, BluetoothDevice):
                         should_restart = True
-                    continue
+                        continue
                 while True:
                     await asyncio.sleep(0.01)
                     if self.paused:
@@ -384,16 +385,16 @@ class Daemon:
                         break
                     if self.should_discard_incoming_data:
                         self.should_discard_incoming_data = False
-                        while device.in_waiting():
-                            device.readline()
+                        while self.device.in_waiting():
+                            self.device.readline()
                     if self.profile_changed:
                         self.profile_changed = False
                         asyncio.get_event_loop().create_task(Task(
                             "PINS_REQUESTED", self.queue_write, self,
                             self.profile
                         ).run())
-                    if device.in_waiting():
-                        data = device.readline().strip()
+                    if self.device.in_waiting():
+                        data = self.device.readline().strip()
                         self.in_history.append(data)
                         self.full_history.append(f"[IN] {data}")
                         for cb in self.received_task_callbacks:
@@ -404,7 +405,7 @@ class Daemon:
                         data = self.write_queue.popleft()
                         self.out_history.append(data)
                         self.full_history.append(f"[OUT] {data}")
-                        device.writeline(data)
+                        self.device.writeline(data)
         await asyncio.sleep(0.1)
 
     def queue_restart(self) -> None:

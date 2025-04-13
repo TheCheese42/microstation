@@ -374,28 +374,29 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 self.daemon.bluetooth_uuid = port.uuid
                 self.daemon.device.close()
 
-                def queue_invoke(
-                    func: Callable[[Any], Any], args: tuple[Any, ...]
-                ) -> Any:
-                    id = random.random()
-                    self.queued_main_thread_invokes[id] = (
-                        partial(func, *args), object()
-                    )
-                    time.sleep(0.1)
-                    while type(
-                        self.queued_main_thread_invokes[id][1]
-                    ) is object:
-                        time.sleep(0.01)
-                    ret = self.queued_main_thread_invokes[id][1]
-                    del self.queued_main_thread_invokes[id]
-                    return ret
-
                 self.daemon.device = BluetoothDevice(
-                    port.address, port.uuid, queue_invoke
+                    port.address, port.uuid, self.queue_invoke
                 )
             else:
                 self.daemon.type = "serial"
+                self.daemon.queue_restart()
             self.refresh()
+
+    def queue_invoke(
+        self, func: Callable[[Any], Any], args: tuple[Any, ...]
+    ) -> Any:
+        id = random.random()
+        self.queued_main_thread_invokes[id] = (
+            partial(func, *args), object()
+        )
+        time.sleep(0.1)
+        while type(
+            self.queued_main_thread_invokes[id][1]
+        ) is object:
+            time.sleep(0.01)
+        ret = self.queued_main_thread_invokes[id][1]
+        del self.queued_main_thread_invokes[id]
+        return ret
 
     def setupUi(self, window: QMainWindow) -> None:
         super().setupUi(window)
@@ -450,7 +451,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def connectSignalsSlots(self) -> None:
         self.actionRefresh_Ports.triggered.connect(self.update_ports_from_ui)
         self.actionEnableBluetooth.triggered.connect(self.bluetooth_toggled)
-        self.actionRestart_Daemon.triggered.connect(self.daemon.queue_restart)
+        self.actionRestart_Daemon.triggered.connect(self.restart_daemon)
         self.actionPause.triggered.connect(self.set_paused)
         self.actionRun_in_Background.triggered.connect(self.hide)
         self.actionQuit.triggered.connect(self.full_close)
@@ -542,7 +543,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             if self.daemon.type == "bluetooth":
                 self.daemon.type = "serial"
                 self.daemon.port = ""
-                self.daemon.queue_restart()
+                self.restart_daemon()
             self.bluetooth_devices_found.clear()
             self.bt_devices_found_previous.clear()
             if self.bluetooth_discovery_agent:
@@ -866,7 +867,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             config.set_config_value("baudrate", selected_baudrate)
             if self.daemon.baudrate != selected_baudrate:
                 self.daemon.baudrate = selected_baudrate
-                self.daemon.queue_restart()
+                self.restart_daemon()
             auto_detect_profiles = dialog.autoDetectCheck.isChecked()
             config.set_config_value(
                 "auto_detect_profiles", auto_detect_profiles
@@ -897,7 +898,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             self.selected_profile = None
             self.refresh()
             if dialog.modified_profiles:
-                self.daemon.queue_restart()
+                self.restart_daemon()
+
+    def restart_daemon(self) -> None:
+        self.set_port(self.selected_port)
 
     def open_macros(self) -> None:
         dialog = MacroEditor(self, deepcopy(config.MACROS))
