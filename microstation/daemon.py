@@ -32,7 +32,7 @@ class SerialDevice:
     @property
     def name(self) -> str | None:
         try:
-            return get_port_info(self.ser.port) or "Unknown Board"
+            return get_port_info(self.ser.port or "") or "Unknown Board"
         except AttributeError:
             return "Uninitialized Device"
 
