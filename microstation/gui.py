@@ -1,11 +1,11 @@
 import platform
+import random
 import sys
 import time
 import webbrowser
 from collections.abc import Callable
 from copy import deepcopy
 from functools import partial
-import random
 from pathlib import Path
 from subprocess import getoutput
 from threading import Thread
@@ -13,13 +13,14 @@ from typing import Any, Literal, NamedTuple
 
 from PyQt6 import QtBluetooth
 from PyQt6.QtCore import QLocale, QModelIndex, Qt, QTimer, QTranslator
-from PyQt6.QtGui import QCloseEvent, QIcon, QKeySequence, QMouseEvent
+from PyQt6.QtGui import QAction, QCloseEvent, QIcon, QKeySequence, QMouseEvent
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
                              QDoubleSpinBox, QFrame, QHBoxLayout,
-                             QKeySequenceEdit, QLabel, QLineEdit, QListWidget,
-                             QListWidgetItem, QMainWindow, QMessageBox,
-                             QPushButton, QSizePolicy, QSpacerItem, QSpinBox,
-                             QTextBrowser, QVBoxLayout, QWidget)
+                             QKeySequenceEdit, QLabel, QLayoutItem, QLineEdit,
+                             QListWidget, QListWidgetItem, QMainWindow,
+                             QMessageBox, QPushButton, QSizePolicy,
+                             QSpacerItem, QSpinBox, QTextBrowser, QVBoxLayout,
+                             QWidget)
 from serial.tools.list_ports import comports
 
 from . import config, utils
@@ -341,7 +342,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self._previous_comports = current_comports
         self.menuPort.clear()
         for port in sorted(comports()):
-            action = self.menuPort.addAction(
+            action: QAction = self.menuPort.addAction(  # type: ignore[assignment]  # noqa
                 f"{port.device} ({get_device_info(port)})"
             )
             action.setCheckable(True)
@@ -351,7 +352,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.bt_devices_found_previous = self.bluetooth_devices_found.copy()
         if config.get_config_value("enable_bluetooth"):
             for info in self.bluetooth_devices_found:
-                action = self.menuPort.addAction(
+                action = self.menuPort.addAction(  # type: ignore[assignment]
                     f"{info.name} ({info.address})"
                 )
                 action.setCheckable(True)
@@ -398,8 +399,8 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         del self.queued_main_thread_invokes[id]
         return ret
 
-    def setupUi(self, window: QMainWindow) -> None:
-        super().setupUi(window)
+    def setupUi(self, Microstation: QMainWindow) -> None:
+        super().setupUi(Microstation)
         self.setWindowTitle(tr("Microstation", "Microstation"))
         self.update_ports(True)
         self.autoActivateCheck.setChecked(
@@ -414,7 +415,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         # Language menu
         self.menuLanguage.clear()
         for locale_ in sorted(self.locales, key=lambda x: x.language().name):
-            action = self.menuLanguage.addAction(locale_.language().name)
+            action: QAction = self.menuLanguage.addAction(  # type: ignore[assignment]  # noqa
+                locale_.language().name
+            )
             action.triggered.connect(partial(self.change_language, locale_))
 
         self.change_language(QLocale(config.get_config_value("locale")))
@@ -427,7 +430,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                     if sub_theme.is_file() or "cache" in sub_theme.name:
                         continue
                     theme_name = sub_theme.name.replace("-", " ").title()
-                    action = self.menuTheme.addAction(
+                    action = self.menuTheme.addAction(  # type: ignore[assignment]  # noqa
                         full_name := f"{group_name.title()} {theme_name}"
                     )
                     if config.get_config_value("theme") == full_name:
@@ -440,7 +443,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                         )
                     )
 
-        action = self.menuHelp.addAction(
+        action = self.menuHelp.addAction(  # type: ignore[assignment]
             QIcon(str(ICONS_PATH / "music.svg")), "Need Help?"
         )
         action.triggered.connect(partial(
@@ -502,7 +505,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             f"Found Bluetooth Device {name} at "
             f"{address}", "DEBUG",
         )
-        bt_info = BluetoothDeviceInfo(name, address, uuid)
+        bt_info = BluetoothDeviceInfo(name, address, uuid)  # type: ignore[call-arg]  # noqa
         self.bluetooth_devices_found.append(bt_info)
 
     def bluetooth_toggled(self) -> None:
@@ -628,6 +631,18 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
     def upload_code(self) -> None:
         config.log("User requested sketch upload through GUI", "DEBUG")
+        if self.daemon.type == "bluetooth":
+            config.log(
+                "Can't upload to a Bluetooth device, cancelling.", "INFO"
+            )
+            show_error(
+                self, tr("Microstation", "Can't upload to Bluetooth"),
+                tr("Microstation", "You tried to upload the code to a "
+                   "Bluetooth device. Uploading is only supported for serial "
+                   "devices.\n\nPlease connect your Microcontroller via USB "
+                   "and try again.")
+            )
+            return
         port = self.daemon.port
         config.log(f"Sketch will be uploaded to port {port}", "DEBUG")
         code = (ARDUINO_SKETCH_PATH / "arduino.ino").read_text("utf-8")
@@ -960,9 +975,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 tr("Microstation", "Bluetooth (Off)")
             )
 
-    def closeEvent(self, event: QCloseEvent | None) -> None:
-        if event:
-            event.ignore()
+    def closeEvent(self, a0: QCloseEvent | None) -> None:
+        if a0:
+            a0.ignore()
         self.close()
 
     def close(self) -> bool:
@@ -1101,12 +1116,15 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
     def delete_profile(self) -> None:
         try:
             selected = self.profilesList.selectedIndexes()[0].row()
+            selected_item: QListWidgetItem = self.profilesList.itemAt(  # type: ignore[assignment]  # noqa
+                0, selected
+            )
         except IndexError:
             return
         if show_question(
             self, tr("Profiles", "Delete Profile"),
             tr("Profiles", "Do you really want to delete the Profile "
-               f"{self.profilesList.currentItem().text()}?")
+               f"{selected_item.text()}?")
         ) == QMessageBox.StandardButton.Yes:
             self.profiles.pop(selected)
             self.updateProfileList()
@@ -1125,7 +1143,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
         self.daemon = daemon
         self.open_wiki_method = open_wiki_method
         self.activate_config_widgets: list[QWidget] = []
-        self.component_widgets: list[QWidget] = []
+        self.component_widgets: list[QWidget | QLayoutItem] = []
         self.setupUi(self)
         self.connectSignalsSlots()
 
@@ -1156,9 +1174,9 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
         self.scrollAreaWidgetContents.setLayout(self.scrollAreaLayout)
         cl = self.componentsVBox
         for widget in self.component_widgets:
-            try:
+            if isinstance(widget, QWidget):
                 cl.removeWidget(widget)
-            except TypeError:
+            else:
                 # To also remove the Spacer
                 cl.removeItem(widget)
         self.component_widgets.clear()
@@ -1774,9 +1792,9 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
 
-        def _mousePressEvent(e: QMouseEvent) -> None:
+        def _mousePressEvent(e: QMouseEvent | None) -> None:
             super(QListWidget, self.actionList).mousePressEvent(e)  # type: ignore[misc]  # noqa
-            if not self.actionList.indexAt(e.pos()).isValid():
+            if not e or not self.actionList.indexAt(e.pos()).isValid():
                 self.actionList.clearSelection()
 
         self.actionList.mousePressEvent = _mousePressEvent
@@ -1841,8 +1859,6 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
 
         what = self.actionCombo.currentIndex()
         value: str | int | None
-        if what == 0:  # Default
-            return
         if what == 1:  # Press Key
             type = "press_key"
             value = ""
@@ -1879,6 +1895,8 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
         elif what == 12:  # Type Text
             type = "type_text"
             value = ""
+        else:  # Default
+            return
         action: config.MACRO_ACTION = {
             "type": type,
             "value": value,
@@ -2221,7 +2239,7 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
 
     def mod_combo_changed(self, value: int) -> None:
         if value == 0:
-            if self.widget:
+            if self.widget and isinstance(self.widget, QKeySequenceEdit):
                 self.widget.setEnabled(True)
                 widget: QKeySequenceEdit = self.widget
                 self.key_value_changed(widget.keySequence())
@@ -2454,8 +2472,8 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
             )
         except IndexError:
             self.textBrowser.setPlainText("")
-        self.textBrowser.verticalScrollBar().setValue(
-            self.textBrowser.verticalScrollBar().maximum()
+        self.textBrowser.verticalScrollBar().setValue(  # type: ignore[union-attr]  # noqa
+            self.textBrowser.verticalScrollBar().maximum()  # type: ignore[union-attr]  # noqa
         )
 
     def queue_new_task(self, task: str) -> None:
@@ -2464,8 +2482,8 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
     def new_task(self, task: str) -> None:
         self.textBrowser.append(task)
         if config.get_config_value("autoscroll_serial_monitor"):
-            self.textBrowser.verticalScrollBar().setValue(
-                self.textBrowser.verticalScrollBar().maximum()
+            self.textBrowser.verticalScrollBar().setValue(  # type: ignore[union-attr]  # noqa
+                self.textBrowser.verticalScrollBar().maximum()  # type: ignore[union-attr]  # noqa
             )
 
     def connectSignalsSlots(self) -> None:
@@ -2513,6 +2531,9 @@ class Licenses(QDialog, Ui_Licenses):  # type: ignore[misc]
         super().setupUi(*args, **kwargs)
         for i in range(self.list.count()):
             item = self.list.item(i)
+            if not item:
+                # To make mypy happy
+                continue
             # Don't question this practice
             license_text = item.toolTip()
             url = item.statusTip()

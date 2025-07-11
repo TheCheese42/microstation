@@ -83,9 +83,11 @@ def main() -> None:
         code = app.exec()
     except (KeyboardInterrupt, EOFError) as e:
         config.log(f"Received {e.__class__.__name__}, exiting cleanly", "INFO")
+        code = 1
     except Exception as e:
         config.log(str(e), "CRITICAL")
         traceback.print_exc(file=config.LogStream("TRACE"))
+        code = 1
 
     daemon.queue_stop()
     time.sleep(0.1)

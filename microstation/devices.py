@@ -125,7 +125,7 @@ class RotaryEncoder(Device):
                         else:
                             component.device_data_storage[
                                 "amount_sens_left"] = 1
-                        if component.device_data_storage[
+                        if component.device_data_storage[  # type: ignore
                             "amount_sens_left"
                         ] >= component.properties.get(
                             "sensitivity", cls.CONFIG["sensitivity"]["default"]
@@ -151,7 +151,7 @@ class RotaryEncoder(Device):
                         else:
                             component.device_data_storage[
                                 "amount_sens_right"] = 1
-                        if component.device_data_storage[
+                        if component.device_data_storage[  # type: ignore
                             "amount_sens_right"
                         ] >= component.properties.get(
                             "sensitivity", cls.CONFIG["sensitivity"]["default"]
