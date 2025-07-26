@@ -27,7 +27,7 @@ def main() -> None:
         "-v",
         "--version",
         action="version",
-        version=f"jsondb-cli {version_string}",
+        version=f"Microstation v{version_string}",
     )
     parser.set_defaults(func=lambda _: parser.print_help())
 

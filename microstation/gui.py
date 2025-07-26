@@ -1,4 +1,5 @@
 import platform
+import random
 import sys
 import time
 import webbrowser
@@ -7,24 +8,27 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from subprocess import getoutput
+from textwrap import dedent
 from threading import Thread
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
+from PyQt6 import QtBluetooth
 from PyQt6.QtCore import QLocale, QModelIndex, Qt, QTimer, QTranslator
-from PyQt6.QtGui import QCloseEvent, QIcon, QKeySequence, QMouseEvent
+from PyQt6.QtGui import QAction, QCloseEvent, QIcon, QKeySequence, QMouseEvent
 from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
                              QDoubleSpinBox, QFrame, QHBoxLayout,
-                             QKeySequenceEdit, QLabel, QLineEdit, QListWidget,
-                             QListWidgetItem, QMainWindow, QMessageBox,
-                             QPushButton, QSizePolicy, QSpacerItem, QSpinBox,
-                             QTextBrowser, QVBoxLayout, QWidget)
+                             QKeySequenceEdit, QLabel, QLayoutItem, QLineEdit,
+                             QListWidget, QListWidgetItem, QMainWindow,
+                             QMessageBox, QPushButton, QSizePolicy,
+                             QSpacerItem, QSpinBox, QTextBrowser, QVBoxLayout,
+                             QWidget)
 from serial.tools.list_ports import comports
 
 from . import config, utils
 from .actions import auto_activaters
 from .actions.signals_slots import (SignalOrSlot, find_signal_slot,
                                     query_by_device, query_signals_slots)
-from .daemon import Daemon
+from .daemon import BluetoothDevice, Daemon
 from .enums import Issue, Tag
 from .model import (MODS, Component, Profile, find_device, gen_profile_id,
                     validate_components)
@@ -175,6 +179,12 @@ def ask_install_arduino_cli(parent: QWidget) -> None:
                      "arduino-cli was installed successfully."))
 
 
+class BluetoothDeviceInfo(NamedTuple):
+    name: str
+    address: str
+    uuid: QtBluetooth.QBluetoothUuid.ServiceClassUuid
+
+
 class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def __init__(
         self,
@@ -189,6 +199,15 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.translators = translators
         self.current_translator: QTranslator | None = None
         self.quit_callback = quit_callback
+        self.bluetooth_discovery_agent: (
+            QtBluetooth.QBluetoothDeviceDiscoveryAgent | None
+        ) = None
+        self.bluetooth_devices_found: list[BluetoothDeviceInfo] = []
+        self.bt_devices_found_previous: list[BluetoothDeviceInfo] = []
+        self.no_bluetooth_discover = False
+        self.queued_main_thread_invokes: dict[
+            float, tuple[Callable[[], Any], Any | object]
+        ] = {}
 
         self.selected_port: str = config.get_config_value("default_port")
         self._previous_comports: list[str] = []
@@ -213,11 +232,35 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.quit_timer.timeout.connect(self.check_quit_requested)
         self.quit_timer.start(100)
 
+        self.bluetooth_invoke_timer = QTimer(self)
+        self.bluetooth_invoke_timer.timeout.connect(
+            self.invoke_bluetooth_methods
+        )
+        self.bluetooth_invoke_timer.start(100)
+
+    def invoke_bluetooth_methods(self) -> None:
+        for id, (func, ret) in self.queued_main_thread_invokes.items():
+            if type(ret) is not object:
+                continue
+            self.queued_main_thread_invokes[id] = (func, func())
+
     def refresh(self) -> None:
         self.update_ports()
         self.mcDisplay.setText(
             self.daemon.device.name or tr("Microstation", "Not connected")
         )
+
+        if (
+            self.daemon.type == "bluetooth" and isinstance(
+                self.daemon.device, BluetoothDevice) and (
+                self.daemon.device.connected or self.daemon.device.connecting
+            )
+        ):
+            if self.bluetooth_discovery_agent:
+                self.bluetooth_discovery_agent.stop()
+            self.no_bluetooth_discover = True
+        else:
+            self.no_bluetooth_discover = False
 
         self.selected_profile = self.daemon.profile
 
@@ -274,8 +317,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 tr("Microstation", "The microcontroller reported a critical "
                    "error.\n\n{error}\n\n{tip_msg}").strip().format(
                        error=msg,
-                       tip_msg=tip_msg,
-                   )
+                       tip_msg=tip_msg)
             )
 
     def update_profile_combo(self) -> None:
@@ -296,38 +338,87 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         except ValueError:
             return
         if current_comports == self._previous_comports and not force:
-            return
+            if self.bluetooth_devices_found == self.bt_devices_found_previous:
+                return
         self._previous_comports = current_comports
         self.menuPort.clear()
         for port in sorted(comports()):
-            action = self.menuPort.addAction(
+            action: QAction = self.menuPort.addAction(  # type: ignore[assignment]  # noqa
                 f"{port.device} ({get_device_info(port)})"
             )
             action.setCheckable(True)
             if port.device == self.selected_port:
                 action.setChecked(True)
             action.triggered.connect(partial(self.set_port, port.device))
+        self.bt_devices_found_previous = self.bluetooth_devices_found.copy()
+        if config.get_config_value("enable_bluetooth"):
+            for info in self.bluetooth_devices_found:
+                action = self.menuPort.addAction(  # type: ignore[assignment]
+                    f"{info.name} ({info.address})"
+                )
+                action.setCheckable(True)
+                if info.address == self.selected_port:
+                    action.setChecked(True)
+                action.triggered.connect(partial(self.set_port, info))
 
-    def set_port(self, port: str) -> None:
-        self.selected_port = port
+    def set_port(self, port: str | BluetoothDeviceInfo) -> None:
+        if isinstance(port, BluetoothDeviceInfo):
+            self.selected_port = port.address
+        else:
+            self.selected_port = port
         self.update_ports(force=True)
         if self.daemon.port != port:
-            self.daemon.port = port
-            self.daemon.queue_restart()
+            self.daemon.port = self.selected_port
+            if isinstance(port, BluetoothDeviceInfo):
+                # No restart because everything bluetooth must be done in the
+                # main thread
+                self.daemon.type = "bluetooth"
+                self.daemon.bluetooth_uuid = port.uuid
+                self.daemon.device.close()
 
-    def setupUi(self, window: QMainWindow) -> None:
-        super().setupUi(window)
+                self.daemon.device = BluetoothDevice(
+                    port.address, port.uuid, self.queue_invoke
+                )
+            else:
+                self.daemon.type = "serial"
+                self.daemon.queue_restart()
+            self.refresh()
+
+    def queue_invoke(
+        self, func: Callable[[Any], Any], args: tuple[Any, ...]
+    ) -> Any:
+        id = random.random()
+        self.queued_main_thread_invokes[id] = (
+            partial(func, *args), object()
+        )
+        time.sleep(0.1)
+        while type(
+            self.queued_main_thread_invokes[id][1]
+        ) is object:
+            time.sleep(0.01)
+        ret = self.queued_main_thread_invokes[id][1]
+        del self.queued_main_thread_invokes[id]
+        return ret
+
+    def setupUi(self, Microstation: QMainWindow) -> None:
+        super().setupUi(Microstation)
         self.setWindowTitle(tr("Microstation", "Microstation"))
         self.update_ports(True)
         self.autoActivateCheck.setChecked(
             config.get_config_value("auto_detect_profiles")
         )
+        self.actionEnableBluetooth.setChecked(
+            config.get_config_value("enable_bluetooth")
+        )
+        self.bluetooth_toggled()
         self.refresh()
 
         # Language menu
         self.menuLanguage.clear()
         for locale_ in sorted(self.locales, key=lambda x: x.language().name):
-            action = self.menuLanguage.addAction(locale_.language().name)
+            action: QAction = self.menuLanguage.addAction(  # type: ignore[assignment]  # noqa
+                locale_.language().name
+            )
             action.triggered.connect(partial(self.change_language, locale_))
 
         self.change_language(QLocale(config.get_config_value("locale")))
@@ -340,7 +431,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                     if sub_theme.is_file() or "cache" in sub_theme.name:
                         continue
                     theme_name = sub_theme.name.replace("-", " ").title()
-                    action = self.menuTheme.addAction(
+                    action = self.menuTheme.addAction(  # type: ignore[assignment]  # noqa
                         full_name := f"{group_name.title()} {theme_name}"
                     )
                     if config.get_config_value("theme") == full_name:
@@ -353,7 +444,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                         )
                     )
 
-        action = self.menuHelp.addAction(
+        action = self.menuHelp.addAction(  # type: ignore[assignment]
             QIcon(str(ICONS_PATH / "music.svg")), "Need Help?"
         )
         action.triggered.connect(partial(
@@ -362,8 +453,9 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         ))
 
     def connectSignalsSlots(self) -> None:
-        self.actionRefresh_Ports.triggered.connect(self.update_ports)
-        self.actionRestart_Daemon.triggered.connect(self.daemon.queue_restart)
+        self.actionRefresh_Ports.triggered.connect(self.update_ports_from_ui)
+        self.actionEnableBluetooth.triggered.connect(self.bluetooth_toggled)
+        self.actionRestart_Daemon.triggered.connect(self.restart_daemon)
         self.actionPause.triggered.connect(self.set_paused)
         self.actionRun_in_Background.triggered.connect(self.hide)
         self.actionQuit.triggered.connect(self.full_close)
@@ -395,6 +487,74 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
         self.profileCombo.currentTextChanged.connect(self.set_profile)
         self.autoActivateCheck.stateChanged.connect(self.set_auto_activate)
+
+    def update_ports_from_ui(self) -> None:
+        self.update_ports()
+        self.bluetooth_toggled()
+
+    def bluetooth_device_discovered(
+        self, info: QtBluetooth.QBluetoothDeviceInfo,
+    ) -> None:
+        name = info.name()
+        address = info.address().toString()
+        try:
+            uuid = info.serviceUuids()[0]
+        except IndexError:
+            # Apparently not usable, shouldn't show up in the port list
+            return
+        config.log(
+            f"Found Bluetooth Device {name} at "
+            f"{address}", "DEBUG",
+        )
+        bt_info = BluetoothDeviceInfo(name, address, uuid)  # type: ignore[call-arg]  # noqa
+        self.bluetooth_devices_found.append(bt_info)
+
+    def bluetooth_toggled(self) -> None:
+        state = self.actionEnableBluetooth.isChecked()
+        config.set_config_value("enable_bluetooth", state)
+        if state:
+            self.actionEnableBluetooth.setText(
+                tr("Microstation", "Bluetooth (On)"),
+            )
+
+            if self.no_bluetooth_discover:
+                return
+
+            self.bluetooth_devices_found.clear()
+            if self.bluetooth_discovery_agent:
+                self.bluetooth_discovery_agent.stop()
+            del self.bluetooth_discovery_agent
+            self.bluetooth_discovery_agent = (
+                QtBluetooth.QBluetoothDeviceDiscoveryAgent()
+            )
+            self.bluetooth_discovery_agent.deviceDiscovered.connect(
+                self.bluetooth_device_discovered
+            )
+
+            def discovery_finished() -> None:
+                self.update_ports()
+                QTimer.singleShot(2000, self.bluetooth_toggled)
+
+            self.bluetooth_discovery_agent.finished.connect(discovery_finished)
+            self.bluetooth_discovery_agent.errorOccurred.connect(
+                lambda: QTimer.singleShot(2000, self.bluetooth_toggled)
+            )
+            self.bluetooth_discovery_agent.start()
+        else:
+            self.actionEnableBluetooth.setText(
+                tr("Microstation", "Bluetooth (Off)"),
+            )
+            if self.daemon.type == "bluetooth":
+                self.daemon.type = "serial"
+                self.daemon.port = ""
+                self.restart_daemon()
+            self.bluetooth_devices_found.clear()
+            self.bt_devices_found_previous.clear()
+            if self.bluetooth_discovery_agent:
+                self.bluetooth_discovery_agent.stop()
+            del self.bluetooth_discovery_agent
+            self.bluetooth_discovery_agent = None
+            self.update_ports(True)
 
     def open_welcome(self) -> None:
         dialog = Welcome(self, self.open_wiki, self.open_github)
@@ -433,19 +593,126 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def libs_to_include(self) -> list[str]:
         libs: list[str] = []
         if config.get_config_value("esp32_bluetooth_support"):
-            libs.append("BluetoothSerial.h")
+            libs.append("#include \"BluetoothSerial.h\"")
+        if config.get_config_value("ssd1306_oled_display_support"):
+            libs.append("#include <Adafruit_GFX.h>")
+            libs.append("#include <Adafruit_SSD1306.h>")
+            libs.append("#include <Wire.h>")
         return libs
+
+    def sketch_constants(self) -> list[str]:
+        consts: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            consts.append("BluetoothSerial SerialBT;")
+        if config.get_config_value("ssd1306_oled_display_support"):
+            consts.append("#define SCREEN_WIDTH 128")
+            if config.get_config_value(
+                "ssd1306_oled_display_resolution_is_32px"
+            ):
+                consts.append("#define SCREEN_HEIGHT 32")
+            else:
+                consts.append("#define SCREEN_HEIGHT 64")
+            consts.append(
+                "Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, "
+                "&Wire, -1);"
+            )
+            consts.append(dedent("""
+                void resetDisplay() {
+                    display.clearDisplay();
+                    display.display();
+                    display.setTextSize(1);
+                    display.setTextColor(SSD1306_WHITE);
+                    display.setCursor(0, 0);
+                }
+            """))
+        return consts
+
+    def sketch_setup(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            lines.append("SerialBT.begin(\"MicrostationESP32BT\");")
+            lines.append("Serial.println(\"DEBUG [INFO] Started esp32 Bluetooth as MicrostationESP32BT\");")  # noqa
+        if config.get_config_value("ssd1306_oled_display_support"):
+            lines.append("if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {")
+            lines.append("serialPrintln(\"DEBUG [ERROR] Failed to start SSD1306 OLED Display\");")  # noqa
+            lines.append("while (1) { delay(1000); }")
+            lines.append("}")
+            lines.append("serialPrintln(\"DEBUG [INFO] SSD1306 OLED Display started successfully!\");")  # noqa
+            lines.append("resetDisplay();")
+        return lines
+
+    def sketch_loop(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            lines.append("if (SerialBT.available() > 0) {")
+            lines.append("String receivedData = Serial.readStringUntil('\\n');")  # noqa
+            lines.append("exec_task(receivedData);")
+            lines.append("}")
+        return lines
+
+    def sketch_extra_tasks(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("ssd1306_oled_display_support"):
+            lines.append(dedent("""
+                } else if (task.startsWith("DISPLAY_PRINT")) {
+                    String text = task.substring(14);
+                    resetDisplay();
+                    display.println(text);
+            """))
+        return lines
+
+    def print_hooks(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            lines.append("SerialBT.print(data);")
+        return lines
+
+    def println_hooks(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("esp32_bluetooth_support"):
+            lines.append("SerialBT.println(data);")
+        return lines
 
     def upload_code(self) -> None:
         config.log("User requested sketch upload through GUI", "DEBUG")
+        if self.daemon.type == "bluetooth":
+            config.log(
+                "Can't upload to a Bluetooth device, cancelling.", "INFO"
+            )
+            show_error(
+                self, tr("Microstation", "Can't upload to Bluetooth"),
+                tr("Microstation", "You tried to upload the code to a "
+                   "Bluetooth device. Uploading is only supported for serial "
+                   "devices.\n\nPlease connect your Microcontroller via USB "
+                   "and try again.")
+            )
+            return
         port = self.daemon.port
         config.log(f"Sketch will be uploaded to port {port}", "DEBUG")
         code = (ARDUINO_SKETCH_PATH / "arduino.ino").read_text("utf-8")
         config.log(f"Sketch loaded successfully ({code.__sizeof__()} bytes)",
                    "DEBUG")
         includes_string = ""
+        constants_string = ""
+        setup_string = ""
+        loop_string = ""
+        tasks_string = ""
+        print_string = ""
+        println_string = ""
         for lib in self.libs_to_include():
-            includes_string += f"#include \"{lib}\""
+            includes_string += lib + "\n"
+        for line in self.sketch_constants():
+            constants_string += line + "\n"
+        for line in self.sketch_setup():
+            setup_string += line + "\n"
+        for line in self.sketch_loop():
+            loop_string += line + "\n"
+        for lines in self.sketch_extra_tasks():
+            tasks_string += lines + "\n"
+        for line in self.print_hooks():
+            print_string += line + "\n"
+        for line in self.println_hooks():
+            println_string += line + "\n"
         try:
             cli_information = utils.lookup_arduino_cli_information()
             config.log("Looked up arduino-cli information (version "
@@ -479,6 +746,12 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 baudrate=f"{config.get_config_value("baudrate")}",
                 max_digital_input_pins=f"{config.get_config_value("max_dig_inp_pins")}",  # noqa
                 max_analog_input_pins=f"{config.get_config_value("max_ana_inp_pins")}",  # noqa
+                constants=constants_string,
+                setup=setup_string,
+                loop=loop_string,
+                extra_tasks=tasks_string,
+                print_hook=print_string,
+                println_hook=println_string,
             )
             config.log(f"Formatted sketch ({code.__sizeof__()} bytes)",
                        "DEBUG")
@@ -573,6 +846,24 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             if esp32_bluetooth != prev_esp32_bluetooth:
                 something_changed = True
             config.set_config_value("esp32_bluetooth_support", esp32_bluetooth)
+            ssd1306_oled = dialog.ssd1306_oled.isChecked()
+            prev_ssd1306_oled = config.get_config_value(
+                "ssd1306_oled_display_support"
+            )
+            if ssd1306_oled != prev_ssd1306_oled:
+                something_changed = True
+            config.set_config_value(
+                "ssd1306_oled_display_support", ssd1306_oled
+            )
+            ssd1306_res_is_32 = dialog.ssd1306_oled_res_is_32.isChecked()
+            prev_ssd1306_res_is_32 = config.get_config_value(
+                "ssd1306_oled_display_resolution_is_32px"
+            )
+            if ssd1306_res_is_32 != prev_ssd1306_res_is_32:
+                something_changed = True
+            config.set_config_value(
+                "ssd1306_oled_display_resolution_is_32px", ssd1306_res_is_32
+            )
 
             if something_changed:
                 if show_question(
@@ -657,7 +948,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             config.set_config_value("baudrate", selected_baudrate)
             if self.daemon.baudrate != selected_baudrate:
                 self.daemon.baudrate = selected_baudrate
-                self.daemon.queue_restart()
+                self.restart_daemon()
             auto_detect_profiles = dialog.autoDetectCheck.isChecked()
             config.set_config_value(
                 "auto_detect_profiles", auto_detect_profiles
@@ -667,6 +958,10 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             hide_to_tray_startup = dialog.hideToTrayCheck.isChecked()
             config.set_config_value(
                 "hide_to_tray_startup", hide_to_tray_startup
+            )
+            bluetooth_enabled = dialog.bluetooth_enabled.isChecked()
+            config.set_config_value(
+                "bluetooth_enabled", bluetooth_enabled
             )
             board_manager_urls = dialog.boardManagerURLs.text().split(",")
             board_manager_urls = [i.strip() for i in board_manager_urls]
@@ -684,7 +979,11 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             self.selected_profile = None
             self.refresh()
             if dialog.modified_profiles:
-                self.daemon.queue_restart()
+                self.restart_daemon()
+
+    def restart_daemon(self) -> None:
+        self.set_port(self.selected_port)
+        self.daemon.queue_restart()
 
     def open_macros(self) -> None:
         dialog = MacroEditor(self, deepcopy(config.MACROS))
@@ -726,11 +1025,26 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             if (app := QApplication.instance()) is not None:
                 app.installTranslator(translator)
             self.current_translator = translator
+
         self.retranslateUi(self)
 
-    def closeEvent(self, event: QCloseEvent | None) -> None:
-        if event:
-            event.ignore()
+        # Manual fixes
+        if self.actionPause.isChecked():
+            self.actionPause.setText(tr("Microstation", "Resume"))
+        else:
+            self.actionPause.setText(tr("Microstation", "Pause"))
+        if self.actionEnableBluetooth.isChecked():
+            self.actionEnableBluetooth.setText(
+                tr("Microstation", "Bluetooth (On)")
+            )
+        else:
+            self.actionEnableBluetooth.setText(
+                tr("Microstation", "Bluetooth (Off)")
+            )
+
+    def closeEvent(self, a0: QCloseEvent | None) -> None:
+        if a0:
+            a0.ignore()
         self.close()
 
     def close(self) -> bool:
@@ -775,6 +1089,10 @@ class Settings(QDialog, Ui_Settings):  # type: ignore[misc]
 
         self.hideToTrayCheck.setChecked(
             config.get_config_value("hide_to_tray_startup")
+        )
+
+        self.bluetooth_enabled.setChecked(
+            config.get_config_value("bluetooth_enabled")
         )
 
         self.boardManagerURLs.setText(", ".join(config.get_config_value(
@@ -865,12 +1183,13 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
     def delete_profile(self) -> None:
         try:
             selected = self.profilesList.selectedIndexes()[0].row()
+            selected_text = self.profilesList.selectedItems()[0].text()
         except IndexError:
             return
         if show_question(
             self, tr("Profiles", "Delete Profile"),
             tr("Profiles", "Do you really want to delete the Profile "
-               f"{self.profilesList.currentItem().text()}?")
+               f"{selected_text}?")
         ) == QMessageBox.StandardButton.Yes:
             self.profiles.pop(selected)
             self.updateProfileList()
@@ -889,7 +1208,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
         self.daemon = daemon
         self.open_wiki_method = open_wiki_method
         self.activate_config_widgets: list[QWidget] = []
-        self.component_widgets: list[QWidget] = []
+        self.component_widgets: list[QWidget | QLayoutItem] = []
         self.setupUi(self)
         self.connectSignalsSlots()
 
@@ -920,9 +1239,9 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
         self.scrollAreaWidgetContents.setLayout(self.scrollAreaLayout)
         cl = self.componentsVBox
         for widget in self.component_widgets:
-            try:
+            if isinstance(widget, QWidget):
                 cl.removeWidget(widget)
-            except TypeError:
+            else:
                 # To also remove the Spacer
                 cl.removeItem(widget)
         self.component_widgets.clear()
@@ -1292,7 +1611,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                     selected = None
             else:
                 combo.currentTextChanged.connect(self.manager_changed)
-                selected = self.component.manager.get(entry)
+                selected = self.component.manager.get("name")
 
             selected_ss: str | None = None
             combo.blockSignals(True)
@@ -1388,7 +1707,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         self.component.manager = {"name": value}
         self.update_signal_slot_params(
             "manager", find_signal_slot(value),
-            "manager", self.entry_hbox["manager"]
+            "manager", self.entry_hbox[tr("ComponentEditor", "Manager:")]
         )
 
     def update_signal_slot_params(
@@ -1538,9 +1857,9 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
 
-        def _mousePressEvent(e: QMouseEvent) -> None:
+        def _mousePressEvent(e: QMouseEvent | None) -> None:
             super(QListWidget, self.actionList).mousePressEvent(e)  # type: ignore[misc]  # noqa
-            if not self.actionList.indexAt(e.pos()).isValid():
+            if not e or not self.actionList.indexAt(e.pos()).isValid():
                 self.actionList.clearSelection()
 
         self.actionList.mousePressEvent = _mousePressEvent
@@ -1605,8 +1924,6 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
 
         what = self.actionCombo.currentIndex()
         value: str | int | None
-        if what == 0:  # Default
-            return
         if what == 1:  # Press Key
             type = "press_key"
             value = ""
@@ -1643,6 +1960,8 @@ class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]
         elif what == 12:  # Type Text
             type = "type_text"
             value = ""
+        else:  # Default
+            return
         action: config.MACRO_ACTION = {
             "type": type,
             "value": value,
@@ -1985,7 +2304,7 @@ class MacroActionEditor(QDialog, Ui_MacroActionEditor):  # type: ignore[misc]
 
     def mod_combo_changed(self, value: int) -> None:
         if value == 0:
-            if self.widget:
+            if self.widget and isinstance(self.widget, QKeySequenceEdit):
                 self.widget.setEnabled(True)
                 widget: QKeySequenceEdit = self.widget
                 self.key_value_changed(widget.keySequence())
@@ -2158,6 +2477,12 @@ class MicrocontrollerSettings(QDialog, Ui_MicrocontrollerSettings):  # type: ign
         self.esp32_bluetooth.setChecked(
             config.get_config_value("esp32_bluetooth_support")
         )
+        self.ssd1306_oled.setChecked(
+            config.get_config_value("ssd1306_oled_display_support")
+        )
+        self.ssd1306_oled_res_is_32.setChecked(
+            config.get_config_value("ssd1306_oled_display_resolution_is_32px")
+        )
 
     def connectSignalsSlots(self) -> None:
         self.buttonBox.accepted.connect(self.accept_requested)
@@ -2218,8 +2543,8 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
             )
         except IndexError:
             self.textBrowser.setPlainText("")
-        self.textBrowser.verticalScrollBar().setValue(
-            self.textBrowser.verticalScrollBar().maximum()
+        self.textBrowser.verticalScrollBar().setValue(  # type: ignore[union-attr]  # noqa
+            self.textBrowser.verticalScrollBar().maximum()  # type: ignore[union-attr]  # noqa
         )
 
     def queue_new_task(self, task: str) -> None:
@@ -2228,8 +2553,8 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
     def new_task(self, task: str) -> None:
         self.textBrowser.append(task)
         if config.get_config_value("autoscroll_serial_monitor"):
-            self.textBrowser.verticalScrollBar().setValue(
-                self.textBrowser.verticalScrollBar().maximum()
+            self.textBrowser.verticalScrollBar().setValue(  # type: ignore[union-attr]  # noqa
+                self.textBrowser.verticalScrollBar().maximum()  # type: ignore[union-attr]  # noqa
             )
 
     def connectSignalsSlots(self) -> None:
@@ -2277,6 +2602,9 @@ class Licenses(QDialog, Ui_Licenses):  # type: ignore[misc]
         super().setupUi(*args, **kwargs)
         for i in range(self.list.count()):
             item = self.list.item(i)
+            if not item:
+                # To make mypy happy
+                continue
             # Don't question this practice
             license_text = item.toolTip()
             url = item.statusTip()

@@ -1,10 +1,12 @@
 import asyncio
+import time
 from collections import deque
 from collections.abc import Callable
-from typing import Any, Self
+from typing import Any, Literal
 
 import serial
-import time
+from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothServiceInfo,
+                               QBluetoothSocket, QBluetoothUuid)
 
 from . import config
 from .actions import auto_activaters
@@ -29,7 +31,7 @@ class SerialDevice:
     @property
     def name(self) -> str | None:
         try:
-            return get_port_info(self.ser.port) or "Unknown Board"
+            return get_port_info(self.ser.port or "") or "Unknown Board"
         except AttributeError:
             return "Uninitialized Device"
 
@@ -102,12 +104,155 @@ class SerialDevice:
         except Exception:
             pass
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> None:
         try:
             self.ser.open()
         except Exception:
             log(f"Failed to open device {self}", "DEBUG")
-        return self
+
+    def __exit__(
+        self, _: type, exc_value: Exception, traceback: object
+    ) -> None:
+        self.close()
+
+
+class BluetoothDevice:
+    """
+    Represents a Bluetooth Device. Should be used as context manager.
+    """
+    def __init__(
+        self, addr: str, uuid: QBluetoothUuid.ServiceClassUuid,
+        main_thread_method_invoker: Callable[
+            [Callable[[Any], Any], tuple[Any, ...]], Any
+        ]
+    ) -> None:
+        self.addr = addr
+        self.uuid = uuid
+        self.connected = False
+        self.connecting = False
+        self.main_thread_method_invoker = main_thread_method_invoker
+        try:
+            self.sock = QBluetoothSocket(
+                QBluetoothServiceInfo.Protocol.RfcommProtocol
+            )
+            self.sock.connected.connect(self.connected_to_bluetooth)
+            self.sock.disconnected.connect(self.disconnected_from_bluetooth)
+            self.sock.errorOccurred.connect(self.socket_error)
+            self.sock.connectToService(QBluetoothAddress(addr), uuid)
+            self.connecting = True
+            print("Bluetooth: Waiting for connect...")  # XXX
+        except Exception as e:
+            log(f"Failed to create bluetooth socket {self} ({e})", "DEBUG")
+
+    def connected_to_bluetooth(self) -> None:
+        print("Bluetooth: Connected!")  # XXX
+        self.connected = True
+        self.connecting = False
+        config.log(f"Connected to bluetooth device at {self.addr}")
+
+    def disconnected_from_bluetooth(self) -> None:
+        print("Bluetooth: Disconnected")  # XXX
+        self.connected = False
+        self.connecting = False
+        config.log("Bluetooth device disconnected")
+
+    def socket_error(self) -> None:
+        print("Bluetooth: Error")  # XXX
+        self.connected = False
+        self.connecting = False
+        config.log(
+            f"Bluetooth socket errored: {self.sock.errorString()}", "ERROR"
+        )
+
+    @property
+    def name(self) -> str:
+        if self.connected and (peer_name := self.sock.peerName()):
+            return peer_name
+        return self.addr
+
+    def __str__(self) -> str:
+        return f"{self.name} (Bluetooth)"
+
+    def _write(self, data: bytes) -> None:
+        if not self.connected:
+            return
+        written = self.sock.write(data)
+        if written < 0:
+            log(f"Failed to write to bluetooth device {self}", "ERROR")
+
+    def write(self, data: str) -> None:
+        self.main_thread_method_invoker(self._write, (data.encode("utf-8"),))
+
+    def writeline(self, data: str) -> None:
+        self.main_thread_method_invoker(self._write, (
+            f"{data}\n".encode("utf-8"),
+        ))
+
+    def _read(self, size: int) -> bytes:
+        if not self.connected:
+            return b'0'
+        return self.sock.read(size)
+
+    def _readline(self) -> bytes:
+        if not self.connected:
+            return b'0'
+        ret = self.sock.readLine().trimmed().data()
+        return ret
+
+    def read(self, size: int) -> str:
+        try:
+            ret = self.main_thread_method_invoker(
+                self._read, (size,)
+            )
+            if isinstance(ret, bytes):
+                return ret.decode("utf-8")
+            return ""
+        except UnicodeDecodeError:
+            return ""
+
+    def readline(self) -> str:
+        try:
+            ret = self.main_thread_method_invoker(
+                lambda _: self._readline(), (None,)
+            )
+            if isinstance(ret, bytes):
+                return ret.decode("utf-8")
+            return ""
+        except UnicodeDecodeError:
+            return ""
+
+    def in_waiting(self) -> int:
+        if not self.connected:
+            return 0
+        ret = self.main_thread_method_invoker(
+            lambda _: self.sock.bytesAvailable(), (None,)
+        )
+        if isinstance(ret, int):
+            return ret
+        return 0
+
+    def is_open(self) -> bool:
+        if not self.connected:
+            return False
+        ret = self.main_thread_method_invoker(
+            lambda _: self.sock.isOpen(), (None,)
+        )
+        if isinstance(ret, bool):
+            return ret
+        return False
+
+    def close(self) -> None:
+        if not self.connected:
+            return
+        self.main_thread_method_invoker(lambda _: self.sock.close(), (None,))
+        self.main_thread_method_invoker(
+            lambda _: self.sock.disconnect(), (None,)
+        )
+
+    def __enter__(self) -> None:
+        self.main_thread_method_invoker(
+            self.sock.open, (QBluetoothSocket.OpenModeFlag.ReadWrite,)
+        )
 
     def __exit__(
         self, _: type, exc_value: Exception, traceback: object
@@ -116,10 +261,22 @@ class SerialDevice:
 
 
 class Daemon:
-    def __init__(self, port: str, baudrate: int) -> None:
+    def __init__(
+        self, port: str,
+        baudrate: int,
+        type: Literal["serial"] | Literal["bluetooth"],
+        bluetooth_uuid: QBluetoothUuid.ServiceClassUuid | None = None
+    ) -> None:
         self.port = port
         self.baudrate = baudrate
-        self.device = SerialDevice(port, baudrate)
+        self.type: Literal["serial"] | Literal["bluetooth"] = type
+        self.bluetooth_uuid = bluetooth_uuid
+        if type == "serial":
+            self.device: SerialDevice | BluetoothDevice = SerialDevice(
+                port, baudrate
+            )
+        elif type == "bluetooth":
+            raise ValueError("Bluetooth Devices must be initialized by GUI")
         self.write_queue: deque[str] = deque()
         self.paused = False
         self.restart_queued = False
@@ -198,13 +355,29 @@ class Daemon:
                 should_restart = False
                 self.restart_queued = False
                 self.device.close()
-                self.device = SerialDevice(self.port, self.baudrate)
-            with self.device as device:
-                if not device.is_open():
+                if self.type == "bluetooth":
+                    raise ValueError(
+                        "Bluetooth devices must be initialized from main "
+                        "thread"
+                    )
+                else:
+                    self.device = SerialDevice(self.port, self.baudrate)
+            if isinstance(
+                self.device, BluetoothDevice
+            ) and self.device.connecting:
+                config.log("Waiting for Bluetooth connect...", "DEBUG")
+                await asyncio.sleep(1)
+                continue
+            with self.device:
+                if not self.device.is_open():
                     await asyncio.sleep(1)
-                    should_restart = True
-                    continue
+                    if not isinstance(self.device, BluetoothDevice):
+                        should_restart = True
+                        continue
                 while True:
+                    if not self.device.is_open():
+                        self.profile_changed = True
+                        continue
                     await asyncio.sleep(0.01)
                     if self.paused:
                         continue
@@ -216,16 +389,16 @@ class Daemon:
                         break
                     if self.should_discard_incoming_data:
                         self.should_discard_incoming_data = False
-                        while device.in_waiting():
-                            device.readline()
+                        while self.device.in_waiting():
+                            self.device.readline()
                     if self.profile_changed:
                         self.profile_changed = False
                         asyncio.get_event_loop().create_task(Task(
                             "PINS_REQUESTED", self.queue_write, self,
                             self.profile
                         ).run())
-                    if device.in_waiting():
-                        data = device.readline().strip()
+                    while self.device.in_waiting():
+                        data = self.device.readline().strip()
                         self.in_history.append(data)
                         self.full_history.append(f"[IN] {data}")
                         for cb in self.received_task_callbacks:
@@ -236,7 +409,7 @@ class Daemon:
                         data = self.write_queue.popleft()
                         self.out_history.append(data)
                         self.full_history.append(f"[OUT] {data}")
-                        device.writeline(data)
+                        self.device.writeline(data)
         await asyncio.sleep(0.1)
 
     def queue_restart(self) -> None:
@@ -286,6 +459,10 @@ class Daemon:
                         continue
                     self.last_slot_returns[f"{component.id}:{slot}"] = result
                     component.call_slot(slot, result)
+                if component.manager:
+                    manager: str = component.manager["name"]  # type: ignore[assignment]  # noqa
+                    instance = get_ss_instance(find_signal_slot(manager))
+                    instance.call_manager(component.write_method)
 
 
 class Task:
@@ -359,12 +536,17 @@ class Task:
                                 "jitter_tolerance" in component.device.CONFIG
                                 and "jitter" in device_pin.properties
                             ):
-                                if not (jt := component.properties.get(
+                                jt: int
+                                if not (jt := component.properties.get(  # type: ignore[assignment]  # noqa
                                     "jitter_tolerance"
                                 )):
                                     jt = component.device.CONFIG[
                                         "jitter_tolerance"
                                     ]["default"]  # type: ignore[assignment]
+                                max_adc = config.get_config_value(
+                                    "max_adc_value"
+                                )
+                                jt = round(jt / 100 * max_adc)
                                 self.write_method(
                                     f"ANALOG_TOLERANCE {pin_num:0>3} "
                                     f"{jt:0>6}"

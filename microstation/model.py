@@ -579,10 +579,14 @@ class Controller:
         self._macro_threads_that_should_stop: set[MacroThread] = set()
         self._macro_threads_to_be_released: set[MacroThread] = set()
 
-    def on_key_pressed(self, key: Key | KeyCode) -> None:
+    def on_key_pressed(self, key: Key | KeyCode | None) -> None:
+        if key is None:
+            return
         self.keys_pressed.add(key)
 
-    def on_key_released(self, key: Key | KeyCode) -> None:
+    def on_key_released(self, key: Key | KeyCode | None) -> None:
+        if key is None:
+            return
         if key in self.keys_pressed:
             self.keys_pressed.remove(key)
 
@@ -645,13 +649,13 @@ class Controller:
 
     @contextmanager
     def mod(
-        self, *keys: tuple[Key | KeyCode]
+        self, *keys: Key | KeyCode
     ) -> Generator[None, None, None]:
         """
         Contextmanager to execute a block with some keys pressed. Checks and
         preserves the previous key states of modifiers.
         """
-        to_be_released: list[Key] = []
+        to_be_released: list[Key | KeyCode] = []
         for key in keys:
             if not self.is_pressed(key):
                 self.press(key)
@@ -740,7 +744,7 @@ class Controller:
                 try:
                     key_code = KeyCode.from_char(key)
                 except Exception:
-                    pass
+                    key_code = None
             cuts.append((trans_mods, key_code))
         return cuts
 

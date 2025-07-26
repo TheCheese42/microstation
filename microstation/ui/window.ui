@@ -167,6 +167,7 @@
     </widget>
     <addaction name="menuPort"/>
     <addaction name="actionRefresh_Ports"/>
+    <addaction name="actionEnableBluetooth"/>
     <addaction name="separator"/>
     <addaction name="actionRestart_Daemon"/>
     <addaction name="actionPause"/>
@@ -284,7 +285,7 @@
     <string>Refresh Ports</string>
    </property>
    <property name="toolTip">
-    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Force a Refresh of the Port list.&lt;/p&gt;&lt;p&gt;Shouldn't be required as the list refreshes itself.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Force a Refresh of the Port list (including Bluetooth Devices).&lt;/p&gt;&lt;p&gt;Shouldn't be required as the list refreshes itself.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
    <property name="shortcut">
     <string>F5</string>
@@ -586,6 +587,21 @@
    </property>
    <property name="toolTip">
     <string>Open the Microstation Wiki Page</string>
+   </property>
+  </action>
+  <action name="actionEnableBluetooth">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="../icons/icons.qrc">
+     <normaloff>:/icons/bluetooth.svg</normaloff>:/icons/bluetooth.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Bluetooth</string>
+   </property>
+   <property name="toolTip">
+    <string>Show Bluetooth Devices under &quot;Ports&quot;.</string>
    </property>
   </action>
  </widget>

@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>bluetooth.svg</file>
     <file>music.svg</file>
     <file>book-open.svg</file>
     <file>book.svg</file>

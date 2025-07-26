@@ -1,19 +1,34 @@
+import asyncio
+from collections.abc import Callable
+from contextlib import redirect_stderr
+from datetime import datetime
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 import psutil
+from dbus_fast.errors import DBusError
+from desktop_notifier import DesktopNotifier
+from desktop_notifier.common import Icon
 from pynput.keyboard import Key
 from PyQt6.QtGui import QKeySequence
 from PyQt6.QtWidgets import QApplication
 
 from ..enums import Tag
+from ..paths import ICONS_PATH
+from ..utils import NullStream
 
 if TYPE_CHECKING:
     from ..model import Controller
 
 
 tr = QApplication.translate
+
+
+NOTIFIER = DesktopNotifier(
+    "Microstation",
+    Icon(ICONS_PATH / "aperture.png"),
+)
 
 
 INSTANCES: dict[type["SignalOrSlot"], "SignalOrSlot"] = {}
@@ -51,6 +66,9 @@ class SignalOrSlot:
 
     def call(self, signal_slot: str, *args: Any, **kwargs: Any) -> Any:
         return None
+
+    def call_manager(self, write_method: Callable[[str], None]) -> None:
+        return
 
 
 def get_ss_instance(cls: type[SignalOrSlot]) -> SignalOrSlot:
@@ -229,6 +247,47 @@ class LogToFile(SignalOrSlot):
                 fp.write(str(value) + "\n")
 
 
+class DesktopNotification(SignalOrSlot):
+    NAME = "Desktop Notification"
+    TAGS = [Tag.INPUT, Tag.DIGITAL]
+    PARAMS = [
+        Param(
+            name="title",
+            desc="Title",
+            type_=str,
+            default="",
+            info={
+                "tooltip": tr("SignalsSlots", "Notification title")
+            },
+        ),
+        Param(
+            name="message",
+            desc="Message",
+            type_=str,
+            default="",
+            info={
+                "tooltip": tr("SignalsSlots", "Notification content")
+            },
+        )
+    ]
+
+    def __init__(self) -> None:
+        self.title = ""
+        self.message = ""
+
+    def call(self, signal_slot: str, value: int) -> None:
+        async def send_notification() -> None:
+            with redirect_stderr(NullStream()):
+                try:
+                    await NOTIFIER.send(self.title, self.message)
+                except DBusError as e:
+                    from ..config import log
+                    log(f"Received DBusError while sending notification: {e}",
+                        "INFO")
+
+        asyncio.get_event_loop().create_task(send_notification())
+
+
 class ChangeVolume(SignalOrSlot):
     NAME = "Change Volume"
     TAGS = [Tag.INPUT, Tag.DIGITAL]
@@ -245,7 +304,7 @@ class ChangeVolume(SignalOrSlot):
                               "Zero means that the volume will be increased or"
                               " decreased depending on wether the pin is high "
                               "or low.")
-            }
+            },
         )
     ]
 
@@ -292,6 +351,24 @@ class ProgramRunning(SignalOrSlot):
         return is_running
 
 
+# #################### Managers #####################
+
+
+class DisplayTime(SignalOrSlot):
+    NAME = "Display Time"
+    TAGS = [Tag.OUTPUT, Tag.MANAGER]
+    DEVICES = ["SSD1306 OLED Display"]
+
+    def __init__(self) -> None:
+        self.last_time = ""
+
+    def call_manager(self, write_method: Callable[[str], None]) -> None:
+        time_fmt = datetime.now().strftime("%H:%M:%S")
+        if self.last_time != time_fmt:
+            self.last_time = time_fmt
+            write_method(f"DISPLAY_PRINT {time_fmt}")
+
+
 SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     Nothing,
     NothingManager,
@@ -302,7 +379,10 @@ SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     ReleaseShortcut,
     Macro,
     LogToFile,
+    DesktopNotification,
     ChangeVolume,
     # Slots
     ProgramRunning,
+    # Managers
+    DisplayTime,
 ]

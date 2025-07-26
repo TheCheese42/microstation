@@ -15,7 +15,7 @@ const String VERSION = "{microstation_version}";
 const String COMPILE_ARDUINO_CLI_VERSION = "{arduino_cli_version}";
 const String COMPILE_ARDUINO_CLI_COMMIT = "{arduino_cli_commit}";
 const String COMPILE_ARDUINO_CLI_DATE = "{arduino_cli_date}";
-const int BAUDRATE = {baudrate};
+const long BAUDRATE = {baudrate};
 
 uint8_t MAX_DIGITAL_INPUT_PINS = {max_digital_input_pins};
 uint8_t digital_input_pins[{max_digital_input_pins}] = {};
@@ -26,9 +26,12 @@ uint8_t digital_input_count = 0;
 
 uint8_t MAX_ANALOG_INPUT_PINS = {max_analog_input_pins};
 uint8_t analog_input_pins[{max_analog_input_pins}] = {};
-uint8_t analog_input_states[{max_analog_input_pins}] = {};
+uint16_t analog_input_states[{max_analog_input_pins}] = {};
 uint8_t analog_input_tolerances[{max_analog_input_pins}] = {};
 uint8_t analog_input_count = 0;
+
+// Other constants
+{constants}
 
 
 void exec_task(String task);
@@ -36,17 +39,29 @@ void poll_digital_input();
 void poll_analog_input();
 
 
+template <typename T>
+void serialPrint(const T& data) {
+  {print_hook}
+  Serial.print(data);
+}
+template <typename T>
+void serialPrintln(const T& data) {
+  {println_hook}
+  Serial.println(data);
+}
+
+
 void print_debug() {
-  Serial.println("DEBUG [INFO] Microstation - Version " + VERSION);
-  Serial.print("DEBUG [INFO] Compiled at ");
-  Serial.print(__DATE__);
-  Serial.print(" ");
-  Serial.println(__TIME__);
-  Serial.print("DEBUG [INFO] Compiled from file ");
-  Serial.println(__FILE__);
-  Serial.println("DEBUG [INFO] Compiled for core " + COMPILE_CORE + " and board " + COMPILE_BOARD);
-  Serial.println("DEBUG [INFO] Compiled by Microstation v" + VERSION);
-  Serial.println("DEBUG [INFO] Using arduino-cli v" + COMPILE_ARDUINO_CLI_VERSION + " (Commit: " + COMPILE_ARDUINO_CLI_COMMIT + "; Date: " + COMPILE_ARDUINO_CLI_DATE + ")");
+  serialPrintln("DEBUG [INFO] Microstation - Version " + VERSION);
+  serialPrint("DEBUG [INFO] Compiled at ");
+  serialPrint(__DATE__);
+  serialPrint(" ");
+  serialPrintln(__TIME__);
+  serialPrint("DEBUG [INFO] Compiled from file ");
+  serialPrintln(__FILE__);
+  serialPrintln("DEBUG [INFO] Compiled for core " + COMPILE_CORE + " and board " + COMPILE_BOARD);
+  serialPrintln("DEBUG [INFO] Compiled by Microstation v" + VERSION);
+  serialPrintln("DEBUG [INFO] Using arduino-cli v" + COMPILE_ARDUINO_CLI_VERSION + " (Commit: " + COMPILE_ARDUINO_CLI_COMMIT + "; Date: " + COMPILE_ARDUINO_CLI_DATE + ")");
 }
 
 
@@ -63,8 +78,8 @@ void reset_data() {
 
 
 void report_version() {
-  Serial.print("VERSION ");
-  Serial.println(VERSION);
+  serialPrint("VERSION ");
+  serialPrintln(VERSION);
 }
 
 
@@ -72,12 +87,19 @@ void setup() {
   Serial.begin(BAUDRATE);
   delay(1000);  // Prevent first bytes to be lost
   print_debug();
-  Serial.println("PINS_REQUESTED");
   report_version();
+
+  // Additional setup code
+  {setup}
+
+  serialPrintln("PINS_REQUESTED");
 }
 
 
 void loop() {
+  // Additional loop code
+  {loop}
+
   if (Serial.available() > 0) {
     String receivedData = Serial.readStringUntil('\n');
     exec_task(receivedData);
@@ -88,6 +110,10 @@ void loop() {
 
 
 void exec_task(String task) {
+  if (task != "") {
+    serialPrint("DEBUG [DEBUG] Received Task: ");
+    serialPrintln(task);
+  }
   if (task == "") {
     return;
   } else if (task.startsWith("RESET_PINS")) {
@@ -102,38 +128,38 @@ void exec_task(String task) {
       pinMode(pin, INPUT_PULLUP);
       if (mode == "DIG") {
         if (digital_input_count >= MAX_DIGITAL_INPUT_PINS) {
-          Serial.println("DEBUG [CRITICAL] [TMDIP] Too many digital input pins");
+          serialPrintln("DEBUG [CRITICAL] [TMDIP] Too many digital input pins");
         }
         digital_input_pins[digital_input_count] = pin;
         digital_input_count++;
       } else if (mode == "ANA") {
         if (analog_input_count >= MAX_ANALOG_INPUT_PINS) {
-          Serial.println("DEBUG [CRITICAL] [TMAIP] Too many analog input pins");
+          serialPrintln("DEBUG [CRITICAL] [TMAIP] Too many analog input pins");
         }
         analog_input_pins[analog_input_count] = pin;
         analog_input_count++;
       } else {
-        Serial.print("DEBUG [ERROR] Invalid mode: ");
-        Serial.println(mode);
+        serialPrint("DEBUG [ERROR] Invalid mode: ");
+        serialPrintln(mode);
       }
     } else if (io_mode == "OUT") {
       pinMode(pin, OUTPUT);
     } else {
-      Serial.print("DEBUG [ERROR] Invalid IO mode: ");
-      Serial.println(io_mode);
+      serialPrint("DEBUG [ERROR] Invalid IO mode: ");
+      serialPrintln(io_mode);
     }
   } else if (task.startsWith("WRITE")) {
     String mode = task.substring(6, 9);
     int pin = task.substring(10, 13).toInt();
     if (mode == "DIG") {
-      int state = task.substring(14).toInt();
+      int state = task.substring(14, 15).toInt();
       digitalWrite(pin, state);
     } else if (mode == "ANA") {
       int state = task.substring(14, 21).toInt();
       analogWrite(pin, state);
     } else {
-      Serial.print("DEBUG [ERROR] Invalid mode: ");
-      Serial.println(mode);
+      serialPrint("DEBUG [ERROR] Invalid mode: ");
+      serialPrintln(mode);
     }
   } else if (task.startsWith("DIGITAL_DEBOUNCE")) {
     int pin = task.substring(17, 20).toInt();
@@ -143,9 +169,10 @@ void exec_task(String task) {
     int pin = task.substring(17, 20).toInt();
     int tolerance = task.substring(21, 27).toInt();
     analog_input_tolerances[pin] = tolerance;
+  {extra_tasks}
   } else {
-    Serial.print("DEBUG [ERROR] Invalid task: ");
-    Serial.println(task);
+    serialPrint("DEBUG [ERROR] Invalid task: ");
+    serialPrintln(task);
   }
 }
 
@@ -166,10 +193,10 @@ void poll_digital_input() {
       }
       digital_input_start_times[i] = 0;
       digital_input_states[i] = current_state;
-      Serial.print("EVENT DIGITAL ");
-      Serial.print(pin);
-      Serial.print(" ");
-      Serial.println(current_state);
+      serialPrint("EVENT DIGITAL ");
+      serialPrint(pin);
+      serialPrint(" ");
+      serialPrintln(current_state);
     }
   }
 }
@@ -188,9 +215,9 @@ void poll_analog_input() {
       return;
     }
     analog_input_states[i] = current_state;
-    Serial.print("EVENT ANALOG ");
-    Serial.print(pin);
-    Serial.print(" ");
-    Serial.println(current_state);
+    serialPrint("EVENT ANALOG ");
+    serialPrint(pin);
+    serialPrint(" ");
+    serialPrintln(current_state);
   }
 }
