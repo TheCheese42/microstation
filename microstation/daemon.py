@@ -7,7 +7,6 @@ from typing import Any, Literal
 import serial
 from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothServiceInfo,
                                QBluetoothSocket, QBluetoothUuid)
-from PyQt6.QtCore import QByteArray
 
 from . import config
 from .actions import auto_activaters
@@ -149,8 +148,7 @@ class BluetoothDevice:
         print("Bluetooth: Connected!")  # XXX
         self.connected = True
         self.connecting = False
-        config.log(
-            f"Connected to bluetooth device at {self.addr}")
+        config.log(f"Connected to bluetooth device at {self.addr}")
 
     def disconnected_from_bluetooth(self) -> None:
         print("Bluetooth: Disconnected")  # XXX
@@ -247,6 +245,9 @@ class BluetoothDevice:
         if not self.connected:
             return
         self.main_thread_method_invoker(lambda _: self.sock.close(), (None,))
+        self.main_thread_method_invoker(
+            lambda _: self.sock.disconnect(), (None,)
+        )
 
     def __enter__(self) -> None:
         self.main_thread_method_invoker(
@@ -374,6 +375,9 @@ class Daemon:
                         should_restart = True
                         continue
                 while True:
+                    if not self.device.is_open():
+                        self.profile_changed = True
+                        continue
                     await asyncio.sleep(0.01)
                     if self.paused:
                         continue
@@ -393,7 +397,7 @@ class Daemon:
                             "PINS_REQUESTED", self.queue_write, self,
                             self.profile
                         ).run())
-                    if self.device.in_waiting():
+                    while self.device.in_waiting():
                         data = self.device.readline().strip()
                         self.in_history.append(data)
                         self.full_history.append(f"[IN] {data}")
@@ -528,12 +532,17 @@ class Task:
                                 "jitter_tolerance" in component.device.CONFIG
                                 and "jitter" in device_pin.properties
                             ):
-                                if not (jt := component.properties.get(
+                                jt: int
+                                if not (jt := component.properties.get(  # type: ignore[assignment]  # noqa
                                     "jitter_tolerance"
                                 )):
                                     jt = component.device.CONFIG[
                                         "jitter_tolerance"
                                     ]["default"]  # type: ignore[assignment]
+                                max_adc = config.get_config_value(
+                                    "max_adc_value"
+                                )
+                                jt = round(jt / 100 * max_adc)
                                 self.write_method(
                                     f"ANALOG_TOLERANCE {pin_num:0>3} "
                                     f"{jt:0>6}"

@@ -1,8 +1,9 @@
 import json
 from collections.abc import Generator, Iterator
+from io import StringIO
 from platform import system
 from subprocess import PIPE, STDOUT, Popen, getstatusoutput
-from typing import NamedTuple
+from typing import Any, NamedTuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -443,3 +444,8 @@ def progress_bar_animation_snappy(
             round(f(time_withing_loop * (100 / max_time_one_side) * 10)),
             True
         )
+
+
+class NullStream(StringIO):
+    def write(self, s: str) -> int:
+        return 0

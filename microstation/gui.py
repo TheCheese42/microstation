@@ -917,6 +917,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
 
     def restart_daemon(self) -> None:
         self.set_port(self.selected_port)
+        self.daemon.queue_restart()
 
     def open_macros(self) -> None:
         dialog = MacroEditor(self, deepcopy(config.MACROS))
@@ -1116,15 +1117,13 @@ class Profiles(QDialog, Ui_Profiles):  # type: ignore[misc]
     def delete_profile(self) -> None:
         try:
             selected = self.profilesList.selectedIndexes()[0].row()
-            selected_item: QListWidgetItem = self.profilesList.itemAt(  # type: ignore[assignment]  # noqa
-                0, selected
-            )
+            selected_text = self.profilesList.selectedItems()[0].text()
         except IndexError:
             return
         if show_question(
             self, tr("Profiles", "Delete Profile"),
             tr("Profiles", "Do you really want to delete the Profile "
-               f"{selected_item.text()}?")
+               f"{selected_text}?")
         ) == QMessageBox.StandardButton.Yes:
             self.profiles.pop(selected)
             self.updateProfileList()

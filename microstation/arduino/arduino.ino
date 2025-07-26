@@ -15,7 +15,7 @@ const String VERSION = "{microstation_version}";
 const String COMPILE_ARDUINO_CLI_VERSION = "{arduino_cli_version}";
 const String COMPILE_ARDUINO_CLI_COMMIT = "{arduino_cli_commit}";
 const String COMPILE_ARDUINO_CLI_DATE = "{arduino_cli_date}";
-const int BAUDRATE = {baudrate};
+const long BAUDRATE = {baudrate};
 
 uint8_t MAX_DIGITAL_INPUT_PINS = {max_digital_input_pins};
 uint8_t digital_input_pins[{max_digital_input_pins}] = {};
@@ -26,7 +26,7 @@ uint8_t digital_input_count = 0;
 
 uint8_t MAX_ANALOG_INPUT_PINS = {max_analog_input_pins};
 uint8_t analog_input_pins[{max_analog_input_pins}] = {};
-uint8_t analog_input_states[{max_analog_input_pins}] = {};
+uint16_t analog_input_states[{max_analog_input_pins}] = {};
 uint8_t analog_input_tolerances[{max_analog_input_pins}] = {};
 uint8_t analog_input_count = 0;
 
@@ -110,6 +110,10 @@ void loop() {
 
 
 void exec_task(String task) {
+  if (task != "") {
+    serialPrint("DEBUG [DEBUG] Received Task: ");
+    serialPrintln(task);
+  }
   if (task == "") {
     return;
   } else if (task.startsWith("RESET_PINS")) {
