@@ -343,7 +343,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self._previous_comports = current_comports
         self.menuPort.clear()
         for port in sorted(comports()):
-            action: QAction = self.menuPort.addAction(  # type: ignore[assignment]  # noqa
+            action: QAction = self.menuPort.addAction(
                 f"{port.device} ({get_device_info(port)})"
             )
             action.setCheckable(True)
@@ -353,7 +353,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.bt_devices_found_previous = self.bluetooth_devices_found.copy()
         if config.get_config_value("enable_bluetooth"):
             for info in self.bluetooth_devices_found:
-                action = self.menuPort.addAction(  # type: ignore[assignment]
+                action = self.menuPort.addAction(
                     f"{info.name} ({info.address})"
                 )
                 action.setCheckable(True)
@@ -416,7 +416,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         # Language menu
         self.menuLanguage.clear()
         for locale_ in sorted(self.locales, key=lambda x: x.language().name):
-            action: QAction = self.menuLanguage.addAction(  # type: ignore[assignment]  # noqa
+            action: QAction = self.menuLanguage.addAction(
                 locale_.language().name
             )
             action.triggered.connect(partial(self.change_language, locale_))
@@ -431,7 +431,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                     if sub_theme.is_file() or "cache" in sub_theme.name:
                         continue
                     theme_name = sub_theme.name.replace("-", " ").title()
-                    action = self.menuTheme.addAction(  # type: ignore[assignment]  # noqa
+                    action = self.menuTheme.addAction(
                         full_name := f"{group_name.title()} {theme_name}"
                     )
                     if config.get_config_value("theme") == full_name:
@@ -444,7 +444,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                         )
                     )
 
-        action = self.menuHelp.addAction(  # type: ignore[assignment]
+        action = self.menuHelp.addAction(
             QIcon(str(ICONS_PATH / "music.svg")), "Need Help?"
         )
         action.triggered.connect(partial(
@@ -506,7 +506,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             f"Found Bluetooth Device {name} at "
             f"{address}", "DEBUG",
         )
-        bt_info = BluetoothDeviceInfo(name, address, uuid)  # type: ignore[call-arg]  # noqa
+        bt_info = BluetoothDeviceInfo(name, address, uuid)
         self.bluetooth_devices_found.append(bt_info)
 
     def bluetooth_toggled(self) -> None:
@@ -2543,8 +2543,8 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
             )
         except IndexError:
             self.textBrowser.setPlainText("")
-        self.textBrowser.verticalScrollBar().setValue(  # type: ignore[union-attr]  # noqa
-            self.textBrowser.verticalScrollBar().maximum()  # type: ignore[union-attr]  # noqa
+        self.textBrowser.verticalScrollBar().setValue(
+            self.textBrowser.verticalScrollBar().maximum()
         )
 
     def queue_new_task(self, task: str) -> None:
@@ -2553,8 +2553,8 @@ class SerialMonitor(QDialog, Ui_SerialMonitor):  # type: ignore[misc]
     def new_task(self, task: str) -> None:
         self.textBrowser.append(task)
         if config.get_config_value("autoscroll_serial_monitor"):
-            self.textBrowser.verticalScrollBar().setValue(  # type: ignore[union-attr]  # noqa
-                self.textBrowser.verticalScrollBar().maximum()  # type: ignore[union-attr]  # noqa
+            self.textBrowser.verticalScrollBar().setValue(
+                self.textBrowser.verticalScrollBar().maximum()
             )
 
     def connectSignalsSlots(self) -> None:

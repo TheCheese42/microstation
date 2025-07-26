@@ -6,6 +6,7 @@ from threading import Thread
 
 import pystray
 from PIL import Image
+from PyQt6.QtWidgets import QApplication
 
 from . import config, utils
 from .daemon import Daemon
@@ -36,6 +37,9 @@ def main() -> None:
         daemon=True,
     )
     daemon_thread.start()
+
+    win: Microstation
+    app: QApplication
 
     def show_gui(win: Microstation, _) -> None:  # type: ignore[no-untyped-def]
         config.log("Received SHOW signal from tray icon", "DEBUG")
