@@ -459,6 +459,10 @@ class Daemon:
                         continue
                     self.last_slot_returns[f"{component.id}:{slot}"] = result
                     component.call_slot(slot, result)
+                if component.manager:
+                    manager: str = component.manager["name"]  # type: ignore[assignment]  # noqa
+                    instance = get_ss_instance(find_signal_slot(manager))
+                    instance.call_manager(component.write_method)
 
 
 class Task:

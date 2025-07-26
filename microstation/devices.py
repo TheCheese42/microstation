@@ -294,10 +294,16 @@ class ButtonRow(Device):
         component.device_data_storage[f"last_state_{button}"] = 1
 
 
+class SSD1306OLEDDisplay(Device):
+    NAME = "SSD1306 OLED Display"
+    TAGS = [Tag.OUTPUT]
+
+
 __all__ = [
     "Button",
     "LED",
     "Potentiometer",
     "RotaryEncoder",
     "ButtonRow",
+    "SSD1306OLEDDisplay",
 ]

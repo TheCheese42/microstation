@@ -30,6 +30,8 @@ DEFAULT_CONFIG: dict[str, str | int | float | bool | list[str]] = {
     "max_ana_inp_pins": 50,
     "custom_fqbn": "",
     "esp32_bluetooth_support": False,
+    "ssd1306_oled_display_support": False,
+    "ssd1306_oled_display_resolution_is_32px": False,
 }
 
 type MACRO_ACTION = dict[str, str | int | None]

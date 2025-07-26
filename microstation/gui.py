@@ -8,6 +8,7 @@ from copy import deepcopy
 from functools import partial
 from pathlib import Path
 from subprocess import getoutput
+from textwrap import dedent
 from threading import Thread
 from typing import Any, Literal, NamedTuple
 
@@ -592,20 +593,52 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
     def libs_to_include(self) -> list[str]:
         libs: list[str] = []
         if config.get_config_value("esp32_bluetooth_support"):
-            libs.append("BluetoothSerial.h")
+            libs.append("#include \"BluetoothSerial.h\"")
+        if config.get_config_value("ssd1306_oled_display_support"):
+            libs.append("#include <Adafruit_GFX.h>")
+            libs.append("#include <Adafruit_SSD1306.h>")
+            libs.append("#include <Wire.h>")
         return libs
 
     def sketch_constants(self) -> list[str]:
         consts: list[str] = []
         if config.get_config_value("esp32_bluetooth_support"):
             consts.append("BluetoothSerial SerialBT;")
+        if config.get_config_value("ssd1306_oled_display_support"):
+            consts.append("#define SCREEN_WIDTH 128")
+            if config.get_config_value(
+                "ssd1306_oled_display_resolution_is_32px"
+            ):
+                consts.append("#define SCREEN_HEIGHT 32")
+            else:
+                consts.append("#define SCREEN_HEIGHT 64")
+            consts.append(
+                "Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, "
+                "&Wire, -1);"
+            )
+            consts.append(dedent("""
+                void resetDisplay() {
+                    display.clearDisplay();
+                    display.display();
+                    display.setTextSize(1);
+                    display.setTextColor(SSD1306_WHITE);
+                    display.setCursor(0, 0);
+                }
+            """))
         return consts
 
     def sketch_setup(self) -> list[str]:
         lines: list[str] = []
         if config.get_config_value("esp32_bluetooth_support"):
             lines.append("SerialBT.begin(\"MicrostationESP32BT\");")
-            lines.append("Serial.println(\"DEBUG Started esp32 Bluetooth as MicrostationESP32BT\");")  # noqa
+            lines.append("Serial.println(\"DEBUG [INFO] Started esp32 Bluetooth as MicrostationESP32BT\");")  # noqa
+        if config.get_config_value("ssd1306_oled_display_support"):
+            lines.append("if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {")
+            lines.append("serialPrintln(\"DEBUG [ERROR] Failed to start SSD1306 OLED Display\");")  # noqa
+            lines.append("while (1) { delay(1000); }")
+            lines.append("}")
+            lines.append("serialPrintln(\"DEBUG [INFO] SSD1306 OLED Display started successfully!\");")  # noqa
+            lines.append("resetDisplay();")
         return lines
 
     def sketch_loop(self) -> list[str]:
@@ -615,6 +648,17 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             lines.append("String receivedData = Serial.readStringUntil('\\n');")  # noqa
             lines.append("exec_task(receivedData);")
             lines.append("}")
+        return lines
+
+    def sketch_extra_tasks(self) -> list[str]:
+        lines: list[str] = []
+        if config.get_config_value("ssd1306_oled_display_support"):
+            lines.append(dedent("""
+                } else if (task.startsWith("DISPLAY_PRINT")) {
+                    String text = task.substring(14);
+                    resetDisplay();
+                    display.println(text);
+            """))
         return lines
 
     def print_hooks(self) -> list[str]:
@@ -652,16 +696,19 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         constants_string = ""
         setup_string = ""
         loop_string = ""
+        tasks_string = ""
         print_string = ""
         println_string = ""
         for lib in self.libs_to_include():
-            includes_string += f"#include \"{lib}\"\n"
+            includes_string += lib + "\n"
         for line in self.sketch_constants():
             constants_string += line + "\n"
         for line in self.sketch_setup():
             setup_string += line + "\n"
         for line in self.sketch_loop():
             loop_string += line + "\n"
+        for lines in self.sketch_extra_tasks():
+            tasks_string += lines + "\n"
         for line in self.print_hooks():
             print_string += line + "\n"
         for line in self.println_hooks():
@@ -702,6 +749,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
                 constants=constants_string,
                 setup=setup_string,
                 loop=loop_string,
+                extra_tasks=tasks_string,
                 print_hook=print_string,
                 println_hook=println_string,
             )
@@ -798,6 +846,24 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             if esp32_bluetooth != prev_esp32_bluetooth:
                 something_changed = True
             config.set_config_value("esp32_bluetooth_support", esp32_bluetooth)
+            ssd1306_oled = dialog.ssd1306_oled.isChecked()
+            prev_ssd1306_oled = config.get_config_value(
+                "ssd1306_oled_display_support"
+            )
+            if ssd1306_oled != prev_ssd1306_oled:
+                something_changed = True
+            config.set_config_value(
+                "ssd1306_oled_display_support", ssd1306_oled
+            )
+            ssd1306_res_is_32 = dialog.ssd1306_oled_res_is_32.isChecked()
+            prev_ssd1306_res_is_32 = config.get_config_value(
+                "ssd1306_oled_display_resolution_is_32px"
+            )
+            if ssd1306_res_is_32 != prev_ssd1306_res_is_32:
+                something_changed = True
+            config.set_config_value(
+                "ssd1306_oled_display_resolution_is_32px", ssd1306_res_is_32
+            )
 
             if something_changed:
                 if show_question(
@@ -1545,7 +1611,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                     selected = None
             else:
                 combo.currentTextChanged.connect(self.manager_changed)
-                selected = self.component.manager.get(entry)
+                selected = self.component.manager.get("name")
 
             selected_ss: str | None = None
             combo.blockSignals(True)
@@ -1641,7 +1707,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         self.component.manager = {"name": value}
         self.update_signal_slot_params(
             "manager", find_signal_slot(value),
-            "manager", self.entry_hbox["manager"]
+            "manager", self.entry_hbox[tr("ComponentEditor", "Manager:")]
         )
 
     def update_signal_slot_params(
@@ -2410,6 +2476,12 @@ class MicrocontrollerSettings(QDialog, Ui_MicrocontrollerSettings):  # type: ign
         )
         self.esp32_bluetooth.setChecked(
             config.get_config_value("esp32_bluetooth_support")
+        )
+        self.ssd1306_oled.setChecked(
+            config.get_config_value("ssd1306_oled_display_support")
+        )
+        self.ssd1306_oled_res_is_32.setChecked(
+            config.get_config_value("ssd1306_oled_display_resolution_is_32px")
         )
 
     def connectSignalsSlots(self) -> None:

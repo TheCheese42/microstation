@@ -152,7 +152,7 @@ void exec_task(String task) {
     String mode = task.substring(6, 9);
     int pin = task.substring(10, 13).toInt();
     if (mode == "DIG") {
-      int state = task.substring(14).toInt();
+      int state = task.substring(14, 15).toInt();
       digitalWrite(pin, state);
     } else if (mode == "ANA") {
       int state = task.substring(14, 21).toInt();
@@ -169,6 +169,7 @@ void exec_task(String task) {
     int pin = task.substring(17, 20).toInt();
     int tolerance = task.substring(21, 27).toInt();
     analog_input_tolerances[pin] = tolerance;
+  {extra_tasks}
   } else {
     serialPrint("DEBUG [ERROR] Invalid task: ");
     serialPrintln(task);

@@ -1,5 +1,7 @@
 import asyncio
+from collections.abc import Callable
 from contextlib import redirect_stderr
+from datetime import datetime
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -64,6 +66,9 @@ class SignalOrSlot:
 
     def call(self, signal_slot: str, *args: Any, **kwargs: Any) -> Any:
         return None
+
+    def call_manager(self, write_method: Callable[[str], None]) -> None:
+        return
 
 
 def get_ss_instance(cls: type[SignalOrSlot]) -> SignalOrSlot:
@@ -346,6 +351,24 @@ class ProgramRunning(SignalOrSlot):
         return is_running
 
 
+# #################### Managers #####################
+
+
+class DisplayTime(SignalOrSlot):
+    NAME = "Display Time"
+    TAGS = [Tag.OUTPUT, Tag.MANAGER]
+    DEVICES = ["SSD1306 OLED Display"]
+
+    def __init__(self) -> None:
+        self.last_time = ""
+
+    def call_manager(self, write_method: Callable[[str], None]) -> None:
+        time_fmt = datetime.now().strftime("%H:%M:%S")
+        if self.last_time != time_fmt:
+            self.last_time = time_fmt
+            write_method(f"DISPLAY_PRINT {time_fmt}")
+
+
 SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     Nothing,
     NothingManager,
@@ -360,4 +383,6 @@ SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     ChangeVolume,
     # Slots
     ProgramRunning,
+    # Managers
+    DisplayTime,
 ]
