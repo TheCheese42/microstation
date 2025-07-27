@@ -1,10 +1,10 @@
 import time
 from typing import Literal
 
+from .config import log
 from .enums import Tag
 from .gui import tr
 from .model import CONFIG_VALUE, Component, Device, Pin
-from .config import log
 
 
 class Button(Device):
@@ -70,11 +70,9 @@ class RotaryEncoder(Device):
     def available_signals_digital(
         cls, properties: dict[str, CONFIG_VALUE] | None = None,
     ) -> list[str]:
-        if Tag.INPUT in cls.TAGS and Tag.DIGITAL in cls.TAGS:
-            return ["encoder_rotated", "encoder_rotated_left",
-                    "encoder_rotated_right", "sw_changed",
-                    "sw_high", "sw_low"]
-        return []
+        return ["encoder_rotated", "encoder_rotated_left",
+                "encoder_rotated_right", "sw_changed",
+                "sw_high", "sw_low"]
 
     @classmethod
     def custom_signal_handler(
@@ -275,8 +273,13 @@ class ButtonRow(Device):
                 button = i
                 break
         else:
+            # All off
             for button in range(buttons):
-                component.device_data_storage[f"last_state_{button}"] = 0
+                if component.device_data_storage[f"last_state_{button}"]:
+                    # Turned off
+                    component.emit_signal(f"digital_changed_{button}", state)
+                    component.emit_signal(f"digital_low_{button}", state)
+                    component.device_data_storage[f"last_state_{button}"] = 0
             return
         if component.device_data_storage.get(f"last_state_{button}"):
             pass  # Button still on
@@ -299,7 +302,7 @@ class SSD1306OLEDDisplay(Device):
     TAGS = [Tag.OUTPUT]
 
 
-__all__ = [
+DEVICES = [
     "Button",
     "LED",
     "Potentiometer",

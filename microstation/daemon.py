@@ -462,7 +462,12 @@ class Daemon:
                 if component.manager:
                     manager: str = component.manager["name"]  # type: ignore[assignment]  # noqa
                     instance = get_ss_instance(find_signal_slot(manager))
-                    instance.call_manager(component.write_method)
+                    if isinstance(
+                        params := component.manager.get("params"), dict,
+                    ):
+                        for attr, value in params.items():
+                            setattr(instance, attr, value)
+                    instance.call_manager(component, component.write_method)
 
 
 class Task:

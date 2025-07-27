@@ -1,9 +1,13 @@
 import json
+import platform
+import webbrowser
 from collections.abc import Generator, Iterator
 from io import StringIO
+from pathlib import Path
 from platform import system
-from subprocess import PIPE, STDOUT, Popen, getstatusoutput
-from typing import Any, NamedTuple
+from subprocess import PIPE, STDOUT, Popen, getoutput, getstatusoutput
+from threading import Thread
+from typing import NamedTuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -444,6 +448,54 @@ def progress_bar_animation_snappy(
             round(f(time_withing_loop * (100 / max_time_one_side) * 10)),
             True
         )
+
+
+def open_url(url: str) -> None:
+    thread = Thread(target=_open_url_threaded, args=(url,))
+    config.log(f"Opening url {url} in thread {thread.name}", "DEBUG")
+    thread.start()
+
+
+def _open_url_threaded(url: str) -> None:
+    try:
+        webbrowser.WindowsDefault().open(url)  # type: ignore[attr-defined]
+    except Exception:
+        system = platform.system()
+        if system == "Windows":
+            getoutput(
+                f"start {url}"
+            )
+        else:
+            getoutput(
+                f"open {url}"
+            )
+
+
+def open_file(path: str | Path) -> None:
+    thread = Thread(target=_open_file_threaded, args=(path,))
+    config.log(f"Opening file at path {path} in thread {thread.name}",
+                "DEBUG")
+    thread.start()
+
+
+def _open_file_threaded(path: str | Path) -> None:
+    try:
+        # Webbrowser module can well be used to open regular file as well.
+        # The system will use the default application, for the file type,
+        # not necessarily the webbrowser.
+        webbrowser.WindowsDefault().open(str(path))  # type: ignore[attr-defined]  # noqa
+    except Exception:
+        system = platform.system()
+        if system == "Windows":
+            getoutput(f"start {path}")
+        else:
+            getoutput(f"open {path}")
+
+
+def ping(host: str) -> bool:
+    param = "-n" if platform.system().lower() == "windows" else "-c"
+    command = f"ping {param} 1 {host}"
+    return getstatusoutput(command)[0] == 0
 
 
 class NullStream(StringIO):

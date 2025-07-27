@@ -7,7 +7,7 @@ from typing import Any
 
 from .model import Profile
 from .paths import (CONFIG_DIR, CONFIG_PATH, LIB_DIR, LOGGER_PATH, MACROS_PATH,
-                    MC_DEBUG_LOG_PATH, PROFILES_PATH)
+                    MC_DEBUG_LOG_PATH, PLUGINS_PATH, PROFILES_PATH)
 from .version import version_string
 
 DEFAULT_CONFIG: dict[str, str | int | float | bool | list[str]] = {
@@ -80,6 +80,7 @@ def init_config() -> None:
     trunc_log()
     ensure_profiles_file()
     ensure_macros_file()
+    PLUGINS_PATH.mkdir(parents=True, exist_ok=True)
 
     if not config_exists():
         with open(CONFIG_PATH, "w", encoding="utf-8") as fp:

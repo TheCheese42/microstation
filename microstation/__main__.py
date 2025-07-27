@@ -13,11 +13,13 @@ from .daemon import Daemon
 from .gui import Microstation, launch_gui
 from .model import CONTROLLER, start_controller_listeners
 from .paths import ICONS_PATH
+from .plugin_api import load_plugins
 
 
 def main() -> None:
     config.init_config()
     config.log_basic()
+    load_plugins()
     if path := utils.arduino_cli_path():
         config.log(f"arduino-cli found at path {path}", "DEBUG")
     else:

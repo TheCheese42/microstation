@@ -77,7 +77,7 @@ def fetch_devices() -> list[type["Device"]]:
         from . import devices as devices_module
     except ImportError:
         import devices as devices_module  # type: ignore[no-redef]
-    for device_type in devices_module.__all__:
+    for device_type in devices_module.DEVICES:
         device = getattr(devices_module, device_type)
         devices.append(device)
     return devices
@@ -247,12 +247,12 @@ class Component:
             if not isinstance(key, str):
                 raise ValueError(
                     "Component manager keys must be strings, got "
-                    f"{type(key)}"
+                    f"{type(key)} ({key})"
                 )
-            if not isinstance(val, str):
+            if not isinstance(val, str) and not isinstance(val, dict):
                 raise ValueError(
-                    "Component manager values must be string, got "
-                    f"{type(val)}"
+                    "Component manager values must be strings or dicts, got "
+                    f"{type(val)} ({val})"
                 )
 
         self.device_data_storage: dict[str, Any] = {}

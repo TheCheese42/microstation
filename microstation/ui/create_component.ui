@@ -344,6 +344,11 @@
        </property>
       </item>
      </item>
+     <item>
+      <property name="text">
+       <string>Plugin Devices</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item>

@@ -1,13 +1,10 @@
-import platform
 import random
 import sys
 import time
-import webbrowser
 from collections.abc import Callable
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
-from subprocess import getoutput
 from textwrap import dedent
 from threading import Thread
 from typing import Any, Literal, NamedTuple
@@ -21,7 +18,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
                              QListWidget, QListWidgetItem, QMainWindow,
                              QMessageBox, QPushButton, QSizePolicy,
                              QSpacerItem, QSpinBox, QTextBrowser, QVBoxLayout,
-                             QWidget)
+                             QWidget, QTreeWidgetItem)
 from serial.tools.list_ports import comports
 
 from . import config, utils
@@ -80,6 +77,9 @@ except ImportError:
 
 
 tr = QApplication.translate
+
+# Tuple is (class_name, display_name)
+PLUGIN_DEVICES: list[tuple[str, str]] = []
 
 
 def translation_for_ss(ss: str) -> str:
@@ -448,7 +448,7 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
             QIcon(str(ICONS_PATH / "music.svg")), "Need Help?"
         )
         action.triggered.connect(partial(
-            self.open_url,
+            utils.open_url,
             "https://archive.org/details/undertaleoriginalsoundtrack/"
         ))
 
@@ -564,13 +564,13 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         )
 
     def open_wiki(self) -> None:
-        self.open_url("https://github.com/TheCheese42/microstation/wiki")
+        utils.open_url("https://github.com/TheCheese42/microstation/wiki")
 
     def open_github(self) -> None:
-        self.open_url("https://github.com/TheCheese42/microstation")
+        utils.open_url("https://github.com/TheCheese42/microstation")
 
     def open_licenses(self) -> None:
-        dialog = Licenses(self, self.open_url)
+        dialog = Licenses(self)
         dialog.exec()
 
     def set_profile(self, profile_name: str) -> None:
@@ -885,58 +885,20 @@ class Microstation(QMainWindow, Ui_Microstation):  # type: ignore[misc]
         self.daemon.received_task_callbacks.remove(dialog.queue_new_task)
 
     def open_log(self) -> None:
-        self.open_file(LOGGER_PATH)
+        utils.open_file(LOGGER_PATH)
 
     def open_serial_log(self) -> None:
-        self.open_file(MC_DEBUG_LOG_PATH)
+        utils.open_file(MC_DEBUG_LOG_PATH)
 
     def export_serial_history(self) -> None:
         SER_HISTORY_PATH.write_text(
             "\n".join(self.daemon.full_history), "utf-8",
         )
-        self.open_file(SER_HISTORY_PATH)
+        utils.open_file(SER_HISTORY_PATH)
 
     def open_about(self) -> None:
         dialog = About(self)
         dialog.exec()
-
-    def open_url(self, url: str) -> None:
-        thread = Thread(target=self._open_url_threaded, args=(url,))
-        config.log(f"Opening url {url} in thread {thread.name}", "DEBUG")
-        thread.start()
-
-    def _open_url_threaded(self, url: str) -> None:
-        try:
-            webbrowser.WindowsDefault().open(url)  # type: ignore[attr-defined]
-        except Exception:
-            system = platform.system()
-            if system == "Windows":
-                getoutput(
-                    f"start {url}"
-                )
-            else:
-                getoutput(
-                    f"open {url}"
-                )
-
-    def open_file(self, path: str | Path) -> None:
-        thread = Thread(target=self._open_file_threaded, args=(path,))
-        config.log(f"Opening file at path {path} in thread {thread.name}",
-                   "DEBUG")
-        thread.start()
-
-    def _open_file_threaded(self, path: str | Path) -> None:
-        try:
-            # Webbrowser module can well be used to open regular file as well.
-            # The system will use the default application, for the file type,
-            # not necessarily the webbrowser.
-            webbrowser.WindowsDefault().open(str(path))  # type: ignore[attr-defined]  # noqa
-        except Exception:
-            system = platform.system()
-            if system == "Windows":
-                getoutput(f"start {path}")
-            else:
-                getoutput(f"open {path}")
 
     def open_settings(self) -> None:
         dialog = Settings(self)
@@ -1465,6 +1427,12 @@ class ComponentCreator(QDialog, Ui_CreateComponent):  # type: ignore[misc]
 
     def setupUi(self, *args: Any, **kwargs: Any) -> None:
         super().setupUi(*args, **kwargs)
+        count = self.componentsTree.topLevelItemCount()
+        plugin_devices = self.componentsTree.topLevelItem(count - 1)
+        for device, name in PLUGIN_DEVICES:
+            item = QTreeWidgetItem([device])
+            item.setToolTip(0, name)
+            plugin_devices.addChild(item)
 
 
 class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
@@ -2589,11 +2557,8 @@ class About(QDialog, Ui_About):  # type: ignore[misc]
 
 
 class Licenses(QDialog, Ui_Licenses):  # type: ignore[misc]
-    def __init__(
-        self, parent: QWidget, open_url_method: Callable[[str], None]
-    ) -> None:
+    def __init__(self, parent: QWidget) -> None:
         super().__init__(parent)
-        self.open_url = open_url_method
         self.names_urls_licenses: dict[str, tuple[str, str]] = {}
         self.setupUi(self)
         self.connectSignalsSlots()
@@ -2628,7 +2593,7 @@ class Licenses(QDialog, Ui_Licenses):  # type: ignore[misc]
         self.browser.setText(self.names_urls_licenses[selected.text()][1])
 
     def double_clicked(self, item: QListWidgetItem) -> None:
-        self.open_url(self.names_urls_licenses[item.text()][0])
+        utils.open_url(self.names_urls_licenses[item.text()][0])
 
 
 class Welcome(QDialog, Ui_Welcome):  # type: ignore[misc]

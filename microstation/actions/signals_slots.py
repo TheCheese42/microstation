@@ -19,7 +19,7 @@ from ..paths import ICONS_PATH
 from ..utils import NullStream
 
 if TYPE_CHECKING:
-    from ..model import Controller
+    from ..model import Component, Controller
 
 
 tr = QApplication.translate
@@ -67,7 +67,11 @@ class SignalOrSlot:
     def call(self, signal_slot: str, *args: Any, **kwargs: Any) -> Any:
         return None
 
-    def call_manager(self, write_method: Callable[[str], None]) -> None:
+    def call_manager(
+        self,
+        component: "Component",
+        write_method: Callable[[str], None],
+    ) -> None:
         return
 
 
@@ -362,7 +366,11 @@ class DisplayTime(SignalOrSlot):
     def __init__(self) -> None:
         self.last_time = ""
 
-    def call_manager(self, write_method: Callable[[str], None]) -> None:
+    def call_manager(
+        self,
+        component: "Component",
+        write_method: Callable[[str], None],
+    ) -> None:
         time_fmt = datetime.now().strftime("%H:%M:%S")
         if self.last_time != time_fmt:
             self.last_time = time_fmt
