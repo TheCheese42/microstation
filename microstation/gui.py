@@ -22,7 +22,7 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
 from serial.tools.list_ports import comports
 
 from . import config, utils
-from .actions import auto_activaters
+from .actions import auto_activators
 from .actions.signals_slots import (SignalOrSlot, find_signal_slot,
                                     query_by_device, query_signals_slots)
 from .daemon import BluetoothDevice, Daemon
@@ -1181,7 +1181,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
         self.autoActivateCombo.addItems(
             [tr("ProfileEditor", "Off"), tr("ProfileEditor", "Default")]
         )
-        for name in auto_activaters.ACTIVATERS:
+        for name in auto_activators.ACTIVATERS:
             self.autoActivateCombo.addItem(name)
             if self.profile.auto_activate_manager == name:
                 self.autoActivateCombo.setCurrentText(name)
@@ -1377,7 +1377,7 @@ class ProfileEditor(QDialog, Ui_ProfileEditor):  # type: ignore[misc]
                 self.profile.auto_activate_manager = False
             self.profile.auto_activate_params = {}
             return
-        params = auto_activaters.ACTIVATERS[text][1]
+        params = auto_activators.ACTIVATERS[text][1]
         if not init:
             self.profile.auto_activate_params = {}
         for name, type in params.items():

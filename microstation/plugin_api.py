@@ -5,7 +5,7 @@ from importlib import import_module
 from types import ModuleType
 
 from . import devices
-from .actions.auto_activaters import ACTIVATERS
+from .actions.auto_activators import ACTIVATERS
 from .actions.signals_slots import SIGNALS_SLOTS, Param, SignalOrSlot, UniStr
 from .config import log
 from .devices import DEVICES

@@ -275,7 +275,7 @@ class ButtonRow(Device):
         else:
             # All off
             for button in range(buttons):
-                if component.device_data_storage[f"last_state_{button}"]:
+                if component.device_data_storage.get("last_state_{button}"):
                     # Turned off
                     component.emit_signal(f"digital_changed_{button}", state)
                     component.emit_signal(f"digital_low_{button}", state)

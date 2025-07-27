@@ -9,7 +9,7 @@ from PyQt6.QtBluetooth import (QBluetoothAddress, QBluetoothServiceInfo,
                                QBluetoothSocket, QBluetoothUuid)
 
 from . import config
-from .actions import auto_activaters
+from .actions import auto_activators
 from .actions.signals_slots import find_signal_slot, get_ss_instance
 from .config import get_config_value, log, log_mc
 from .model import Pin, Profile
@@ -305,12 +305,18 @@ class Daemon:
             if profile.auto_activate_manager is True:
                 true_profiles.append(profile)
             elif profile.auto_activate_manager:
-                for name, activater in auto_activaters.ACTIVATERS.items():
+                for name, activater in auto_activators.ACTIVATERS.items():
                     if name == profile.auto_activate_manager:
                         callab = activater[0]
                         params = profile.auto_activate_params
                         if callab(**params):
                             true_profiles.append(profile)
+                        break
+                else:
+                    log("Removing nonexistent auto activator "
+                        f"{profile.auto_activate_manager} from profile "
+                        f"{profile.name}.", "INFO")
+                    profile.auto_activate_manager = False
         try:
             out = sorted(
                 true_profiles,
@@ -440,14 +446,21 @@ class Daemon:
             if not self.profile:
                 continue
             for component in self.profile.components:
-                for slot, action in component.slots_actions.items():
+                for slot, action in component.slots_actions.copy().items():
                     name = action["name"]
                     if not isinstance(name, str):
                         raise TypeError(
                             f"Action name for slot {slot} must be a string, "
                             f"got {type(name)}"
                         )
-                    instance = get_ss_instance(find_signal_slot(name))
+                    try:
+                        instance = get_ss_instance(find_signal_slot(name))
+                    except ValueError:
+                        log(f"Removing nonexistent signal or slot {name} from "
+                            f"component with device {component.device.NAME}.",
+                            "INFO")
+                        component.slots_actions.pop(slot)
+                        continue
                     if isinstance(params := action.get("params"), dict):
                         for attr, value in params.items():
                             setattr(instance, attr, value)
@@ -461,7 +474,14 @@ class Daemon:
                     component.call_slot(slot, result)
                 if component.manager:
                     manager: str = component.manager["name"]  # type: ignore[assignment]  # noqa
-                    instance = get_ss_instance(find_signal_slot(manager))
+                    try:
+                        instance = get_ss_instance(find_signal_slot(manager))
+                    except ValueError:
+                        log(f"Removing nonexistent manager {manager} from "
+                            f"component with device {component.device.NAME}.",
+                            "INFO")
+                        component.manager = {}
+                        continue
                     if isinstance(
                         params := component.manager.get("params"), dict,
                     ):
