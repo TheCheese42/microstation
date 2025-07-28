@@ -5,6 +5,7 @@ from datetime import datetime
 from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
+from subprocess import getoutput
 
 import psutil
 from dbus_fast.errors import DBusError
@@ -364,6 +365,34 @@ class SaveToVariable(SignalOrSlot):
         PLACEHOLDERS[self.placeholder] = self.value or value
 
 
+class ExecuteCommand(SignalOrSlot):
+    NAME = "Execute Command"
+    TAGS = [Tag.INPUT, Tag.DIGITAL]
+    PARAMS = [
+        Param(
+            name="command",
+            desc="Command",
+            type_=str,
+            default="",
+            info={
+                "tooltip": tr(
+                    "SignalsSlots",
+                    "The system command to be executed.",
+                )
+            },
+        ),
+    ]
+
+    def __init__(self) -> None:
+        self.command = ""
+
+    def call(self, signal_slot: str, value: int | float) -> None:
+        output = getoutput(self.command)
+        from ..config import log
+        log(f"Command output for command '{self.command}': '{output}'",
+            "DEBUG")
+
+
 # ##################### SLOTS ######################
 
 
@@ -428,6 +457,7 @@ SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     DesktopNotification,
     ChangeVolume,
     SaveToVariable,
+    ExecuteCommand,
     # Slots
     ProgramRunning,
     # Managers
