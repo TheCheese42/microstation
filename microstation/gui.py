@@ -17,13 +17,13 @@ from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDialog,
                              QKeySequenceEdit, QLabel, QLayoutItem, QLineEdit,
                              QListWidget, QListWidgetItem, QMainWindow,
                              QMessageBox, QPushButton, QSizePolicy,
-                             QSpacerItem, QSpinBox, QTextBrowser, QVBoxLayout,
-                             QWidget, QTreeWidgetItem)
+                             QSpacerItem, QSpinBox, QTextBrowser,
+                             QTreeWidgetItem, QVBoxLayout, QWidget)
 from serial.tools.list_ports import comports
 
 from . import config, utils
 from .actions import auto_activators
-from .actions.signals_slots import (SignalOrSlot, find_signal_slot,
+from .actions.signals_slots import (Param, SignalOrSlot, find_signal_slot,
                                     query_by_device, query_signals_slots)
 from .daemon import BluetoothDevice, Daemon
 from .enums import Issue, Tag
@@ -1699,35 +1699,37 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                 if (d := self.component.slots_actions.get(entry)):
                     if isinstance((p := d.get("params")), dict):
                         value = p.get(param.name)
-            else:
+            else:  # Manager
                 if isinstance(
                     (e := self.component.manager.get("params")), dict
                 ):
                     value = e.get(param.name)
-            if param.type == int:
-                widget = QSpinBox()
-                widget.setRange(param.info.get("min") or 0, param.info.get("max") or 999999)  # type: ignore[arg-type]  # noqa E501
-                widget.setValue(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
-                widget.valueChanged.connect(
-                    partial(
-                        self.param_changed, type_, entry, param.name
-                    )
-                )
-            elif param.type == float:
-                widget = QDoubleSpinBox()
-                widget.setRange(param.info.get("min") or 0.0, param.info.get("max") or 999999.0)  # type: ignore[arg-type]  # noqa E501
-                widget.setValue(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
-                widget.valueChanged.connect(
-                    partial(
-                        self.param_changed, type_, entry, param.name
-                    )
-                )
-            elif param.type == bool:
+            # if param.type == int:
+            #     widget = QSpinBox()
+            #     widget.setRange(param.info.get("min") or 0, param.info.get("max") or 999999)  # type: ignore[arg-type]  # noqa E501
+            #     widget.setValue(
+            #         int(value) if value is not None else int(param.default)
+            #     )
+            #     widget.valueChanged.connect(
+            #         partial(
+            #             self.param_changed, type_, entry, param.name
+            #         )
+            #     )
+            # elif param.type == float:
+            #     widget = QDoubleSpinBox()
+            #     widget.setRange(param.info.get("min") or 0.0, param.info.get("max") or 999999.0)  # type: ignore[arg-type]  # noqa E501
+            #     widget.setValue(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
+            #     widget.valueChanged.connect(
+            #         partial(
+            #             self.param_changed, type_, entry, param.name
+            #         )
+            #     )
+            if param.type == bool:
                 widget = QCheckBox()
                 widget.setChecked(bool(value) if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
                 widget.stateChanged.connect(
                     partial(
-                        self.param_changed, type_, entry, param.name
+                        self.param_changed, type_, entry, param,
                     )
                 )
             elif param.type == QKeySequence:
@@ -1735,7 +1737,7 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                 widget.setKeySequence(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
                 widget.keySequenceChanged.connect(
                     partial(
-                        self.param_changed, type_, entry, param.name
+                        self.param_changed, type_, entry, param,
                     )
                 )
             elif param.type == "macro":
@@ -1745,22 +1747,27 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
                     if macro["name"] == value:
                         widget.setCurrentIndex(i)
                 self.param_changed(
-                    type_, entry, param.name, value
-                    if isinstance(value, str) else widget.currentText()
+                    type_, entry, param, value
+                    if isinstance(value, str) else widget.currentText(),
                 )
                 widget.currentTextChanged.connect(
                     partial(
-                        self.param_changed, type_, entry, param.name
+                        self.param_changed, type_, entry, param,
                     )
                 )
             else:
                 widget = QLineEdit()
-                widget.setText(value if value is not None else param.default)  # type: ignore[arg-type]  # noqa E501
+                if value is None:
+                    value = param.default
+                value = str(value)
+                widget.setText(value)
                 widget.textChanged.connect(
                     partial(
-                        self.param_changed, type_, entry, param.name
+                        self.param_changed, type_, entry, param,
                     )
                 )
+            if hasattr(widget, "setPlaceholderText"):
+                widget.setPlaceholderText(param.desc)
             font = widget.font()
             font.setPointSize(14)
             widget.setFont(font)
@@ -1773,19 +1780,26 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         self,
         type_: str,
         entry: str,
-        param: str,
+        param: Param,
         value: int | float | bool | str | QKeySequence,
     ) -> None:
         if isinstance(value, QKeySequence):
             value = value.toString()
+        elif param.type == int:
+            value = str(value)
+            if value.isdigit():
+                if (min_ := param.info.get("min")) and int(value) < int(min_):
+                    value = str(min_)
+                if (max_ := param.info.get("max")) and int(value) > int(max_):
+                    value = str(max_)
         if type_ == "signal":
             d = self.component.signals_actions.get(entry)
             if d:
                 p = d.get("params")
                 if isinstance(p, dict):
-                    p[param] = value
+                    p[param.name] = value
                 else:
-                    d["params"] = {param: value}
+                    d["params"] = {param.name: value}
             else:
                 raise ValueError(
                     f"Entry {entry} param changed but entry doesn't exist"
@@ -1795,9 +1809,9 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
             if d:
                 p = d.get("params")
                 if isinstance(p, dict):
-                    p[param] = value
+                    p[param.name] = value
                 else:
-                    d["params"] = {param: value}
+                    d["params"] = {param.name: value}
             else:
                 raise ValueError(
                     f"Entry {entry} param changed but entry doesn't exist"
@@ -1805,9 +1819,9 @@ class ComponentEditor(QDialog, Ui_ComponentEditor):  # type: ignore[misc]
         else:
             e = self.component.manager.get("params")
             if isinstance(e, dict):
-                e[param] = value
+                e[param.name] = value
             else:
-                self.component.manager["params"] = {param: value}
+                self.component.manager["params"] = {param.name: value}
 
 
 class MacroEditor(QDialog, Ui_MacroEditor):  # type: ignore[misc]

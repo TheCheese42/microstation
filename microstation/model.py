@@ -1,6 +1,7 @@
 # from abc import ABCMeta, abstractmethod
 import random
 import time
+from collections import defaultdict
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import cache
@@ -16,6 +17,7 @@ from pynput.mouse import Listener as MListener
 
 from .actions.signals_slots import find_signal_slot, get_ss_instance
 from .enums import Issue, Tag
+from .utils import format_placeholders
 
 type COMPONENT = dict[str, Any]
 type PROFILE = dict[str, Any]
@@ -68,6 +70,8 @@ KEY_LOOKUP = {
     "Tab": Key.tab,
     "Up": Key.up,
 }
+
+PLACEHOLDERS: dict[str, int | float | str | bool] = defaultdict(lambda: "0")
 
 
 @cache
@@ -305,6 +309,17 @@ class Component:
                 if isinstance(action["params"], dict):
                     params = action["params"].items()
                     for attr, value in params:
+                        if isinstance(value, str):
+                            value = format_placeholders(value, PLACEHOLDERS)
+                        type_ = type(getattr(instance, attr))
+                        try:
+                            value = type_(value)
+                        except Exception as e:
+                            from .config import log
+                            log(f"Failed to convert signal attribute ({attr}) "
+                                f"value ({value}) to its correct type ({type_}"
+                                f"): {e.__class__.__name__}: {e}", "ERROR")
+                            return
                         setattr(instance, attr, value)
             except KeyError:
                 pass

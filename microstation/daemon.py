@@ -12,8 +12,8 @@ from . import config
 from .actions import auto_activators
 from .actions.signals_slots import find_signal_slot, get_ss_instance
 from .config import get_config_value, log, log_mc
-from .model import Pin, Profile
-from .utils import get_port_info
+from .model import PLACEHOLDERS, Pin, Profile
+from .utils import format_placeholders, get_port_info
 
 
 class SerialDevice:
@@ -463,6 +463,19 @@ class Daemon:
                         continue
                     if isinstance(params := action.get("params"), dict):
                         for attr, value in params.items():
+                            if isinstance(value, str):
+                                value = format_placeholders(
+                                    value, PLACEHOLDERS,
+                                )
+                            type_ = type(getattr(instance, attr))
+                            try:
+                                value = type_(value)
+                            except Exception as e:
+                                log("Failed to convert slot attribute "
+                                    f"({attr}) value ({value}) to its correct "
+                                    f"type ({type_}): {e.__class__.__name__}: "
+                                    f"{e}", "ERROR")
+                                return
                             setattr(instance, attr, value)
                     last_result = self.last_slot_returns.get(
                         f"{component.id}:{slot}"
@@ -486,6 +499,20 @@ class Daemon:
                         params := component.manager.get("params"), dict,
                     ):
                         for attr, value in params.items():
+                            if isinstance(value, str):
+                                value = format_placeholders(
+                                    value, PLACEHOLDERS,
+                                )
+                            type_ = type(getattr(instance, attr))
+                            try:
+                                value = type_(value)
+                            except Exception as e:
+                                from .config import log
+                                log("Failed to convert signal attribute "
+                                    f"({attr}) value ({value}) to its correct "
+                                    f"type ({type_}): {e.__class__.__name__}: "
+                                    f"{e}", "ERROR")
+                                return
                             setattr(instance, attr, value)
                     instance.call_manager(component, component.write_method)
 

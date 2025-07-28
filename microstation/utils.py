@@ -1,5 +1,6 @@
 import json
 import platform
+import re
 import webbrowser
 from collections.abc import Generator, Iterator
 from io import StringIO
@@ -7,7 +8,7 @@ from pathlib import Path
 from platform import system
 from subprocess import PIPE, STDOUT, Popen, getoutput, getstatusoutput
 from threading import Thread
-from typing import NamedTuple
+from typing import Any, NamedTuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -34,6 +35,12 @@ def format_string(text: str, **kwargs: str) -> str:
     """
     for key, val in kwargs.items():
         text = text.replace(f"{{{key}}}", val)
+    return text
+
+
+def format_placeholders(text: str, placeholders: dict[str, Any]) -> str:
+    while match := re.search(r"\{(.*?)\}", text):
+        text = text.replace(match.group(), placeholders[match.group(1)])
     return text
 
 
@@ -333,13 +340,13 @@ def available_cores() -> Generator[tuple[str, bool, str], None, None]:
         raise RuntimeError(
             f"Error fetching cores: {output} (status code {status})"
         )
-    for platform in json.loads(output)["platforms"]:
+    for platform_ in json.loads(output)["platforms"]:
         try:
-            id: str = platform["id"]
-            latest_version = platform["latest_version"]
-            name = platform["releases"][latest_version]["name"]
+            id: str = platform_["id"]
+            latest_version = platform_["latest_version"]
+            name = platform_["releases"][latest_version]["name"]
             try:
-                installed = platform["releases"][latest_version]["installed"]
+                installed = platform_["releases"][latest_version]["installed"]
             except KeyError:
                 installed = False
         except Exception:
@@ -474,7 +481,7 @@ def _open_url_threaded(url: str) -> None:
 def open_file(path: str | Path) -> None:
     thread = Thread(target=_open_file_threaded, args=(path,))
     config.log(f"Opening file at path {path} in thread {thread.name}",
-                "DEBUG")
+               "DEBUG")
     thread.start()
 
 

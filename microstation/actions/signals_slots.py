@@ -326,6 +326,44 @@ class ChangeVolume(SignalOrSlot):
             get_controller().tap(key)
 
 
+class SaveToVariable(SignalOrSlot):
+    NAME = "Save to Variable"
+    TAGS = [Tag.INPUT, Tag.DIGITAL, Tag.ANALOG]
+    PARAMS = [
+        Param(
+            name="placeholder",
+            desc="Placeholder",
+            type_=str,
+            default="",
+            info={
+                "tooltip": tr("SignalsSlots", "The name of the placeholder. "
+                              "Can later be inserted into any signal, slot or "
+                              "manager config value using curly brackets: "
+                              "{name}.")
+            },
+        ),
+        Param(
+            name="value",
+            desc="Value",
+            type_=str,
+            default="",
+            info={
+                "tooltip": tr("SignalsSlots", "The value of the variable. "
+                              "If empty it will use the digital or analog "
+                              "value provided by the signal.")
+            },
+        )
+    ]
+
+    def __init__(self) -> None:
+        self.placeholder = ""
+        self.value = ""
+
+    def call(self, signal_slot: str, value: int | float) -> None:
+        from ..model import PLACEHOLDERS
+        PLACEHOLDERS[self.placeholder] = self.value or value
+
+
 # ##################### SLOTS ######################
 
 
@@ -389,6 +427,7 @@ SIGNALS_SLOTS: list[type[SignalOrSlot]] = [
     LogToFile,
     DesktopNotification,
     ChangeVolume,
+    SaveToVariable,
     # Slots
     ProgramRunning,
     # Managers

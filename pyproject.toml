@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Microstation"
-version = "0.9.0"
+version = "0.10.0"
 authors = [{ name = "Dominik Reinartz", email = "dominik.reinartz@proton.me" }]
 description = "Dynamically create Microcontroller layouts and connect them to your Computer."
 readme = "README.md"

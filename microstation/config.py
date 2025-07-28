@@ -64,14 +64,22 @@ def trunc_log() -> None:
 
 def ensure_profiles_file() -> None:
     if not PROFILES_PATH.exists():
-        with open(PROFILES_PATH, "w", encoding="utf-8") as fp:
-            fp.write("[]")
+        PROFILES_PATH.write_text("[]", "utf-8")
+    else:
+        try:
+            json.loads(PROFILES_PATH.read_text("utf-8"))
+        except json.decoder.JSONDecodeError:
+            PROFILES_PATH.write_text("[]", "utf-8")
 
 
 def ensure_macros_file() -> None:
     if not MACROS_PATH.exists():
-        with open(MACROS_PATH, "w", encoding="utf-8") as fp:
-            fp.write("[]")
+        MACROS_PATH.write_text("[]", "utf-8")
+    else:
+        try:
+            json.loads(MACROS_PATH.read_text("utf-8"))
+        except json.decoder.JSONDecodeError:
+            MACROS_PATH.write_text("[]", "utf-8")
 
 
 def init_config() -> None:
