@@ -81,6 +81,6 @@ jobs:
         with:
           name: ${{ runner.os }} Build
           path: |
-            build/*.exe
-            bin/Debug/*.msi
+            microstation-win64-portable.exe
+            microstation-win64.msi
           include-hidden-files: true

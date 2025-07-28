@@ -74,5 +74,5 @@ jobs:
         with:
           name: ${{ runner.os }} Build
           path: |
-            build/*.bin
+            microstation-linux-x86_64.bin
           include-hidden-files: true
